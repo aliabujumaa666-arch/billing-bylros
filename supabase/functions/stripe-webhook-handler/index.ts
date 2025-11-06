@@ -45,7 +45,7 @@ async function logWebhook(eventId: string, eventType: string, payload: any, proc
 
 async function processPaymentIntentSucceeded(paymentIntent: any) {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  
+
   const invoiceId = paymentIntent.metadata?.invoice_id;
   if (!invoiceId) {
     throw new Error('No invoice_id in payment intent metadata');
@@ -62,8 +62,9 @@ async function processPaymentIntentSucceeded(paymentIntent: any) {
   }
 
   const amountPaid = paymentIntent.amount / 100;
+  const previousBalance = invoice.balance;
 
-  const { error: paymentError } = await supabase
+  const { data: paymentResult, error: paymentError } = await supabase
     .from('payments')
     .insert({
       invoice_id: invoiceId,
@@ -81,9 +82,11 @@ async function processPaymentIntentSucceeded(paymentIntent: any) {
         status: paymentIntent.status,
         receipt_url: paymentIntent.charges?.data[0]?.receipt_url || '',
       },
-    });
+    })
+    .select()
+    .single();
 
-  if (paymentError) {
+  if (paymentError || !paymentResult) {
     console.error('Payment insert error:', paymentError);
     throw new Error('Failed to record payment');
   }
@@ -102,6 +105,31 @@ async function processPaymentIntentSucceeded(paymentIntent: any) {
   if (updateError) {
     console.error('Invoice update error:', updateError);
     throw new Error('Failed to update invoice');
+  }
+
+  const { data: receiptNumber } = await supabase.rpc('generate_receipt_number');
+
+  const { error: receiptError } = await supabase
+    .from('receipts')
+    .insert({
+      receipt_number: receiptNumber,
+      customer_id: invoice.customer_id,
+      payment_id: paymentResult.id,
+      invoice_id: invoice.id,
+      order_id: invoice.order_id,
+      amount_paid: amountPaid,
+      payment_method: 'Stripe',
+      payment_reference: paymentIntent.id,
+      invoice_total: invoice.total_amount,
+      previous_balance: previousBalance,
+      remaining_balance: newBalance,
+      payment_date: new Date().toISOString().split('T')[0],
+      notes: `Stripe payment - Payment Intent ID: ${paymentIntent.id}`,
+      status: 'generated',
+    });
+
+  if (receiptError) {
+    console.error('Receipt creation error:', receiptError);
   }
 
   return { success: true, balance: newBalance, status: newStatus };

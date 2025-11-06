@@ -105,7 +105,9 @@ async function processPayPalPayment(captureData: any, invoiceId: string) {
     throw new Error("Invoice not found");
   }
 
-  const { error: paymentError } = await supabase
+  const previousBalance = invoice.balance;
+
+  const { data: paymentResult, error: paymentError } = await supabase
     .from("payments")
     .insert({
       invoice_id: invoiceId,
@@ -122,9 +124,11 @@ async function processPayPalPayment(captureData: any, invoiceId: string) {
         payer_name: captureData.payer?.name?.given_name + " " + captureData.payer?.name?.surname,
         status: capture.status,
       },
-    });
+    })
+    .select()
+    .single();
 
-  if (paymentError) {
+  if (paymentError || !paymentResult) {
     console.error("Payment insert error:", paymentError);
     throw new Error("Failed to record payment");
   }
@@ -143,6 +147,31 @@ async function processPayPalPayment(captureData: any, invoiceId: string) {
   if (updateError) {
     console.error("Invoice update error:", updateError);
     throw new Error("Failed to update invoice");
+  }
+
+  const { data: receiptNumber } = await supabase.rpc('generate_receipt_number');
+
+  const { error: receiptError } = await supabase
+    .from("receipts")
+    .insert({
+      receipt_number: receiptNumber,
+      customer_id: invoice.customer_id,
+      payment_id: paymentResult.id,
+      invoice_id: invoice.id,
+      order_id: invoice.order_id,
+      amount_paid: amount,
+      payment_method: "PayPal",
+      payment_reference: capture.id,
+      invoice_total: invoice.total_amount,
+      previous_balance: previousBalance,
+      remaining_balance: newBalance,
+      payment_date: new Date().toISOString().split('T')[0],
+      notes: `PayPal payment - Order ID: ${captureData.id}`,
+      status: 'generated',
+    });
+
+  if (receiptError) {
+    console.error("Receipt creation error:", receiptError);
   }
 
   return { success: true, balance: newBalance, status: newStatus };

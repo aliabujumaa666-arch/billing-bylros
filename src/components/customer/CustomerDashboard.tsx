@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { useBrand } from '../../contexts/BrandContext';
 import { supabase } from '../../lib/supabase';
-import { Package, FileText, Calendar, DollarSign, User, LogOut, Home, HelpCircle, Bell, MessageSquare, PackageCheck, Menu, X, Shield } from 'lucide-react';
+import { Package, FileText, Calendar, DollarSign, User, LogOut, Home, HelpCircle, Bell, MessageSquare, PackageCheck, Menu, X, Shield, Receipt } from 'lucide-react';
 import { CustomerHome } from './CustomerHome';
 import { CustomerProfile } from './CustomerProfile';
 import { CustomerQuotes } from './CustomerQuotes';
@@ -16,9 +16,10 @@ import { CustomerHelpCenter } from './CustomerHelpCenter';
 import { CustomerChangelog } from './CustomerChangelog';
 import { NotificationPreferences } from './NotificationPreferences';
 import { CustomerMessages } from './CustomerMessages';
+import { CustomerReceipts } from './CustomerReceipts';
 import { FeedbackWidget } from '../FeedbackWidget';
 
-type View = 'home' | 'overview' | 'profile' | 'quotes' | 'orders' | 'invoices' | 'visits' | 'warranties' | 'help' | 'changelog' | 'notifications' | 'messages' | 'payment-success' | 'payment-cancel';
+type View = 'home' | 'overview' | 'profile' | 'quotes' | 'orders' | 'invoices' | 'receipts' | 'visits' | 'warranties' | 'help' | 'changelog' | 'notifications' | 'messages' | 'payment-success' | 'payment-cancel';
 
 export function CustomerDashboard() {
   const { customerData, signOut } = useCustomerAuth();
@@ -104,6 +105,8 @@ export function CustomerDashboard() {
         return <CustomerOrders />;
       case 'invoices':
         return <CustomerInvoices />;
+      case 'receipts':
+        return <CustomerReceipts />;
       case 'visits':
         return <CustomerSiteVisits />;
       case 'warranties':
@@ -209,6 +212,7 @@ export function CustomerDashboard() {
     { id: 'quotes', icon: FileText, label: 'Quotes' },
     { id: 'orders', icon: Package, label: 'Orders' },
     { id: 'invoices', icon: DollarSign, label: 'Invoices' },
+    { id: 'receipts', icon: Receipt, label: 'Receipts' },
     { id: 'visits', icon: Calendar, label: 'Site Visits' },
     { id: 'warranties', icon: Shield, label: 'Warranties' },
   ];

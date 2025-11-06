@@ -634,6 +634,278 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
   doc.save(`Invoice_${invoice.invoice_number}.pdf`);
 };
 
+export const exportReceiptToPDF = (receipt: any, customer: any, invoice: any, brand?: any) => {
+  const doc = new jsPDF();
+
+  const pdfSettings = brand?.pdfSettings?.invoices || getDefaultPDFSettings();
+  const companyName = brand?.company?.name || 'BYLROS';
+  const companyFullName = brand?.company?.fullName || 'Middle East Aluminium & Glass LLC';
+  const companyAddress = brand?.contact?.address?.fullAddress || 'Costra Business Park (Block B), Production City, Dubai, UAE';
+  const companyPhone = brand?.contact?.phone || '+971-52-5458-968';
+  const companyEmail = brand?.contact?.email || 'info@bylros.ae';
+  const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
+
+  const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
+
+  if (pdfSettings.watermark.enableWatermark) {
+    doc.saveGraphicsState();
+    doc.setTextColor(128, 128, 128);
+    doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
+    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
+      align: 'center',
+      angle: pdfSettings.watermark.watermarkAngle,
+    });
+    doc.setGState(new (doc as any).GState({ opacity: pdfSettings.watermark.watermarkOpacity }));
+    doc.restoreGraphicsState();
+  }
+
+  if (pdfSettings.header.showHeader) {
+    doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
+  }
+
+  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.5);
+    doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
+  }
+
+  if (pdfSettings.header.showHeader && pdfSettings.header.showCompanyInfo) {
+    const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
+    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
+    doc.setFontSize(32);
+    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+    doc.text(companyName, 14, 22);
+
+    if (pdfSettings.header.showTagline) {
+      doc.setFontSize(9);
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
+      doc.text(tagline, 14, 29);
+    }
+
+    doc.setFontSize(8);
+    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
+    doc.text(companyFullName, 14, 37);
+    doc.text(companyAddress, 14, 42);
+    doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+  }
+
+  doc.setFillColor(34, 197, 94, 0.1);
+  doc.roundedRect(10, 62, 190, 12, 2, 2, 'F');
+
+  doc.setTextColor(34, 197, 94);
+  doc.setFontSize(22);
+  doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+  doc.text('PAYMENT RECEIPT', 14, 70);
+
+  doc.setFontSize(9);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Receipt #: ${receipt.receipt_number}`, 140, 70, { align: 'right' });
+
+  doc.setFillColor(250, 250, 251);
+  doc.roundedRect(10, 78, 90, 32, 2, 2, 'F');
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(10, 78, 90, 32, 2, 2, 'S');
+
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  doc.text('RECEIPT DETAILS', 14, 84);
+
+  doc.setFontSize(9);
+  doc.setTextColor(30, 41, 59);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.text(`Payment Date:`, 14, 91);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.text(`${new Date(receipt.payment_date).toLocaleDateString()}`, 50, 91);
+
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.text(`Payment Time:`, 14, 97);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.text(`${new Date(receipt.created_at).toLocaleTimeString()}`, 50, 97);
+
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.text(`Payment Method:`, 14, 103);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.setTextColor(34, 197, 94);
+  doc.text(receipt.payment_method || 'N/A', 50, 103);
+
+  doc.setFillColor(250, 250, 251);
+  doc.roundedRect(110, 78, 90, 32, 2, 2, 'F');
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(110, 78, 90, 32, 2, 2, 'S');
+
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  doc.text('CUSTOMER INFORMATION', 114, 84);
+
+  doc.setFontSize(10);
+  doc.setTextColor(30, 41, 59);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.text(customer.name, 114, 91);
+
+  doc.setFontSize(9);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text(`📞 ${customer.phone}`, 114, 97);
+  if (customer.email) doc.text(`✉ ${customer.email}`, 114, 103);
+
+  let yPos = 120;
+
+  doc.setFillColor(239, 246, 255);
+  doc.roundedRect(10, yPos, 190, 12, 2, 2, 'F');
+  doc.setDrawColor(191, 219, 254);
+  doc.roundedRect(10, yPos, 190, 12, 2, 2, 'S');
+
+  doc.setFontSize(11);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.setTextColor(30, 64, 175);
+  doc.text('PAYMENT SUMMARY', 14, yPos + 8);
+
+  yPos += 20;
+
+  doc.setFillColor(250, 250, 251);
+  doc.roundedRect(10, yPos, 90, 50, 2, 2, 'F');
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(10, yPos, 90, 50, 2, 2, 'S');
+
+  doc.setFontSize(9);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Invoice Number:`, 14, yPos + 7);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.setTextColor(30, 41, 59);
+  doc.text(invoice.invoice_number || 'N/A', 55, yPos + 7);
+
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Invoice Total:`, 14, yPos + 14);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.setTextColor(30, 41, 59);
+  doc.text(`AED ${receipt.invoice_total.toFixed(2)}`, 55, yPos + 14);
+
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Previous Balance:`, 14, yPos + 21);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.text(`AED ${receipt.previous_balance.toFixed(2)}`, 55, yPos + 21);
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.5);
+  doc.line(14, yPos + 25, 96, yPos + 25);
+
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(34, 197, 94);
+  doc.text(`Amount Paid:`, 14, yPos + 32);
+  doc.setFontSize(13);
+  doc.text(`AED ${receipt.amount_paid.toFixed(2)}`, 55, yPos + 32);
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.5);
+  doc.line(14, yPos + 36, 96, yPos + 36);
+
+  doc.setFontSize(11);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.setTextColor(receipt.remaining_balance > 0 ? 220 : 34, receipt.remaining_balance > 0 ? 38 : 197, receipt.remaining_balance > 0 ? 38 : 94);
+  doc.text(`Remaining Balance:`, 14, yPos + 43);
+  doc.setFontSize(13);
+  doc.text(`AED ${receipt.remaining_balance.toFixed(2)}`, 55, yPos + 43);
+
+  doc.setFillColor(34, 197, 94, 0.1);
+  doc.roundedRect(110, yPos, 90, 50, 2, 2, 'F');
+  doc.setDrawColor(34, 197, 94);
+  doc.roundedRect(110, yPos, 90, 50, 2, 2, 'S');
+
+  const statusText = receipt.remaining_balance <= 0 ? 'PAID IN FULL' : 'PARTIAL PAYMENT';
+  const statusColor = receipt.remaining_balance <= 0 ? [34, 197, 94] : [245, 158, 11];
+
+  doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
+  doc.roundedRect(114, yPos + 4, 82, 10, 2, 2, 'F');
+
+  doc.setFontSize(12);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text(statusText, 155, yPos + 11, { align: 'center' });
+
+  doc.setFontSize(9);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text('Thank you for your payment!', 155, yPos + 22, { align: 'center' });
+
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  doc.text('This receipt confirms your payment', 155, yPos + 29, { align: 'center' });
+  doc.text('and serves as proof of transaction.', 155, yPos + 34, { align: 'center' });
+
+  if (receipt.payment_reference) {
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setTextColor(30, 41, 59);
+    doc.text(`Ref: ${receipt.payment_reference}`, 155, yPos + 42, { align: 'center' });
+  }
+
+  yPos += 60;
+
+  if (receipt.notes) {
+    doc.setFillColor(254, 252, 232);
+    doc.roundedRect(10, yPos, 190, 20, 2, 2, 'F');
+    doc.setDrawColor(250, 204, 21);
+    doc.roundedRect(10, yPos, 190, 20, 2, 2, 'S');
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(161, 98, 7);
+    doc.text('NOTES', 14, yPos + 5);
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(113, 63, 18);
+    const splitNotes = doc.splitTextToSize(receipt.notes, 180);
+    doc.text(splitNotes, 14, yPos + 11);
+    yPos += 25;
+  }
+
+  if (pdfSettings.footer.showFooter) {
+    const footerY = 270;
+
+    if (pdfSettings.footer.footerStyle === 'gradient') {
+      doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.rect(0, footerY, 210, pdfSettings.layout.footerHeight, 'F');
+
+      doc.setDrawColor(255, 255, 255, 0.3);
+      doc.setLineWidth(0.3);
+      doc.line(10, footerY + 12, 200, footerY + 12);
+    } else if (pdfSettings.footer.footerStyle === 'bordered') {
+      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.setLineWidth(1);
+      doc.line(10, footerY, 200, footerY);
+    }
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(pdfSettings.footer.footerText, 105, footerY + 8, { align: 'center' });
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.setFontSize(pdfSettings.fonts.footerFontSize);
+    doc.setTextColor(255, 255, 255, 0.9);
+    doc.text(companyFullName, 105, footerY + 14, { align: 'center' });
+    doc.text(`${companyPhone} | ${companyEmail}`, 105, footerY + 19, { align: 'center' });
+
+    if (pdfSettings.footer.showGenerationDate) {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255, 0.7);
+      doc.text(`Receipt generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, footerY + 24, { align: 'center' });
+    }
+  }
+
+  doc.save(`Receipt_${receipt.receipt_number}.pdf`);
+};
+
 export const exportToExcel = (data: any[], filename: string) => {
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();

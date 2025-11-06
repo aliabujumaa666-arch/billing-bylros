@@ -19,6 +19,7 @@ const Quotes = lazy(() => import('./components/Quotes').then(module => ({ defaul
 const SiteVisits = lazy(() => import('./components/SiteVisits').then(module => ({ default: module.SiteVisits })));
 const Orders = lazy(() => import('./components/Orders').then(module => ({ default: module.Orders })));
 const Invoices = lazy(() => import('./components/Invoices').then(module => ({ default: module.Invoices })));
+const Receipts = lazy(() => import('./components/Receipts').then(module => ({ default: module.Receipts })));
 const OrderTracker = lazy(() => import('./components/OrderTracker').then(module => ({ default: module.OrderTracker })));
 const PortalSettings = lazy(() => import('./components/PortalSettings').then(module => ({ default: module.PortalSettings })));
 const KnowledgeBase = lazy(() => import('./components/KnowledgeBase').then(module => ({ default: module.KnowledgeBase })));
@@ -84,6 +85,8 @@ function AdminApp() {
         return <Orders />;
       case 'invoices':
         return <Invoices />;
+      case 'receipts':
+        return <Receipts />;
       case 'tracker':
         return <OrderTracker />;
       case 'portal-settings':

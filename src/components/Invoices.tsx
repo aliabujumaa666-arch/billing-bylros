@@ -97,18 +97,44 @@ export function Invoices() {
     if (!selectedInvoice) return;
 
     try {
-      await supabase.from('payments').insert([{
-        invoice_id: selectedInvoice.id,
-        ...paymentData,
-      }]);
-
+      const previousBalance = selectedInvoice.balance;
       const newBalance = selectedInvoice.balance - paymentData.amount;
       const newStatus = newBalance <= 0 ? 'Paid' : 'Partial';
+
+      const { data: paymentResult, error: paymentError } = await supabase
+        .from('payments')
+        .insert([{
+          invoice_id: selectedInvoice.id,
+          ...paymentData,
+        }])
+        .select()
+        .single();
+
+      if (paymentError) throw paymentError;
 
       await supabase.from('invoices').update({
         balance: newBalance,
         status: newStatus,
       }).eq('id', selectedInvoice.id);
+
+      const { data: receiptNumber } = await supabase.rpc('generate_receipt_number');
+
+      await supabase.from('receipts').insert([{
+        receipt_number: receiptNumber,
+        customer_id: selectedInvoice.customer_id,
+        payment_id: paymentResult.id,
+        invoice_id: selectedInvoice.id,
+        order_id: selectedInvoice.order_id,
+        amount_paid: paymentData.amount,
+        payment_method: paymentData.payment_method,
+        payment_reference: paymentData.reference,
+        invoice_total: selectedInvoice.total_amount,
+        previous_balance: previousBalance,
+        remaining_balance: newBalance,
+        payment_date: paymentData.payment_date,
+        notes: paymentData.notes,
+        status: 'generated',
+      }]);
 
       setShowPaymentModal(false);
       setSelectedInvoice(null);
@@ -120,7 +146,7 @@ export function Invoices() {
         notes: '',
       });
       fetchData();
-      alert('Payment recorded successfully!');
+      alert('Payment recorded successfully! Receipt has been generated.');
     } catch (error) {
       console.error('Error recording payment:', error);
       alert('Failed to record payment');
