@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
-import { MessageSquare, Send, Settings, FileText, Clock, Users, CheckCircle, XCircle, Loader, History } from 'lucide-react';
+import { MessageSquare, Send, Settings, FileText, Clock, Users, CheckCircle, XCircle, Loader, History, Zap } from 'lucide-react';
+import { MetaWhatsAppConnect } from './MetaWhatsAppConnect';
 
 interface WhatsAppSettings {
   id: string;
@@ -57,6 +58,8 @@ export function WhatsAppMessaging() {
     phone_number: '',
     webhook_url: ''
   });
+
+  const [configMethod, setConfigMethod] = useState<'manual' | 'meta'>('meta');
 
   useEffect(() => {
     Promise.all([
@@ -578,79 +581,142 @@ export function WhatsAppMessaging() {
       {activeTab === 'settings' && (
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">WhatsApp API Settings</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                API Provider
-              </label>
-              <select
-                value={apiSettings.api_provider}
-                onChange={(e) => setApiSettings({ ...apiSettings, api_provider: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+
+          {settings && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-green-900">Connected</h3>
+                  <p className="text-sm text-green-800 mt-1">
+                    Provider: {settings.api_provider} | Phone: {settings.phone_number}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (confirm('Are you sure you want to disconnect and reconfigure?')) {
+                      supabase
+                        .from('whatsapp_settings')
+                        .update({ is_active: false })
+                        .eq('id', settings.id)
+                        .then(() => {
+                          setSettings(null);
+                          showSuccess('Disconnected successfully');
+                        });
+                    }
+                  }}
+                  className="text-sm text-red-600 hover:text-red-700"
+                >
+                  Disconnect
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="mb-6">
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
+              <button
+                onClick={() => setConfigMethod('meta')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  configMethod === 'meta'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <option value="twilio">Twilio</option>
-                <option value="vonage">Vonage</option>
-                <option value="whatsapp-business">WhatsApp Business API</option>
-              </select>
+                <Zap className="w-4 h-4" />
+                Meta OAuth (Recommended)
+              </button>
+              <button
+                onClick={() => setConfigMethod('manual')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  configMethod === 'manual'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                Manual Configuration
+              </button>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                API Key
-              </label>
-              <input
-                type="text"
-                value={apiSettings.api_key}
-                onChange={(e) => setApiSettings({ ...apiSettings, api_key: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                API Secret
-              </label>
-              <input
-                type="password"
-                value={apiSettings.api_secret}
-                onChange={(e) => setApiSettings({ ...apiSettings, api_secret: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Phone Number
-              </label>
-              <input
-                type="text"
-                value={apiSettings.phone_number}
-                onChange={(e) => setApiSettings({ ...apiSettings, phone_number: e.target.value })}
-                placeholder="+1234567890"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Webhook URL (Optional)
-              </label>
-              <input
-                type="url"
-                value={apiSettings.webhook_url}
-                onChange={(e) => setApiSettings({ ...apiSettings, webhook_url: e.target.value })}
-                placeholder="https://your-domain.com/webhook"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
-              />
-            </div>
-
-            <button
-              onClick={saveSettings}
-              className="w-full px-6 py-3 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-colors"
-            >
-              Save Settings
-            </button>
           </div>
+
+          {configMethod === 'meta' ? (
+            <MetaWhatsAppConnect onSuccess={fetchSettings} />
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  API Provider
+                </label>
+                <select
+                  value={apiSettings.api_provider}
+                  onChange={(e) => setApiSettings({ ...apiSettings, api_provider: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                >
+                  <option value="twilio">Twilio</option>
+                  <option value="vonage">Vonage</option>
+                  <option value="whatsapp-business">WhatsApp Business API</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  API Key
+                </label>
+                <input
+                  type="text"
+                  value={apiSettings.api_key}
+                  onChange={(e) => setApiSettings({ ...apiSettings, api_key: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  API Secret
+                </label>
+                <input
+                  type="password"
+                  value={apiSettings.api_secret}
+                  onChange={(e) => setApiSettings({ ...apiSettings, api_secret: e.target.value })}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  value={apiSettings.phone_number}
+                  onChange={(e) => setApiSettings({ ...apiSettings, phone_number: e.target.value })}
+                  placeholder="+1234567890"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Webhook URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={apiSettings.webhook_url}
+                  onChange={(e) => setApiSettings({ ...apiSettings, webhook_url: e.target.value })}
+                  placeholder="https://your-domain.com/webhook"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                />
+              </div>
+
+              <button
+                onClick={saveSettings}
+                className="w-full px-6 py-3 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-colors"
+              >
+                Save Settings
+              </button>
+            </div>
+          )}
         </div>
       )}
 
