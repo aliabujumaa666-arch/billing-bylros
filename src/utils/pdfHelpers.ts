@@ -1,5 +1,26 @@
 import { PDFSettings } from '../contexts/BrandContext';
 
+export const fontMapping: Record<string, string> = {
+  'helvetica': 'helvetica',
+  'arial': 'helvetica',
+  'verdana': 'helvetica',
+  'trebuchet': 'helvetica',
+  'segoe': 'helvetica',
+  'tahoma': 'helvetica',
+  'times': 'times',
+  'georgia': 'times',
+  'palatino': 'times',
+  'garamond': 'times',
+  'bookman': 'times',
+  'courier': 'courier',
+  'courier-new': 'courier',
+  'lucida-console': 'courier',
+};
+
+export const getFontFamily = (fontName: string): string => {
+  return fontMapping[fontName.toLowerCase()] || 'helvetica';
+};
+
 export const getDefaultPDFSettings = (): PDFSettings => ({
   fonts: {
     headerFont: 'helvetica',

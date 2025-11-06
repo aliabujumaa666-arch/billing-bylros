@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { getDefaultPDFSettings, hexToRgb } from './pdfHelpers';
+import { getDefaultPDFSettings, hexToRgb, getFontFamily } from './pdfHelpers';
 
 export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   const doc = new jsPDF();
@@ -20,7 +20,7 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     doc.saveGraphicsState();
     doc.setTextColor(128, 128, 128);
     doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
-    doc.setFont(pdfSettings.fonts.headerFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
@@ -46,12 +46,12 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
     doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
     doc.setFontSize(32);
-    doc.setFont(pdfSettings.fonts.headerFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
     doc.text(companyName, 14, 22);
 
     if (pdfSettings.header.showTagline) {
       doc.setFontSize(9);
-      doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
       doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
       doc.text(tagline, 14, 29);
     }
@@ -68,11 +68,11 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
 
   doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
   doc.setFontSize(22);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
   doc.text('QUOTATION', 14, 70);
 
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(100, 100, 100);
   doc.text(`Quote Reference: ${quote.quote_number}`, 140, 70, { align: 'right' });
 
@@ -87,24 +87,24 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
 
   doc.setFontSize(9);
   doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.text(`Issue Date:`, 14, 91);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.text(`${new Date(quote.created_at).toLocaleDateString()}`, 42, 91);
 
   if (quote.valid_until) {
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.text(`Valid Until:`, 14, 97);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.text(`${new Date(quote.valid_until).toLocaleDateString()}`, 42, 97);
   }
 
   doc.setFontSize(9);
   doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.text(`Status:`, 14, 103);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setTextColor(59, 130, 246);
   doc.text(quote.status || 'Draft', 42, 103);
 
@@ -119,11 +119,11 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
 
   doc.setFontSize(10);
   doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.text(customer.name, 114, 91);
 
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(71, 85, 105);
   doc.text(`📞 ${customer.phone}`, 114, 97);
   if (customer.email) doc.text(`✉ ${customer.email}`, 114, 103);
@@ -131,7 +131,7 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   if (pdfSettings.sections.showItemsTable) {
     const textPrimaryRgb = hexToRgb(pdfSettings.colors.textPrimary);
     doc.setFontSize(10);
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setTextColor(textPrimaryRgb.r, textPrimaryRgb.g, textPrimaryRgb.b);
     doc.text('ITEMS & SPECIFICATIONS', 14, 115);
 
@@ -206,7 +206,7 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   doc.roundedRect(10, finalY, 70, 10, 2, 2, 'S');
 
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setTextColor(30, 64, 175);
   doc.text('Total Chargeable Area:', 14, finalY + 6);
   doc.text(`${totalChargeableArea.toFixed(2)} m²`, 75, finalY + 6, { align: 'right' });
@@ -218,10 +218,10 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
 
   let currentY = finalY + 7;
   doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(71, 85, 105);
   doc.text('Subtotal:', 135, currentY);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setTextColor(30, 41, 59);
   doc.text(`AED ${quote.subtotal.toFixed(2)}`, 195, currentY, { align: 'right' });
   currentY += 6;
@@ -230,18 +230,18 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     const discountLabel = quote.discount_type === 'percentage'
       ? `Discount (${quote.discount_value}%)`
       : 'Discount';
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setTextColor(34, 197, 94);
     doc.text(`${discountLabel}:`, 135, currentY);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.text(`- AED ${quote.discount.toFixed(2)}`, 195, currentY, { align: 'right' });
     currentY += 6;
   }
 
-  doc.setFont('helvetica', 'normal');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(71, 85, 105);
   doc.text('VAT (5%):', 135, currentY);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setTextColor(30, 41, 59);
   doc.text(`AED ${quote.vat_amount.toFixed(2)}`, 195, currentY, { align: 'right' });
   currentY += 8;
@@ -253,7 +253,7 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b, 0.1);
   doc.roundedRect(133, currentY - 1, 65, 8, 1, 1, 'F');
 
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setFontSize(11);
   doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
   doc.text('TOTAL AMOUNT:', 135, currentY + 4);
@@ -268,12 +268,12 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     doc.setDrawColor(250, 204, 21);
     doc.roundedRect(10, remarksY, 120, 25, 2, 2, 'S');
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setFontSize(8);
     doc.setTextColor(161, 98, 7);
     doc.text('REMARKS & NOTES', 14, remarksY + 5);
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setFontSize(8);
     doc.setTextColor(113, 63, 18);
     const splitRemarks = doc.splitTextToSize(quote.remarks, 110);
@@ -291,12 +291,12 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
       doc.roundedRect(10, termsY, 190, 32, 2, 2, 'S');
     }
 
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setFontSize(9);
     doc.setTextColor(30, 64, 175);
     doc.text(pdfSettings.terms.termsTitle, 14, termsY + 6);
 
-    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(30, 58, 138);
     doc.text(pdfSettings.terms.termsContent, 14, termsY + 11);
@@ -318,12 +318,12 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
       doc.line(10, footerY, 200, footerY);
     }
 
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setFontSize(10);
     doc.setTextColor(255, 255, 255);
     doc.text(pdfSettings.footer.footerText, 105, footerY + 8, { align: 'center' });
 
-    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setFontSize(pdfSettings.fonts.footerFontSize);
     doc.setTextColor(255, 255, 255, 0.9);
     doc.text(companyFullName, 105, footerY + 14, { align: 'center' });
@@ -407,7 +407,7 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
     doc.saveGraphicsState();
     doc.setTextColor(128, 128, 128);
     doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
-    doc.setFont(pdfSettings.fonts.headerFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
@@ -433,12 +433,12 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
     const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
     doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
     doc.setFontSize(32);
-    doc.setFont(pdfSettings.fonts.headerFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
     doc.text(companyName, 14, 22);
 
     if (pdfSettings.header.showTagline) {
       doc.setFontSize(9);
-      doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
       doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
       doc.text(tagline, 14, 29);
     }
@@ -455,11 +455,11 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
 
   doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
   doc.setFontSize(22);
-  doc.setFont(pdfSettings.fonts.headerFont, 'bold');
+  doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
   doc.text('INVOICE', 14, 70);
 
   doc.setFontSize(9);
-  doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(100, 100, 100);
   doc.text(`Invoice Reference: ${invoice.invoice_number}`, 140, 70, { align: 'right' });
 
@@ -475,15 +475,15 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
 
     doc.setFontSize(9);
     doc.setTextColor(30, 41, 59);
-    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.text(`Issue Date:`, 14, 91);
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.text(`${new Date(invoice.created_at).toLocaleDateString()}`, 42, 91);
 
     if (invoice.due_date) {
-      doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
       doc.text(`Due Date:`, 14, 97);
-      doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
       doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
       doc.text(`${new Date(invoice.due_date).toLocaleDateString()}`, 42, 97);
     }
@@ -501,11 +501,11 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
 
     doc.setFontSize(10);
     doc.setTextColor(30, 41, 59);
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.text(customer.name, 114, 91);
 
     doc.setFontSize(9);
-    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setTextColor(71, 85, 105);
     doc.text(`📞 ${customer.phone}`, 114, 97);
     if (customer.email) doc.text(`✉ ${customer.email}`, 114, 103);
@@ -516,36 +516,36 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
   if (pdfSettings.sections.showTotals) {
     const textPrimaryRgb = hexToRgb(pdfSettings.colors.textPrimary);
     doc.setFontSize(10);
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setTextColor(textPrimaryRgb.r, textPrimaryRgb.g, textPrimaryRgb.b);
     doc.text('PAYMENT SUMMARY', 14, yPos);
     yPos += 10;
 
     doc.setFontSize(9);
-    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setTextColor(71, 85, 105);
     doc.text(`Total Amount:`, 14, yPos);
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setTextColor(30, 41, 59);
     doc.text(`AED ${invoice.total_amount.toFixed(2)}`, 70, yPos);
     yPos += 6;
 
-    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setTextColor(71, 85, 105);
     doc.text(`Deposit Paid:`, 14, yPos);
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setTextColor(34, 197, 94);
     doc.text(`AED ${invoice.deposit_paid.toFixed(2)}`, 70, yPos);
     yPos += 6;
 
-    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setTextColor(71, 85, 105);
     doc.text(`Payment Before Delivery:`, 14, yPos);
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.text(`AED ${invoice.payment_before_delivery.toFixed(2)}`, 70, yPos);
     yPos += 8;
 
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setFontSize(11);
     doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.text(`Balance Due:`, 14, yPos);
@@ -554,7 +554,7 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
   }
 
   if (payments && payments.length > 0) {
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setFontSize(10);
     doc.setTextColor(30, 41, 59);
     doc.text('Payment History', 14, yPos);
@@ -600,12 +600,12 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
       doc.line(10, footerY, 200, footerY);
     }
 
-    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setFontSize(10);
     doc.setTextColor(255, 255, 255);
     doc.text(pdfSettings.footer.footerText, 105, footerY + 8, { align: 'center' });
 
-    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setFontSize(pdfSettings.fonts.footerFontSize);
     doc.setTextColor(255, 255, 255, 0.9);
     doc.text(companyFullName, 105, footerY + 14, { align: 'center' });

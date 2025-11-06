@@ -86,9 +86,26 @@ export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: Docum
                     onChange={(e) => updateSettings('fonts', 'headerFont', e.target.value)}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
                   >
-                    <option value="helvetica">Helvetica</option>
-                    <option value="times">Times</option>
-                    <option value="courier">Courier</option>
+                    <optgroup label="Sans-Serif Fonts">
+                      <option value="helvetica">Helvetica</option>
+                      <option value="arial">Arial</option>
+                      <option value="verdana">Verdana</option>
+                      <option value="trebuchet">Trebuchet MS</option>
+                      <option value="segoe">Segoe UI</option>
+                      <option value="tahoma">Tahoma</option>
+                    </optgroup>
+                    <optgroup label="Serif Fonts">
+                      <option value="times">Times New Roman</option>
+                      <option value="georgia">Georgia</option>
+                      <option value="palatino">Palatino</option>
+                      <option value="garamond">Garamond</option>
+                      <option value="bookman">Bookman</option>
+                    </optgroup>
+                    <optgroup label="Monospace Fonts">
+                      <option value="courier">Courier</option>
+                      <option value="courier-new">Courier New</option>
+                      <option value="lucida-console">Lucida Console</option>
+                    </optgroup>
                   </select>
                 </div>
 
@@ -99,9 +116,26 @@ export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: Docum
                     onChange={(e) => updateSettings('fonts', 'bodyFont', e.target.value)}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
                   >
-                    <option value="helvetica">Helvetica</option>
-                    <option value="times">Times</option>
-                    <option value="courier">Courier</option>
+                    <optgroup label="Sans-Serif Fonts">
+                      <option value="helvetica">Helvetica</option>
+                      <option value="arial">Arial</option>
+                      <option value="verdana">Verdana</option>
+                      <option value="trebuchet">Trebuchet MS</option>
+                      <option value="segoe">Segoe UI</option>
+                      <option value="tahoma">Tahoma</option>
+                    </optgroup>
+                    <optgroup label="Serif Fonts">
+                      <option value="times">Times New Roman</option>
+                      <option value="georgia">Georgia</option>
+                      <option value="palatino">Palatino</option>
+                      <option value="garamond">Garamond</option>
+                      <option value="bookman">Bookman</option>
+                    </optgroup>
+                    <optgroup label="Monospace Fonts">
+                      <option value="courier">Courier</option>
+                      <option value="courier-new">Courier New</option>
+                      <option value="lucida-console">Lucida Console</option>
+                    </optgroup>
                   </select>
                 </div>
 
