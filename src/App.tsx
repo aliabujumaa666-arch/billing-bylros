@@ -8,6 +8,7 @@ import { Login } from './components/Login';
 import { Layout } from './components/Layout';
 import { PublicHome } from './components/PublicHome';
 import { PublicBooking } from './components/PublicBooking';
+import { PublicPage } from './components/PublicPage';
 import { SiteVisitPayment } from './components/SiteVisitPayment';
 import { SubmitRequest } from './components/SubmitRequest';
 import { GlobalSearch } from './components/GlobalSearch';
@@ -39,6 +40,7 @@ const WarrantyManagement = lazy(() => import('./components/WarrantyManagement').
 const WhatsAppMessaging = lazy(() => import('./components/WhatsAppMessaging').then(module => ({ default: module.WhatsAppMessaging })));
 const WhatsAppInbox = lazy(() => import('./components/WhatsAppInbox').then(module => ({ default: module.WhatsAppInbox })));
 const WhatsAppAISettings = lazy(() => import('./components/WhatsAppAISettings').then(module => ({ default: module.WhatsAppAISettings })));
+const PageManagement = lazy(() => import('./components/PageManagement').then(module => ({ default: module.PageManagement })));
 const CustomerLogin = lazy(() => import('./components/customer/CustomerLogin').then(module => ({ default: module.CustomerLogin })));
 const CustomerDashboard = lazy(() => import('./components/customer/CustomerDashboard').then(module => ({ default: module.CustomerDashboard })));
 
@@ -125,6 +127,8 @@ function AdminApp() {
         return <WhatsAppInbox />;
       case 'whatsapp-ai-settings':
         return <WhatsAppAISettings />;
+      case 'page-management':
+        return <PageManagement />;
       default:
         return <Dashboard />;
     }
@@ -165,7 +169,8 @@ function CustomerApp() {
 }
 
 function AppRouter() {
-  const [viewMode, setViewMode] = useState<'public' | 'admin' | 'customer' | 'booking' | 'site-visit-payment' | 'submit-request'>('public');
+  const [viewMode, setViewMode] = useState<'public' | 'admin' | 'customer' | 'booking' | 'site-visit-payment' | 'submit-request' | 'page'>('public');
+  const [pageSlug, setPageSlug] = useState<string>('');
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -175,6 +180,10 @@ function AppRouter() {
       setViewMode('site-visit-payment');
     } else if (path.startsWith('/book-visit')) {
       setViewMode('booking');
+    } else if (path.startsWith('/page/')) {
+      setViewMode('page');
+      const slug = path.replace('/page/', '');
+      setPageSlug(slug);
     } else if (path.startsWith('/customer')) {
       setViewMode('customer');
     } else if (path.startsWith('/admin')) {
@@ -237,6 +246,14 @@ function AppRouter() {
     return (
       <BrandProvider>
         <PublicBooking onBack={navigateToPublic} />
+      </BrandProvider>
+    );
+  }
+
+  if (viewMode === 'page') {
+    return (
+      <BrandProvider>
+        <PublicPage slug={pageSlug} />
       </BrandProvider>
     );
   }
