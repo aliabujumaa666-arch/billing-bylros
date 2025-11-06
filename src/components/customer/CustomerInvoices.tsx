@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
+import { useBrand } from '../../contexts/BrandContext';
 import { supabase } from '../../lib/supabase';
 import { FileText, Download, DollarSign, Calendar, CreditCard } from 'lucide-react';
 import { exportInvoiceToPDF } from '../../utils/exportUtils';
@@ -8,6 +9,7 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 
 export function CustomerInvoices() {
   const { customerData } = useCustomerAuth();
+  const { brand } = useBrand();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [customer, setCustomer] = useState<any>(null);
@@ -95,7 +97,7 @@ export function CustomerInvoices() {
       payments: payments || []
     };
 
-    exportInvoiceToPDF(invoiceWithPayments, customer, payments || []);
+    exportInvoiceToPDF(invoiceWithPayments, customer, payments || [], brand);
   };
 
   const handlePayPalApprove = async (data: any, invoice: any) => {

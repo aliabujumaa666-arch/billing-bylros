@@ -6,7 +6,7 @@ import { getDefaultPDFSettings, hexToRgb } from './pdfHelpers';
 export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   const doc = new jsPDF();
 
-  const pdfSettings = brand?.pdf || getDefaultPDFSettings();
+  const pdfSettings = brand?.pdfSettings?.quotes || brand?.pdf || getDefaultPDFSettings();
   const primaryColor = brand?.visual?.primaryColor || '#bb2738';
   const accentColor = brand?.visual?.accentColor || '#a01f2f';
   const companyName = brand?.company?.name || 'BYLROS';
@@ -394,51 +394,180 @@ export const exportQuoteToExcel = (quote: any, customer: any) => {
   XLSX.writeFile(workbook, `Quote_${quote.quote_number}.xlsx`);
 };
 
-export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[]) => {
+export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[], brand?: any) => {
   const doc = new jsPDF();
 
-  doc.setFillColor(187, 39, 56);
-  doc.rect(0, 0, 210, 45, 'F');
+  const pdfSettings = brand?.pdfSettings?.invoices || getDefaultPDFSettings();
+  const primaryColor = brand?.visual?.primaryColor || '#bb2738';
+  const accentColor = brand?.visual?.accentColor || '#a01f2f';
+  const companyName = brand?.company?.name || 'BYLROS';
+  const companyFullName = brand?.company?.fullName || 'Middle East Aluminium & Glass LLC';
+  const companyAddress = brand?.contact?.address?.fullAddress || 'Costra Business Park (Block B), Production City, Dubai, UAE';
+  const companyPhone = brand?.contact?.phone || '+971-52-5458-968';
+  const companyEmail = brand?.contact?.email || 'info@bylros.ae';
+  const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
-  doc.setFont('helvetica', 'bold');
-  doc.text('BYLROS', 14, 20);
+  const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
+  const accentRgb = hexToRgb(accentColor);
 
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Middle East Aluminium & Glass LLC', 14, 28);
-  doc.text('Costra Business Park (Block B), Production City, Dubai, UAE', 14, 34);
-  doc.text('Phone: +971-52-5458-968 | Email: info@bylros.ae', 14, 40);
-
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text('INVOICE', 14, 60);
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Invoice #: ${invoice.invoice_number}`, 14, 70);
-  doc.text(`Date: ${new Date(invoice.created_at).toLocaleDateString()}`, 14, 76);
-  if (invoice.due_date) {
-    doc.text(`Due Date: ${new Date(invoice.due_date).toLocaleDateString()}`, 14, 82);
+  if (pdfSettings.watermark.enableWatermark) {
+    doc.saveGraphicsState();
+    doc.setTextColor(128, 128, 128);
+    doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
+    doc.setFont(pdfSettings.fonts.headerFont, 'bold');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
+      align: 'center',
+      angle: pdfSettings.watermark.watermarkAngle,
+    });
+    doc.setGState(new (doc as any).GState({ opacity: pdfSettings.watermark.watermarkOpacity }));
+    doc.restoreGraphicsState();
   }
 
-  doc.text(`Customer: ${customer.name}`, 140, 70);
-  doc.text(`Phone: ${customer.phone}`, 140, 76);
+  if (pdfSettings.header.showHeader) {
+    doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
+  }
 
-  let yPos = 100;
+  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
+    doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b);
+    doc.triangle(180, 0, 210, 0, 210, 30, 'F');
+    doc.triangle(0, 45, 30, pdfSettings.layout.headerHeight, 0, pdfSettings.layout.headerHeight, 'F');
 
-  doc.text(`Total Amount: AED ${invoice.total_amount.toFixed(2)}`, 14, yPos);
-  doc.text(`Deposit Paid: AED ${invoice.deposit_paid.toFixed(2)}`, 14, yPos + 6);
-  doc.text(`Payment Before Delivery: AED ${invoice.payment_before_delivery.toFixed(2)}`, 14, yPos + 12);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Balance Due: AED ${invoice.balance.toFixed(2)}`, 14, yPos + 18);
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.5);
+    doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
+  }
+
+  if (pdfSettings.header.showHeader && pdfSettings.header.showCompanyInfo) {
+    const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
+    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
+    doc.setFontSize(32);
+    doc.setFont(pdfSettings.fonts.headerFont, 'bold');
+    doc.text(companyName, 14, 22);
+
+    if (pdfSettings.header.showTagline) {
+      doc.setFontSize(9);
+      doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
+      doc.text(tagline, 14, 29);
+    }
+
+    doc.setFontSize(8);
+    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
+    doc.text(companyFullName, 14, 37);
+    doc.text(companyAddress, 14, 42);
+    doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+  }
+
+  doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b, 0.1);
+  doc.roundedRect(10, 62, 190, 12, 2, 2, 'F');
+
+  doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+  doc.setFontSize(22);
+  doc.setFont(pdfSettings.fonts.headerFont, 'bold');
+  doc.text('INVOICE', 14, 70);
+
+  doc.setFontSize(9);
+  doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Invoice Reference: ${invoice.invoice_number}`, 140, 70, { align: 'right' });
+
+  if (pdfSettings.sections.showQuoteDetails) {
+    doc.setFillColor(250, 250, 251);
+    doc.roundedRect(10, 78, 90, 28, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(10, 78, 90, 28, 2, 2, 'S');
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('INVOICE DETAILS', 14, 84);
+
+    doc.setFontSize(9);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.text(`Issue Date:`, 14, 91);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.text(`${new Date(invoice.created_at).toLocaleDateString()}`, 42, 91);
+
+    if (invoice.due_date) {
+      doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+      doc.text(`Due Date:`, 14, 97);
+      doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+      doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.text(`${new Date(invoice.due_date).toLocaleDateString()}`, 42, 97);
+    }
+  }
+
+  if (pdfSettings.sections.showCustomerInfo) {
+    doc.setFillColor(250, 250, 251);
+    doc.roundedRect(110, 78, 90, 28, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(110, 78, 90, 28, 2, 2, 'S');
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('CUSTOMER INFORMATION', 114, 84);
+
+    doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.text(customer.name, 114, 91);
+
+    doc.setFontSize(9);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text(`📞 ${customer.phone}`, 114, 97);
+    if (customer.email) doc.text(`✉ ${customer.email}`, 114, 103);
+  }
+
+  let yPos = 115;
+
+  if (pdfSettings.sections.showTotals) {
+    const textPrimaryRgb = hexToRgb(pdfSettings.colors.textPrimary);
+    doc.setFontSize(10);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setTextColor(textPrimaryRgb.r, textPrimaryRgb.g, textPrimaryRgb.b);
+    doc.text('PAYMENT SUMMARY', 14, yPos);
+    yPos += 10;
+
+    doc.setFontSize(9);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Total Amount:`, 14, yPos);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setTextColor(30, 41, 59);
+    doc.text(`AED ${invoice.total_amount.toFixed(2)}`, 70, yPos);
+    yPos += 6;
+
+    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Deposit Paid:`, 14, yPos);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setTextColor(34, 197, 94);
+    doc.text(`AED ${invoice.deposit_paid.toFixed(2)}`, 70, yPos);
+    yPos += 6;
+
+    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Payment Before Delivery:`, 14, yPos);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.text(`AED ${invoice.payment_before_delivery.toFixed(2)}`, 70, yPos);
+    yPos += 8;
+
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.text(`Balance Due:`, 14, yPos);
+    doc.text(`AED ${invoice.balance.toFixed(2)}`, 70, yPos);
+    yPos += 15;
+  }
 
   if (payments && payments.length > 0) {
-    yPos += 35;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
     doc.text('Payment History', 14, yPos);
 
     const paymentData = payments.map((p: any) => [
@@ -448,20 +577,61 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[])
       p.reference || '-',
     ]);
 
+    const tableHeaderBgRgb = hexToRgb(pdfSettings.colors.tableHeaderBg);
+    const tableHeaderTextRgb = hexToRgb(pdfSettings.colors.tableHeaderText);
+
     autoTable(doc, {
       startY: yPos + 5,
       head: [['Date', 'Amount', 'Method', 'Reference']],
       body: paymentData,
-      theme: 'grid',
-      headStyles: { fillColor: [187, 39, 56], textColor: 255 },
-      styles: { fontSize: 9 },
+      theme: pdfSettings.table.tableStyle as any,
+      headStyles: {
+        fillColor: [tableHeaderBgRgb.r, tableHeaderBgRgb.g, tableHeaderBgRgb.b],
+        textColor: [tableHeaderTextRgb.r, tableHeaderTextRgb.g, tableHeaderTextRgb.b],
+        fontSize: pdfSettings.fonts.tableFontSize,
+        fontStyle: 'bold',
+      },
+      styles: { fontSize: pdfSettings.fonts.tableFontSize },
     });
   }
 
-  doc.setFontSize(8);
-  doc.setTextColor(128, 128, 128);
-  doc.text('Thank you for your business!', 105, 280, { align: 'center' });
-  doc.text('BYLROS Middle East Aluminium & Glass LLC', 105, 285, { align: 'center' });
+  if (pdfSettings.footer.showFooter) {
+    const footerY = 270;
+
+    if (pdfSettings.footer.footerStyle === 'gradient') {
+      doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.rect(0, footerY, 210, pdfSettings.layout.footerHeight, 'F');
+
+      doc.setFillColor(255, 255, 255, 0.1);
+      doc.circle(15, footerY + 13, 15, 'F');
+      doc.circle(195, footerY + 13, 20, 'F');
+
+      doc.setDrawColor(255, 255, 255, 0.3);
+      doc.setLineWidth(0.3);
+      doc.line(10, footerY + 12, 200, footerY + 12);
+    } else if (pdfSettings.footer.footerStyle === 'bordered') {
+      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.setLineWidth(1);
+      doc.line(10, footerY, 200, footerY);
+    }
+
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(pdfSettings.footer.footerText, 105, footerY + 8, { align: 'center' });
+
+    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFontSize(pdfSettings.fonts.footerFontSize);
+    doc.setTextColor(255, 255, 255, 0.9);
+    doc.text(companyFullName, 105, footerY + 14, { align: 'center' });
+    doc.text(`${companyPhone} | ${companyEmail}`, 105, footerY + 19, { align: 'center' });
+
+    if (pdfSettings.footer.showGenerationDate) {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255, 0.7);
+      doc.text(`Invoice generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, footerY + 24, { align: 'center' });
+    }
+  }
 
   doc.save(`Invoice_${invoice.invoice_number}.pdf`);
 };

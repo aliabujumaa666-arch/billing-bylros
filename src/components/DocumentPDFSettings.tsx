@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { PDFSettings } from '../contexts/BrandContext';
+import { PDFSettings, DocumentType } from '../contexts/BrandContext';
 import { Type, Palette, Layout, Image, FileText, Eye, Settings, PlusCircle, Trash2 } from 'lucide-react';
 
-interface QuotePDFSettingsProps {
+interface DocumentPDFSettingsProps {
+  documentType: DocumentType;
+  documentLabel: string;
   settings: PDFSettings;
   onUpdate: (settings: PDFSettings) => void;
 }
 
-export function QuotePDFSettings({ settings, onUpdate }: QuotePDFSettingsProps) {
+export function DocumentPDFSettings({ documentType, documentLabel, settings, onUpdate }: DocumentPDFSettingsProps) {
   const [activeTab, setActiveTab] = useState<'fonts' | 'colors' | 'layout' | 'sections' | 'advanced'>('fonts');
 
   const updateSettings = (section: keyof PDFSettings, field: string, value: any) => {
@@ -911,7 +913,7 @@ export function QuotePDFSettings({ settings, onUpdate }: QuotePDFSettingsProps) 
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-800">
-          <strong>Note:</strong> Changes to PDF settings will apply to all future quote PDFs generated. Existing PDFs will not be affected.
+          <strong>Note:</strong> Changes to PDF settings will apply to all future {documentLabel} PDFs generated. Existing PDFs will not be affected.
         </p>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Save, Building2, Phone, Mail, MapPin, Palette, FileText, Globe, Upload, FileDown } from 'lucide-react';
-import { PDFSettings } from '../contexts/BrandContext';
-import { QuotePDFSettings } from './QuotePDFSettings';
+import { PDFSettings, DocumentType, useBrand } from '../contexts/BrandContext';
+import { DocumentPDFSettings } from './DocumentPDFSettings';
 
 interface BrandSettings {
   company: {
@@ -55,6 +55,16 @@ export function BrandSettings() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeSection, setActiveSection] = useState<'brand' | 'pdf'>('brand');
+  const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType>('quotes');
+  const { getPDFSettings, updatePDFSettings } = useBrand();
+  const [currentPDFSettings, setCurrentPDFSettings] = useState<PDFSettings | null>(null);
+
+  useEffect(() => {
+    if (activeSection === 'pdf') {
+      const pdfSettings = getPDFSettings(selectedDocumentType);
+      setCurrentPDFSettings(pdfSettings);
+    }
+  }, [selectedDocumentType, activeSection, getPDFSettings]);
 
   useEffect(() => {
     fetchSettings();
@@ -594,28 +604,53 @@ export function BrandSettings() {
         </>
       )}
 
-      {activeSection === 'pdf' && settings.pdf && (
-        <QuotePDFSettings
-          settings={settings.pdf}
-          onUpdate={(pdfSettings) => {
-            setSettings({
-              ...settings,
-              pdf: pdfSettings,
-            });
-          }}
-        />
-      )}
-
-      {activeSection === 'pdf' && !settings.pdf && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <div className="text-center py-8">
-            <FileDown className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-800 mb-2">PDF Settings Not Available</h3>
-            <p className="text-slate-600 mb-4">
-              PDF settings haven't been initialized yet. Please run the database migration to add PDF settings.
-            </p>
+      {activeSection === 'pdf' && (
+        <>
+          <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+            <div className="flex items-center gap-3 mb-6">
+              <FileText className="w-6 h-6 text-[#bb2738]" />
+              <h3 className="text-xl font-semibold text-slate-800">Select Document Type</h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {[
+                { value: 'quotes' as DocumentType, label: 'Quotes' },
+                { value: 'invoices' as DocumentType, label: 'Invoices' },
+                { value: 'orders' as DocumentType, label: 'Orders' },
+                { value: 'warranties' as DocumentType, label: 'Warranties' },
+                { value: 'siteVisits' as DocumentType, label: 'Site Visits' },
+              ].map((docType) => (
+                <button
+                  key={docType.value}
+                  onClick={() => setSelectedDocumentType(docType.value)}
+                  className={`px-4 py-3 rounded-lg font-medium transition-all ${
+                    selectedDocumentType === docType.value
+                      ? 'bg-[#bb2738] text-white shadow-md'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {docType.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+
+          {currentPDFSettings && (
+            <DocumentPDFSettings
+              documentType={selectedDocumentType}
+              documentLabel={selectedDocumentType}
+              settings={currentPDFSettings}
+              onUpdate={async (pdfSettings) => {
+                try {
+                  await updatePDFSettings(selectedDocumentType, pdfSettings);
+                  setSuccess(`PDF settings for ${selectedDocumentType} saved successfully!`);
+                  setTimeout(() => setSuccess(''), 3000);
+                } catch (err: any) {
+                  setError(`Failed to save PDF settings: ${err.message}`);
+                }
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );

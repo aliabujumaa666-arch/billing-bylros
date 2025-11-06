@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { exportInvoiceToPDF } from '../utils/exportUtils';
+import { useBrand } from '../contexts/BrandContext';
 import { Download, FileCheck, Plus, CreditCard as Edit, Trash2, X, DollarSign } from 'lucide-react';
 
 export function Invoices() {
+  const { brand } = useBrand();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -141,7 +143,7 @@ export function Invoices() {
       .select('*')
       .eq('invoice_id', invoice.id)
       .order('payment_date', { ascending: true });
-    exportInvoiceToPDF(invoice, invoice.customers, payments || []);
+    exportInvoiceToPDF(invoice, invoice.customers, payments || [], brand);
   };
 
   const resetForm = () => {

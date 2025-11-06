@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { getDefaultPDFSettings } from '../utils/pdfHelpers';
 
 export interface PDFSettings {
   fonts: {
@@ -87,6 +88,21 @@ export interface PDFSettings {
   };
 }
 
+export type DocumentType = 'quotes' | 'invoices' | 'orders' | 'warranties' | 'siteVisits';
+
+export interface DocumentPDFSettings {
+  [key: string]: PDFSettings;
+  quotes: PDFSettings;
+  invoices: PDFSettings;
+  orders: PDFSettings;
+  warranties: PDFSettings;
+  siteVisits: PDFSettings;
+  global: {
+    useGlobalDefaults: boolean;
+    defaultSettings: PDFSettings;
+  };
+}
+
 interface BrandSettings {
   company: {
     name: string;
@@ -129,6 +145,7 @@ interface BrandSettings {
     vatNumber: string;
   };
   pdf?: PDFSettings;
+  pdfSettings?: DocumentPDFSettings;
 }
 
 interface BrandContextType {
@@ -136,6 +153,8 @@ interface BrandContextType {
   loading: boolean;
   error: string | null;
   refreshBrand: () => Promise<void>;
+  getPDFSettings: (documentType: DocumentType) => PDFSettings;
+  updatePDFSettings: (documentType: DocumentType, settings: PDFSettings) => Promise<void>;
 }
 
 const defaultBrandSettings: BrandSettings = {
@@ -182,6 +201,38 @@ const defaultBrandSettings: BrandSettings = {
 };
 
 const BrandContext = createContext<BrandContextType | undefined>(undefined);
+
+function getDefaultPDFSettingsForType(documentType: DocumentType): PDFSettings {
+  const baseSettings = getDefaultPDFSettings();
+
+  const footerTexts: Record<DocumentType, string> = {
+    quotes: 'Thank you for choosing us!',
+    invoices: 'Payment Terms: As per agreement',
+    orders: 'Thank you for your order!',
+    warranties: 'Your satisfaction is our priority',
+    siteVisits: 'Professional Site Assessment Services',
+  };
+
+  const watermarkTexts: Record<DocumentType, string> = {
+    quotes: 'DRAFT',
+    invoices: 'UNPAID',
+    orders: 'ORDER',
+    warranties: 'WARRANTY',
+    siteVisits: 'CONFIDENTIAL',
+  };
+
+  return {
+    ...baseSettings,
+    footer: {
+      ...baseSettings.footer,
+      footerText: footerTexts[documentType],
+    },
+    watermark: {
+      ...baseSettings.watermark,
+      watermarkText: watermarkTexts[documentType],
+    },
+  };
+}
 
 export function BrandProvider({ children }: { children: ReactNode }) {
   const [brand, setBrand] = useState<BrandSettings | null>(null);
@@ -243,8 +294,60 @@ export function BrandProvider({ children }: { children: ReactNode }) {
     await fetchBrand();
   };
 
+  const getPDFSettings = (documentType: DocumentType): PDFSettings => {
+    if (!brand) {
+      return getDefaultPDFSettingsForType(documentType);
+    }
+
+    if (brand.pdfSettings) {
+      if (brand.pdfSettings.global?.useGlobalDefaults) {
+        return brand.pdfSettings.global.defaultSettings;
+      }
+      return brand.pdfSettings[documentType] || getDefaultPDFSettingsForType(documentType);
+    }
+
+    if (brand.pdf && documentType === 'quotes') {
+      return brand.pdf;
+    }
+
+    return getDefaultPDFSettingsForType(documentType);
+  };
+
+  const updatePDFSettings = async (documentType: DocumentType, settings: PDFSettings) => {
+    try {
+      const currentValue = brand || defaultBrandSettings;
+      const pdfSettings = currentValue.pdfSettings || {} as DocumentPDFSettings;
+
+      const updatedPdfSettings = {
+        ...pdfSettings,
+        [documentType]: settings,
+      };
+
+      const updatedBrand = {
+        ...currentValue,
+        pdfSettings: updatedPdfSettings,
+      };
+
+      const { error } = await supabase
+        .from('brand_settings')
+        .upsert({
+          setting_key: 'brand',
+          setting_value: updatedBrand,
+        }, {
+          onConflict: 'setting_key',
+        });
+
+      if (error) throw error;
+
+      await fetchBrand();
+    } catch (err: any) {
+      console.error('Error updating PDF settings:', err);
+      throw err;
+    }
+  };
+
   return (
-    <BrandContext.Provider value={{ brand, loading, error, refreshBrand }}>
+    <BrandContext.Provider value={{ brand, loading, error, refreshBrand, getPDFSettings, updatePDFSettings }}>
       {children}
     </BrandContext.Provider>
   );
