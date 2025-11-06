@@ -60,7 +60,6 @@ export function WhatsAppMessaging() {
   });
 
   const [configMethod, setConfigMethod] = useState<'manual' | 'meta'>('meta');
-  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -128,20 +127,7 @@ export function WhatsAppMessaging() {
   };
 
   const saveSettings = async () => {
-    if (!apiSettings.api_key) {
-      showError('API Key is required');
-      return;
-    }
-
-    if (!apiSettings.phone_number) {
-      showError('Phone Number is required');
-      return;
-    }
-
-    setSavingSettings(true);
     try {
-      const { data: user } = await supabase.auth.getUser();
-
       if (settings) {
         const { error } = await supabase
           .from('whatsapp_settings')
@@ -161,20 +147,17 @@ export function WhatsAppMessaging() {
           .from('whatsapp_settings')
           .insert({
             ...apiSettings,
-            is_active: true,
-            created_by: user?.user?.id
+            is_active: true
           });
 
         if (error) throw error;
       }
 
-      showSuccess('WhatsApp settings saved successfully!');
+      showSuccess('Settings saved successfully');
       await fetchSettings();
     } catch (err: any) {
       console.error('Error saving settings:', err);
-      showError(`Failed to save settings: ${err.message || 'Unknown error'}`);
-    } finally {
-      setSavingSettings(false);
+      showError('Failed to save settings');
     }
   };
 
@@ -661,22 +644,14 @@ export function WhatsAppMessaging() {
             <MetaWhatsAppConnect onSuccess={fetchSettings} />
           ) : (
             <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <h3 className="font-semibold text-blue-900 mb-2">Manual Configuration</h3>
-                <p className="text-sm text-blue-800">
-                  Enter your WhatsApp API credentials below. Make sure you have obtained these from your API provider (Twilio, Vonage, or WhatsApp Business API).
-                </p>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  API Provider *
+                  API Provider
                 </label>
                 <select
                   value={apiSettings.api_provider}
                   onChange={(e) => setApiSettings({ ...apiSettings, api_provider: e.target.value })}
-                  disabled={savingSettings}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
                 >
                   <option value="twilio">Twilio</option>
                   <option value="vonage">Vonage</option>
@@ -686,18 +661,14 @@ export function WhatsAppMessaging() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  API Key *
+                  API Key
                 </label>
                 <input
                   type="text"
                   value={apiSettings.api_key}
                   onChange={(e) => setApiSettings({ ...apiSettings, api_key: e.target.value })}
-                  placeholder="Enter your API Key"
-                  disabled={savingSettings}
-                  required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
                 />
-                <p className="text-xs text-slate-500 mt-1">Required - Get this from your API provider dashboard</p>
               </div>
 
               <div>
@@ -708,27 +679,21 @@ export function WhatsAppMessaging() {
                   type="password"
                   value={apiSettings.api_secret}
                   onChange={(e) => setApiSettings({ ...apiSettings, api_secret: e.target.value })}
-                  placeholder="Enter your API Secret (if required)"
-                  disabled={savingSettings}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
                 />
-                <p className="text-xs text-slate-500 mt-1">Optional - Some providers require this</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Phone Number *
+                  Phone Number
                 </label>
                 <input
                   type="text"
                   value={apiSettings.phone_number}
                   onChange={(e) => setApiSettings({ ...apiSettings, phone_number: e.target.value })}
                   placeholder="+1234567890"
-                  disabled={savingSettings}
-                  required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
                 />
-                <p className="text-xs text-slate-500 mt-1">Required - Your WhatsApp Business phone number with country code</p>
               </div>
 
               <div>
@@ -740,35 +705,16 @@ export function WhatsAppMessaging() {
                   value={apiSettings.webhook_url}
                   onChange={(e) => setApiSettings({ ...apiSettings, webhook_url: e.target.value })}
                   placeholder="https://your-domain.com/webhook"
-                  disabled={savingSettings}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] disabled:bg-slate-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
                 />
-                <p className="text-xs text-slate-500 mt-1">Optional - Webhook URL for receiving incoming messages</p>
               </div>
 
               <button
                 onClick={saveSettings}
-                disabled={savingSettings || !apiSettings.api_key || !apiSettings.phone_number}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-6 py-3 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-colors"
               >
-                {savingSettings ? (
-                  <>
-                    <Loader className="w-5 h-5 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    Save Settings
-                  </>
-                )}
+                Save Settings
               </button>
-
-              {!apiSettings.api_key || !apiSettings.phone_number ? (
-                <p className="text-sm text-amber-600 text-center">
-                  Please fill in all required fields (*)
-                </p>
-              ) : null}
             </div>
           )}
         </div>
