@@ -38,6 +38,7 @@ export function Quotes() {
     minimum_chargeable_area: 1.0,
     discount_type: 'none' as 'none' | 'percentage' | 'fixed',
     discount_value: 0,
+    shipping_amount: 0,
   });
 
   useEffect(() => {
@@ -81,9 +82,10 @@ export function Quotes() {
 
     const subtotal_after_discount = subtotal - discount_amount;
     const vat_amount = subtotal_after_discount * 0.05;
-    const total = subtotal_after_discount + vat_amount;
+    const shipping_amount = formData.shipping_amount || 0;
+    const total = subtotal_after_discount + vat_amount + shipping_amount;
 
-    return { subtotal, discount: discount_amount, vat_amount, total, total_chargeable_area };
+    return { subtotal, discount: discount_amount, vat_amount, total, total_chargeable_area, shipping_amount };
   };
 
   const addItem = () => {
@@ -307,6 +309,7 @@ export function Quotes() {
       minimum_chargeable_area: 1.0,
       discount_type: 'none',
       discount_value: 0,
+      shipping_amount: 0,
     });
   };
 
@@ -321,6 +324,7 @@ export function Quotes() {
       minimum_chargeable_area: quote.minimum_chargeable_area || 1.0,
       discount_type: quote.discount_type || 'none',
       discount_value: quote.discount_value || 0,
+      shipping_amount: quote.shipping_amount || 0,
     });
     setShowModal(true);
   };
@@ -725,6 +729,12 @@ export function Quotes() {
                       <span className="text-slate-600">VAT (5%):</span>
                       <span className="font-medium">AED {calculateTotals(formData.items).vat_amount.toFixed(2)}</span>
                     </div>
+                    {formData.shipping_amount > 0 && (
+                      <div className="flex justify-between gap-8">
+                        <span className="text-slate-600">Shipping:</span>
+                        <span className="font-medium">AED {formData.shipping_amount.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-end gap-8 text-base font-bold border-t border-slate-200 pt-2">
                       <span>AED {calculateTotals(formData.items).total.toFixed(2)}</span>
                     </div>
@@ -766,6 +776,30 @@ export function Quotes() {
                     <div className="text-xs text-green-700 mb-1">Discount Amount</div>
                     <div className="text-lg font-semibold text-green-800">
                       AED {calculateTotals(formData.items).discount.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Shipping Amount (AED)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.shipping_amount}
+                    onChange={(e) => setFormData({ ...formData, shipping_amount: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                    placeholder="0.00"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Shipping is added after VAT and is not included in VAT calculations</p>
+                </div>
+                <div className="flex items-end">
+                  <div className="w-full p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="text-xs text-blue-700 mb-1">Total with Shipping</div>
+                    <div className="text-lg font-semibold text-blue-800">
+                      AED {calculateTotals(formData.items).total.toFixed(2)}
                     </div>
                   </div>
                 </div>

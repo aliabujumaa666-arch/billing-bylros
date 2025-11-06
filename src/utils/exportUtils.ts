@@ -244,7 +244,19 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setTextColor(30, 41, 59);
   doc.text(`AED ${quote.vat_amount.toFixed(2)}`, 195, currentY, { align: 'right' });
-  currentY += 8;
+  currentY += 6;
+
+  if (quote.shipping_amount && quote.shipping_amount > 0) {
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text('Shipping:', 135, currentY);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setTextColor(30, 41, 59);
+    doc.text(`AED ${quote.shipping_amount.toFixed(2)}`, 195, currentY, { align: 'right' });
+    currentY += 6;
+  } else {
+    currentY += 2;
+  }
 
   doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
   doc.setLineWidth(0.5);
@@ -376,6 +388,7 @@ export const exportQuoteToExcel = (quote: any, customer: any) => {
     ['', '', '', '', '', '', '', 'Subtotal:', quote.subtotal.toFixed(2)],
     ...(quote.discount > 0 ? [['', '', '', '', '', '', '', `Discount${quote.discount_type === 'percentage' ? ` (${quote.discount_value}%)` : ''}:`, `-${quote.discount.toFixed(2)}`]] : []),
     ['', '', '', '', '', '', '', 'VAT (5%):', quote.vat_amount.toFixed(2)],
+    ...(quote.shipping_amount && quote.shipping_amount > 0 ? [['', '', '', '', '', '', '', 'Shipping:', quote.shipping_amount.toFixed(2)]] : []),
     ['', '', '', '', '', '', '', 'Total:', quote.total.toFixed(2)],
   ];
 
