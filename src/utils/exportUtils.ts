@@ -1,10 +1,12 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { getDefaultPDFSettings, hexToRgb } from './pdfHelpers';
 
 export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   const doc = new jsPDF();
 
+  const pdfSettings = brand?.pdf || getDefaultPDFSettings();
   const primaryColor = brand?.visual?.primaryColor || '#bb2738';
   const accentColor = brand?.visual?.accentColor || '#a01f2f';
   const companyName = brand?.company?.name || 'BYLROS';
@@ -14,53 +16,73 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   const companyEmail = brand?.contact?.email || 'info@bylros.ae';
   const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
 
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : { r: 187, g: 39, b: 56 };
-  };
-
-  const primaryRgb = hexToRgb(primaryColor);
+  const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
   const accentRgb = hexToRgb(accentColor);
 
-  for (let i = 0; i < 210; i += 20) {
-    doc.setFillColor(245, 245, 247, 0.3);
-    doc.circle(i, -10, 30, 'F');
+  if (pdfSettings.watermark.enableWatermark) {
+    doc.saveGraphicsState();
+    doc.setTextColor(128, 128, 128);
+    doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
+    doc.setFont(pdfSettings.fonts.headerFont, 'bold');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
+      align: 'center',
+      angle: pdfSettings.watermark.watermarkAngle,
+    });
+    doc.setGState(new (doc as any).GState({ opacity: pdfSettings.watermark.watermarkOpacity }));
+    doc.restoreGraphicsState();
   }
-  for (let i = 0; i < 210; i += 25) {
-    doc.setFillColor(241, 245, 249, 0.5);
-    doc.circle(i + 10, 290, 40, 'F');
+
+  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
+    for (let i = 0; i < 210; i += 20) {
+      doc.setFillColor(245, 245, 247, 0.3);
+      doc.circle(i, -10, 30, 'F');
+    }
   }
 
-  doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-  doc.rect(0, 0, 210, 55, 'F');
+  if (pdfSettings.footer.showFooter && pdfSettings.footer.footerStyle === 'gradient') {
+    for (let i = 0; i < 210; i += 25) {
+      doc.setFillColor(241, 245, 249, 0.5);
+      doc.circle(i + 10, 290, 40, 'F');
+    }
+  }
 
-  doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b);
-  doc.triangle(180, 0, 210, 0, 210, 30, 'F');
-  doc.triangle(0, 45, 30, 55, 0, 55, 'F');
+  if (pdfSettings.header.showHeader) {
+    doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
+  }
 
-  doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(0.5);
-  doc.line(14, 52, 196, 52);
+  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
+    doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b);
+    doc.triangle(180, 0, 210, 0, 210, 30, 'F');
+    doc.triangle(0, 45, 30, pdfSettings.layout.headerHeight, 0, pdfSettings.layout.headerHeight, 'F');
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(32);
-  doc.setFont('helvetica', 'bold');
-  doc.text(companyName, 14, 22);
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.5);
+    doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
+  }
 
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(255, 255, 255, 0.9);
-  doc.text(tagline, 14, 29);
+  if (pdfSettings.header.showHeader && pdfSettings.header.showCompanyInfo) {
+    const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
+    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
+    doc.setFontSize(32);
+    doc.setFont(pdfSettings.fonts.headerFont, 'bold');
+    doc.text(companyName, 14, 22);
 
-  doc.setFontSize(8);
-  doc.setTextColor(255, 255, 255, 0.85);
-  doc.text(companyFullName, 14, 37);
-  doc.text(companyAddress, 14, 42);
-  doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+    if (pdfSettings.header.showTagline) {
+      doc.setFontSize(9);
+      doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
+      doc.text(tagline, 14, 29);
+    }
+
+    doc.setFontSize(8);
+    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
+    doc.text(companyFullName, 14, 37);
+    doc.text(companyAddress, 14, 42);
+    doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+  }
 
   doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b, 0.1);
   doc.roundedRect(10, 62, 190, 12, 2, 2, 'F');
@@ -127,59 +149,74 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   doc.text(`📞 ${customer.phone}`, 114, 97);
   if (customer.email) doc.text(`✉ ${customer.email}`, 114, 103);
 
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(30, 41, 59);
-  doc.text('ITEMS & SPECIFICATIONS', 14, 115);
+  if (pdfSettings.sections.showItemsTable) {
+    const textPrimaryRgb = hexToRgb(pdfSettings.colors.textPrimary);
+    doc.setFontSize(10);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setTextColor(textPrimaryRgb.r, textPrimaryRgb.g, textPrimaryRgb.b);
+    doc.text('ITEMS & SPECIFICATIONS', 14, 115);
 
-  const tableData = quote.items.map((item: any, index: number) => [
-    `${index + 1}`,
-    item.location || '-',
-    item.type || '-',
-    `${item.height || 0}cm`,
-    `${item.width || 0}cm`,
-    item.qty || 0,
-    item.area?.toFixed(2) || '0.00',
-    item.chargeable_area?.toFixed(2) || item.area?.toFixed(2) || '0.00',
-    item.unit_price?.toFixed(2) || '0.00',
-    (item.total || 0).toFixed(2),
-  ]);
+    const tableHeaders: string[] = [];
+    const tableRow: any[] = [];
 
-  autoTable(doc, {
-    startY: 120,
-    head: [['#', 'Location', 'Type', 'Height', 'Width', 'Qty', 'Area m²', 'Charge m²', 'Rate', 'Total AED']],
-    body: tableData,
-    theme: 'striped',
-    headStyles: {
-      fillColor: [primaryRgb.r, primaryRgb.g, primaryRgb.b],
-      textColor: [255, 255, 255],
-      fontSize: 8,
-      fontStyle: 'bold',
-      halign: 'center',
-      cellPadding: 3,
-    },
-    styles: {
-      fontSize: 8,
-      cellPadding: 2.5,
-      lineColor: [226, 232, 240],
-      lineWidth: 0.1,
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    columnStyles: {
-      0: { halign: 'center', cellWidth: 8 },
-      1: { cellWidth: 28 },
-      2: { cellWidth: 25 },
-      3: { halign: 'center', cellWidth: 15 },
-      4: { halign: 'center', cellWidth: 15 },
-      5: { halign: 'center', cellWidth: 12 },
-      6: { halign: 'right', cellWidth: 18 },
-      7: { halign: 'right', cellWidth: 18 },
-      8: { halign: 'right', cellWidth: 15 },
-      9: { halign: 'right', cellWidth: 22, fontStyle: 'bold' },
-    },
-  });
+    if (pdfSettings.table.showItemNumbers) tableHeaders.push('#');
+    if (pdfSettings.table.showLocation) tableHeaders.push('Location');
+    if (pdfSettings.table.showType) tableHeaders.push('Type');
+    if (pdfSettings.table.showDimensions) {
+      tableHeaders.push('Height', 'Width');
+    }
+    if (pdfSettings.table.showQuantity) tableHeaders.push('Qty');
+    if (pdfSettings.table.showArea) tableHeaders.push('Area m²');
+    if (pdfSettings.table.showChargeableArea) tableHeaders.push('Charge m²');
+    if (pdfSettings.table.showUnitPrice) tableHeaders.push('Rate');
+    if (pdfSettings.table.showTotal) tableHeaders.push('Total AED');
+
+    const tableData = quote.items.map((item: any, index: number) => {
+      const row: any[] = [];
+      if (pdfSettings.table.showItemNumbers) row.push(`${index + 1}`);
+      if (pdfSettings.table.showLocation) row.push(item.location || '-');
+      if (pdfSettings.table.showType) row.push(item.type || '-');
+      if (pdfSettings.table.showDimensions) {
+        row.push(`${item.height || 0}cm`, `${item.width || 0}cm`);
+      }
+      if (pdfSettings.table.showQuantity) row.push(item.qty || 0);
+      if (pdfSettings.table.showArea) row.push(item.area?.toFixed(2) || '0.00');
+      if (pdfSettings.table.showChargeableArea) row.push(item.chargeable_area?.toFixed(2) || item.area?.toFixed(2) || '0.00');
+      if (pdfSettings.table.showUnitPrice) row.push(item.unit_price?.toFixed(2) || '0.00');
+      if (pdfSettings.table.showTotal) row.push((item.total || 0).toFixed(2));
+      return row;
+    });
+
+    const tableHeaderBgRgb = hexToRgb(pdfSettings.colors.tableHeaderBg);
+    const tableHeaderTextRgb = hexToRgb(pdfSettings.colors.tableHeaderText);
+    const tableBorderRgb = hexToRgb(pdfSettings.colors.tableBorder);
+    const tableAltRowRgb = hexToRgb(pdfSettings.colors.tableRowAlternate);
+
+    autoTable(doc, {
+      startY: 120,
+      head: [tableHeaders],
+      body: tableData,
+      theme: pdfSettings.table.tableStyle as any,
+      headStyles: {
+        fillColor: [tableHeaderBgRgb.r, tableHeaderBgRgb.g, tableHeaderBgRgb.b],
+        textColor: [tableHeaderTextRgb.r, tableHeaderTextRgb.g, tableHeaderTextRgb.b],
+        fontSize: pdfSettings.fonts.tableFontSize,
+        fontStyle: 'bold',
+        halign: pdfSettings.table.headerAlignment as any,
+        cellPadding: 3,
+      },
+      styles: {
+        fontSize: pdfSettings.fonts.tableFontSize,
+        cellPadding: 2.5,
+        lineColor: [tableBorderRgb.r, tableBorderRgb.g, tableBorderRgb.b],
+        lineWidth: 0.1,
+        halign: pdfSettings.table.textAlignment as any,
+      },
+      alternateRowStyles: {
+        fillColor: [tableAltRowRgb.r, tableAltRowRgb.g, tableAltRowRgb.b],
+      },
+    });
+  }
 
   const finalY = (doc as any).lastAutoTable.finalY + 8;
 
@@ -255,57 +292,68 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
 
   const termsY = remarksY > currentY + 12 ? remarksY : currentY + 12;
 
-  doc.setFillColor(239, 246, 255);
-  doc.roundedRect(10, termsY, 190, 32, 2, 2, 'F');
-  doc.setDrawColor(191, 219, 254);
-  doc.roundedRect(10, termsY, 190, 32, 2, 2, 'S');
+  if (pdfSettings.terms.showTerms && pdfSettings.sections.showTerms) {
+    if (pdfSettings.terms.termsStyle === 'bordered' || pdfSettings.terms.termsStyle === 'box') {
+      doc.setFillColor(239, 246, 255);
+      doc.roundedRect(10, termsY, 190, 32, 2, 2, 'F');
+      doc.setDrawColor(191, 219, 254);
+      doc.roundedRect(10, termsY, 190, 32, 2, 2, 'S');
+    }
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(30, 64, 175);
-  doc.text('TERMS & CONDITIONS', 14, termsY + 6);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(30, 64, 175);
+    doc.text(pdfSettings.terms.termsTitle, 14, termsY + 6);
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(30, 58, 138);
-  const terms = [
-    '1. This quotation is valid for 30 days from the issue date unless otherwise specified.',
-    '2. A 50% deposit is required to commence work. Balance payment before delivery.',
-    '3. Prices include supply and installation. Site must be ready for installation.',
-    '4. Any modifications after approval may incur additional charges.',
-    '5. Measurements are approximate and subject to site verification.',
-  ];
-  doc.text(terms, 14, termsY + 11);
+    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(30, 58, 138);
+    doc.text(pdfSettings.terms.termsContent, 14, termsY + 11);
+  }
 
-  doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-  doc.rect(0, 270, 210, 27, 'F');
+  if (pdfSettings.footer.showFooter) {
+    const footerY = 270;
 
-  doc.setFillColor(255, 255, 255, 0.1);
-  doc.circle(15, 283, 15, 'F');
-  doc.circle(195, 283, 20, 'F');
+    if (pdfSettings.footer.footerStyle === 'gradient') {
+      doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.rect(0, footerY, 210, pdfSettings.layout.footerHeight, 'F');
 
-  doc.setDrawColor(255, 255, 255, 0.3);
-  doc.setLineWidth(0.3);
-  doc.line(10, 282, 200, 282);
+      doc.setFillColor(255, 255, 255, 0.1);
+      doc.circle(15, footerY + 13, 15, 'F');
+      doc.circle(195, footerY + 13, 20, 'F');
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(255, 255, 255);
-  doc.text('Thank you for choosing us!', 105, 278, { align: 'center' });
+      doc.setDrawColor(255, 255, 255, 0.3);
+      doc.setLineWidth(0.3);
+      doc.line(10, footerY + 12, 200, footerY + 12);
+    } else if (pdfSettings.footer.footerStyle === 'bordered') {
+      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.setLineWidth(1);
+      doc.line(10, footerY, 200, footerY);
+    }
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(255, 255, 255, 0.9);
-  doc.text(companyFullName, 105, 284, { align: 'center' });
-  doc.text(`${companyPhone} | ${companyEmail}`, 105, 289, { align: 'center' });
+    doc.setFont(pdfSettings.fonts.bodyFont, 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(pdfSettings.footer.footerText, 105, footerY + 8, { align: 'center' });
 
-  doc.setFontSize(7);
-  doc.setTextColor(255, 255, 255, 0.7);
-  doc.text(`Quote generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, 294, { align: 'center' });
+    doc.setFont(pdfSettings.fonts.bodyFont, 'normal');
+    doc.setFontSize(pdfSettings.fonts.footerFontSize);
+    doc.setTextColor(255, 255, 255, 0.9);
+    doc.text(companyFullName, 105, footerY + 14, { align: 'center' });
+    doc.text(`${companyPhone} | ${companyEmail}`, 105, footerY + 19, { align: 'center' });
 
-  doc.setFontSize(8);
-  doc.setTextColor(148, 163, 184);
-  doc.text(`Page 1 of 1`, 200, 266, { align: 'right' });
+    if (pdfSettings.footer.showGenerationDate) {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255, 0.7);
+      doc.text(`Quote generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, footerY + 24, { align: 'center' });
+    }
+
+    if (pdfSettings.footer.showPageNumbers) {
+      doc.setFontSize(pdfSettings.fonts.footerFontSize);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Page 1 of 1`, 200, footerY - 4, { align: 'right' });
+    }
+  }
 
   doc.save(`Quote_${quote.quote_number}.pdf`);
 };

@@ -1,6 +1,92 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 
+export interface PDFSettings {
+  fonts: {
+    headerFont: string;
+    bodyFont: string;
+    headerFontSize: number;
+    bodyFontSize: number;
+    tableFontSize: number;
+    footerFontSize: number;
+  };
+  colors: {
+    tableHeaderBg: string;
+    tableHeaderText: string;
+    tableRowAlternate: string;
+    tableBorder: string;
+    accentColor: string;
+    textPrimary: string;
+    textSecondary: string;
+  };
+  layout: {
+    marginTop: number;
+    marginRight: number;
+    marginBottom: number;
+    marginLeft: number;
+    headerHeight: number;
+    footerHeight: number;
+    contentSpacing: number;
+  };
+  logo: {
+    showLogo: boolean;
+    logoPosition: 'left' | 'center' | 'right';
+    logoWidth: number;
+    logoHeight: number;
+  };
+  header: {
+    showHeader: boolean;
+    headerStyle: 'simple' | 'gradient' | 'bordered';
+    showCompanyInfo: boolean;
+    headerTextColor: string;
+    showTagline: boolean;
+  };
+  footer: {
+    showFooter: boolean;
+    footerText: string;
+    showPageNumbers: boolean;
+    showGenerationDate: boolean;
+    footerStyle: 'simple' | 'gradient' | 'bordered';
+  };
+  watermark: {
+    enableWatermark: boolean;
+    watermarkText: string;
+    watermarkOpacity: number;
+    watermarkAngle: number;
+    watermarkFontSize: number;
+  };
+  terms: {
+    termsTitle: string;
+    termsContent: string[];
+    termsStyle: 'simple' | 'bordered' | 'box';
+    showTerms: boolean;
+  };
+  sections: {
+    showQuoteDetails: boolean;
+    showCustomerInfo: boolean;
+    showItemsTable: boolean;
+    showTotals: boolean;
+    showRemarks: boolean;
+    showTerms: boolean;
+  };
+  table: {
+    showItemNumbers: boolean;
+    showLocation: boolean;
+    showType: boolean;
+    showDimensions: boolean;
+    showQuantity: boolean;
+    showArea: boolean;
+    showChargeableArea: boolean;
+    showUnitPrice: boolean;
+    showTotal: boolean;
+    tableStyle: 'striped' | 'grid' | 'plain';
+    headerAlignment: 'left' | 'center' | 'right';
+    numberAlignment: 'left' | 'center' | 'right';
+    textAlignment: 'left' | 'center' | 'right';
+    amountAlignment: 'left' | 'center' | 'right';
+  };
+}
+
 interface BrandSettings {
   company: {
     name: string;
@@ -42,6 +128,7 @@ interface BrandSettings {
     registrationNumber: string;
     vatNumber: string;
   };
+  pdf?: PDFSettings;
 }
 
 interface BrandContextType {

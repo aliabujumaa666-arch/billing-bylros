@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Save, Building2, Phone, Mail, MapPin, Palette, FileText, Globe, Upload } from 'lucide-react';
+import { Save, Building2, Phone, Mail, MapPin, Palette, FileText, Globe, Upload, FileDown } from 'lucide-react';
+import { PDFSettings } from '../contexts/BrandContext';
+import { QuotePDFSettings } from './QuotePDFSettings';
 
 interface BrandSettings {
   company: {
@@ -43,6 +45,7 @@ interface BrandSettings {
     registrationNumber: string;
     vatNumber: string;
   };
+  pdf?: PDFSettings;
 }
 
 export function BrandSettings() {
@@ -51,6 +54,7 @@ export function BrandSettings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [activeSection, setActiveSection] = useState<'brand' | 'pdf'>('brand');
 
   useEffect(() => {
     fetchSettings();
@@ -161,11 +165,40 @@ export function BrandSettings() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Building2 className="w-6 h-6 text-[#bb2738]" />
-          <h3 className="text-xl font-semibold text-slate-800">Company Identity</h3>
+      <div className="border-b border-slate-200">
+        <div className="flex space-x-1">
+          <button
+            onClick={() => setActiveSection('brand')}
+            className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors font-medium ${
+              activeSection === 'brand'
+                ? 'border-[#bb2738] text-[#bb2738]'
+                : 'border-transparent text-slate-600 hover:text-slate-800 hover:border-slate-300'
+            }`}
+          >
+            <Building2 className="w-5 h-5" />
+            Brand Identity
+          </button>
+          <button
+            onClick={() => setActiveSection('pdf')}
+            className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors font-medium ${
+              activeSection === 'pdf'
+                ? 'border-[#bb2738] text-[#bb2738]'
+                : 'border-transparent text-slate-600 hover:text-slate-800 hover:border-slate-300'
+            }`}
+          >
+            <FileDown className="w-5 h-5" />
+            Quote PDF Settings
+          </button>
         </div>
+      </div>
+
+      {activeSection === 'brand' && (
+        <>
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Building2 className="w-6 h-6 text-[#bb2738]" />
+              <h3 className="text-xl font-semibold text-slate-800">Company Identity</h3>
+            </div>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div>
@@ -558,6 +591,32 @@ export function BrandSettings() {
           </div>
         </div>
       </div>
+        </>
+      )}
+
+      {activeSection === 'pdf' && settings.pdf && (
+        <QuotePDFSettings
+          settings={settings.pdf}
+          onUpdate={(pdfSettings) => {
+            setSettings({
+              ...settings,
+              pdf: pdfSettings,
+            });
+          }}
+        />
+      )}
+
+      {activeSection === 'pdf' && !settings.pdf && (
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="text-center py-8">
+            <FileDown className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">PDF Settings Not Available</h3>
+            <p className="text-slate-600 mb-4">
+              PDF settings haven't been initialized yet. Please run the database migration to add PDF settings.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
