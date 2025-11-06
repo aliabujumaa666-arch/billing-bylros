@@ -19,20 +19,33 @@ export function KeyboardShortcuts({ shortcuts }: KeyboardShortcutsProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if user is typing in an input field
+      const target = e.target as HTMLElement;
+      const isInputField = target.tagName === 'INPUT' ||
+                          target.tagName === 'TEXTAREA' ||
+                          target.isContentEditable;
+
+      // Always allow help menu toggle
       if (e.key === '?' && e.shiftKey) {
         e.preventDefault();
         setShowHelp(prev => !prev);
         return;
       }
 
+      // Always allow escape to close help
       if (e.key === 'Escape') {
         setShowHelp(false);
         return;
       }
 
+      // Don't trigger shortcuts when typing in input fields
+      if (isInputField) {
+        return;
+      }
+
       const matchedShortcut = shortcuts.find(shortcut => {
         const keyMatch = shortcut.key.toLowerCase() === e.key.toLowerCase();
-        const ctrlMatch = shortcut.ctrlKey ? e.ctrlKey || e.metaKey : !e.ctrlKey && !e.metaKey;
+        const ctrlMatch = shortcut.ctrlKey ? (e.ctrlKey || e.metaKey) : !(e.ctrlKey || e.metaKey);
         const shiftMatch = shortcut.shiftKey ? e.shiftKey : !e.shiftKey;
         const altMatch = shortcut.altKey ? e.altKey : !e.altKey;
 

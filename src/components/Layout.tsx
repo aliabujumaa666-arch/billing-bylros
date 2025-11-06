@@ -89,7 +89,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [onNavigate]);
 
   const fetchUnreadCount = async () => {
     try {
