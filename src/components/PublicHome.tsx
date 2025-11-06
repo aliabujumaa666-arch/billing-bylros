@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBrand } from '../contexts/BrandContext';
+import { supabase } from '../lib/supabase';
 import { Building2, Calendar, Package, Phone, Mail, MapPin, ArrowRight, Clock, Shield, Award, Users, CheckCircle } from 'lucide-react';
 
 interface PublicHomeProps {
@@ -12,6 +13,37 @@ interface PublicHomeProps {
 export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onNavigateToBooking, onNavigateToSubmitRequest }: PublicHomeProps) {
   const { brand } = useBrand();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [headerMenu, setHeaderMenu] = useState<any[]>([]);
+  const [footerMenu, setFooterMenu] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchMenus();
+  }, []);
+
+  const fetchMenus = async () => {
+    try {
+      const { data } = await supabase
+        .from('portal_settings')
+        .select('header_menu, footer_menu')
+        .eq('setting_key', 'home_page')
+        .maybeSingle();
+
+      if (data) {
+        setHeaderMenu(data.header_menu || []);
+        setFooterMenu(data.footer_menu || []);
+      }
+    } catch (error) {
+      console.error('Error fetching menus:', error);
+    }
+  };
+
+  const handleMenuClick = (url: string, isExternal: boolean, openNewTab: boolean) => {
+    if (isExternal) {
+      window.open(url, openNewTab ? '_blank' : '_self');
+    } else {
+      window.location.href = url;
+    }
+  };
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -35,30 +67,52 @@ export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onN
             </div>
 
             <nav className="hidden md:flex items-center gap-6">
-              <button
-                onClick={onNavigateToSubmitRequest}
-                className="text-slate-700 hover:text-[#bb2738] transition-colors font-medium"
-              >
-                Submit Request
-              </button>
-              <button
-                onClick={onNavigateToBooking}
-                className="text-slate-700 hover:text-[#bb2738] transition-colors font-medium"
-              >
-                Book Site Visit
-              </button>
-              <button
-                onClick={onNavigateToTracker}
-                className="text-slate-700 hover:text-[#bb2738] transition-colors font-medium"
-              >
-                Track Order
-              </button>
-              <button
-                onClick={onNavigateToCustomerLogin}
-                className="px-5 py-2 bg-[#bb2738] hover:bg-[#a01f2f] text-white rounded-lg transition-colors font-medium"
-              >
-                Login / Register
-              </button>
+              {headerMenu.length > 0 ? (
+                <>
+                  {headerMenu.sort((a, b) => a.order - b.order).map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleMenuClick(item.url, item.is_external, item.open_new_tab)}
+                      className="text-slate-700 hover:text-[#bb2738] transition-colors font-medium"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={onNavigateToCustomerLogin}
+                    className="px-5 py-2 bg-[#bb2738] hover:bg-[#a01f2f] text-white rounded-lg transition-colors font-medium"
+                  >
+                    Login / Register
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={onNavigateToSubmitRequest}
+                    className="text-slate-700 hover:text-[#bb2738] transition-colors font-medium"
+                  >
+                    Submit Request
+                  </button>
+                  <button
+                    onClick={onNavigateToBooking}
+                    className="text-slate-700 hover:text-[#bb2738] transition-colors font-medium"
+                  >
+                    Book Site Visit
+                  </button>
+                  <button
+                    onClick={onNavigateToTracker}
+                    className="text-slate-700 hover:text-[#bb2738] transition-colors font-medium"
+                  >
+                    Track Order
+                  </button>
+                  <button
+                    onClick={onNavigateToCustomerLogin}
+                    className="px-5 py-2 bg-[#bb2738] hover:bg-[#a01f2f] text-white rounded-lg transition-colors font-medium"
+                  >
+                    Login / Register
+                  </button>
+                </>
+              )}
             </nav>
 
             <button
@@ -444,26 +498,41 @@ export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onN
               <div>
                 <h3 className="font-bold text-lg mb-4">Quick Links</h3>
                 <ul className="space-y-2 text-slate-400 text-sm">
-                  <li>
-                    <button onClick={() => scrollToSection('home')} className="hover:text-white transition-colors">
-                      Home
-                    </button>
-                  </li>
-                  <li>
-                    <button onClick={onNavigateToBooking} className="hover:text-white transition-colors">
-                      Book Site Visit
-                    </button>
-                  </li>
-                  <li>
-                    <button onClick={onNavigateToTracker} className="hover:text-white transition-colors">
-                      Track Order
-                    </button>
-                  </li>
-                  <li>
-                    <button onClick={onNavigateToCustomerLogin} className="hover:text-white transition-colors">
-                      Login / Register
-                    </button>
-                  </li>
+                  {footerMenu.length > 0 ? (
+                    footerMenu.sort((a, b) => a.order - b.order).map((item, index) => (
+                      <li key={index}>
+                        <button
+                          onClick={() => handleMenuClick(item.url, item.is_external, item.open_new_tab)}
+                          className="hover:text-white transition-colors"
+                        >
+                          {item.label}
+                        </button>
+                      </li>
+                    ))
+                  ) : (
+                    <>
+                      <li>
+                        <button onClick={() => scrollToSection('home')} className="hover:text-white transition-colors">
+                          Home
+                        </button>
+                      </li>
+                      <li>
+                        <button onClick={onNavigateToBooking} className="hover:text-white transition-colors">
+                          Book Site Visit
+                        </button>
+                      </li>
+                      <li>
+                        <button onClick={onNavigateToTracker} className="hover:text-white transition-colors">
+                          Track Order
+                        </button>
+                      </li>
+                      <li>
+                        <button onClick={onNavigateToCustomerLogin} className="hover:text-white transition-colors">
+                          Login / Register
+                        </button>
+                      </li>
+                    </>
+                  )}
                 </ul>
               </div>
 
