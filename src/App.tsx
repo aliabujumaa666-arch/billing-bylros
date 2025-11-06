@@ -8,6 +8,7 @@ import { Login } from './components/Login';
 import { Layout } from './components/Layout';
 import { PublicHome } from './components/PublicHome';
 import { PublicBooking } from './components/PublicBooking';
+import { SiteVisitPayment } from './components/SiteVisitPayment';
 import { GlobalSearch } from './components/GlobalSearch';
 
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
@@ -157,11 +158,13 @@ function CustomerApp() {
 }
 
 function AppRouter() {
-  const [viewMode, setViewMode] = useState<'public' | 'admin' | 'customer' | 'booking'>('public');
+  const [viewMode, setViewMode] = useState<'public' | 'admin' | 'customer' | 'booking' | 'site-visit-payment'>('public');
 
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.startsWith('/book-visit')) {
+    if (path.startsWith('/site-visit-payment')) {
+      setViewMode('site-visit-payment');
+    } else if (path.startsWith('/book-visit')) {
       setViewMode('booking');
     } else if (path.startsWith('/customer')) {
       setViewMode('customer');
@@ -199,6 +202,14 @@ function AppRouter() {
 
   // Prevent unused variable warning - this function is available for future use
   void navigateToAdmin;
+
+  if (viewMode === 'site-visit-payment') {
+    return (
+      <BrandProvider>
+        <SiteVisitPayment onBack={navigateToPublic} />
+      </BrandProvider>
+    );
+  }
 
   if (viewMode === 'booking') {
     return (
