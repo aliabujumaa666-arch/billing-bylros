@@ -124,6 +124,24 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['attachments']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['attachments']['Insert']>;
       };
+      keyboard_shortcuts: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          shortcut_key: string;
+          ctrl_key: boolean;
+          shift_key: boolean;
+          alt_key: boolean;
+          action: string;
+          description: string;
+          is_enabled: boolean;
+          is_custom: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['keyboard_shortcuts']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['keyboard_shortcuts']['Insert']>;
+      };
     };
   };
 };

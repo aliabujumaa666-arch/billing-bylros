@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useBrand } from '../contexts/BrandContext';
+import { supabase } from '../lib/supabase';
 import {
   Building2, Users, FileText, Calendar, ShoppingCart,
   FileCheck, Package, LogOut, Menu, X, Globe, Settings,
@@ -22,6 +23,14 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
   const { t, language, setLanguage, isRTL } = useLanguage();
   const { brand } = useBrand();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [shortcuts, setShortcuts] = useState<Array<{
+    key: string;
+    description: string;
+    action: () => void;
+    ctrlKey?: boolean;
+    shiftKey?: boolean;
+    altKey?: boolean;
+  }>>([]);
 
   const navigation = [
     { id: 'dashboard', icon: Building2, label: t('nav.dashboard') },
@@ -52,6 +61,58 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     { id: 'email-templates', icon: FileText, label: 'Email Templates' },
   ];
 
+  useEffect(() => {
+    loadShortcuts();
+  }, []);
+
+  const loadShortcuts = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('keyboard_shortcuts')
+        .select('*')
+        .or(`user_id.eq.${user.id},user_id.is.null`)
+        .eq('is_enabled', true)
+        .order('action');
+
+      if (error) throw error;
+
+      const userShortcuts = (data || []).filter(s => s.user_id === user.id);
+      const defaultShortcuts = (data || []).filter(s => s.user_id === null);
+
+      const mergedShortcuts = defaultShortcuts.map(defaultShortcut => {
+        const userOverride = userShortcuts.find(us => us.action === defaultShortcut.action);
+        return userOverride || defaultShortcut;
+      });
+
+      const customShortcuts = userShortcuts.filter(
+        us => !defaultShortcuts.some(ds => ds.action === us.action)
+      );
+
+      const allShortcuts = [...mergedShortcuts, ...customShortcuts];
+
+      const formattedShortcuts = allShortcuts.map(s => ({
+        key: s.shortcut_key,
+        description: s.description,
+        action: () => {
+          if (s.action.startsWith('navigate:')) {
+            const page = s.action.replace('navigate:', '');
+            onNavigate(page);
+          }
+        },
+        ctrlKey: s.ctrl_key,
+        shiftKey: s.shift_key,
+        altKey: s.alt_key,
+      }));
+
+      setShortcuts(formattedShortcuts);
+    } catch (error) {
+      console.error('Error loading shortcuts:', error);
+    }
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -59,15 +120,6 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
       console.error('Error signing out:', error);
     }
   };
-
-  const shortcuts = [
-    { key: 'd', description: 'Go to Dashboard', action: () => onNavigate('dashboard'), ctrlKey: true },
-    { key: 'c', description: 'Go to Customers', action: () => onNavigate('customers'), ctrlKey: true },
-    { key: 'q', description: 'Go to Quotes', action: () => onNavigate('quotes'), ctrlKey: true },
-    { key: 'o', description: 'Go to Orders', action: () => onNavigate('orders'), ctrlKey: true },
-    { key: 'i', description: 'Go to Invoices', action: () => onNavigate('invoices'), ctrlKey: true },
-    { key: 's', description: 'Go to Site Visits', action: () => onNavigate('visits'), ctrlKey: true },
-  ];
 
   return (
     <div className="min-h-screen bg-slate-50" dir={isRTL ? 'rtl' : 'ltr'}>

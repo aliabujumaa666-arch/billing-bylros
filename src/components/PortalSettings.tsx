@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Save, Eye, Plus, Trash2, Settings, CreditCard, Building2, Mail } from 'lucide-react';
+import { Save, Eye, Plus, Trash2, Settings, CreditCard, Building2, Mail, Keyboard } from 'lucide-react';
 import { PayPalSettings } from './PayPalSettings';
 import { StripeSettings } from './StripeSettings';
 import { BrandSettings } from './BrandSettings';
 import EmailSettings from './EmailSettings';
+import { KeyboardShortcutSettings } from './KeyboardShortcutSettings';
 
 export function PortalSettings() {
-  const [activeTab, setActiveTab] = useState<'brand' | 'portal' | 'paypal' | 'stripe' | 'email'>('brand');
+  const [activeTab, setActiveTab] = useState<'brand' | 'portal' | 'paypal' | 'stripe' | 'email' | 'shortcuts'>('brand');
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -202,6 +203,17 @@ export function PortalSettings() {
           <Mail className="w-4 h-4" />
           Email Settings
         </button>
+        <button
+          onClick={() => setActiveTab('shortcuts')}
+          className={`flex items-center gap-2 px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
+            activeTab === 'shortcuts'
+              ? 'border-[#bb2738] text-[#bb2738]'
+              : 'border-transparent text-slate-600 hover:text-slate-800'
+          }`}
+        >
+          <Keyboard className="w-4 h-4" />
+          Shortcuts
+        </button>
       </div>
 
       {activeTab === 'brand' ? (
@@ -212,6 +224,8 @@ export function PortalSettings() {
         <StripeSettings />
       ) : activeTab === 'email' ? (
         <EmailSettings />
+      ) : activeTab === 'shortcuts' ? (
+        <KeyboardShortcutSettings />
       ) : (
         <>
           {error && (
