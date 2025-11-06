@@ -50,15 +50,18 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     { id: 'cache-management', icon: HardDrive, label: 'Clear Cache' },
   ];
 
+  const whatsappNavigation = [
+    { id: 'whatsapp-inbox', icon: MessageSquare, label: 'WhatsApp Inbox' },
+    { id: 'whatsapp-messaging', icon: MessageSquare, label: 'Bulk Messaging' },
+    { id: 'whatsapp-ai-settings', icon: Settings, label: 'AI Settings' },
+  ];
+
   const supportNavigation = [
     { id: 'knowledge-base', icon: BookOpen, label: 'Knowledge Base' },
     { id: 'faq-management', icon: HelpCircle, label: 'FAQs' },
     { id: 'video-tutorials', icon: Video, label: 'Video Tutorials' },
     { id: 'support-tickets', icon: Ticket, label: 'Support Tickets' },
     { id: 'messages', icon: MessageSquare, label: 'Messages' },
-    { id: 'whatsapp-inbox', icon: MessageSquare, label: 'WhatsApp Inbox' },
-    { id: 'whatsapp-messaging', icon: MessageSquare, label: 'WhatsApp Bulk' },
-    { id: 'whatsapp-ai-settings', icon: Settings, label: 'AI Settings' },
     { id: 'feedback-management', icon: MessageSquare, label: 'Feedback' },
     { id: 'changelog-management', icon: PackageCheck, label: 'Changelog' },
     { id: 'email-templates', icon: FileText, label: 'Email Templates' },
@@ -226,9 +229,9 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
           </nav>
 
           <div className="px-4 py-2 mt-6 mb-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">Documentation & Support</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">WhatsApp Marketing</p>
             <div className="space-y-1">
-              {supportNavigation.map((item) => {
+              {whatsappNavigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.id;
                 const showBadge = item.id === 'whatsapp-inbox' && unreadCount > 0;
@@ -254,6 +257,35 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="px-4 py-2 mt-6 mb-4">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">Documentation & Support</p>
+            <div className="space-y-1">
+              {supportNavigation.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      onNavigate(item.id);
+                      setSidebarOpen(false);
+                    }}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm relative
+                      ${isActive
+                        ? 'bg-[#bb2738] text-white shadow-md'
+                        : 'text-slate-700 hover:bg-slate-100'
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="font-medium">{item.label}</span>
                   </button>
                 );
               })}
