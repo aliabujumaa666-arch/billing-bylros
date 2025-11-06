@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useBrand } from '../contexts/BrandContext';
 import { exportQuoteToPDF, exportQuoteToExcel } from '../utils/exportUtils';
-import { Plus, Download, FileSpreadsheet, CreditCard as Edit, Trash2, X, ArrowRight, Upload } from 'lucide-react';
+import { Plus, Download, FileSpreadsheet, CreditCard as Edit, Trash2, X, ArrowRight, Upload, Zap, Copy, ClipboardPaste } from 'lucide-react';
 import { QuoteBulkImport } from './QuoteBulkImport';
 
 type QuoteItem = {
@@ -19,12 +20,15 @@ type QuoteItem = {
 
 export function Quotes() {
   const { t } = useLanguage();
+  const { brand } = useBrand();
   const [quotes, setQuotes] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showBulkAddItems, setShowBulkAddItems] = useState(false);
   const [editingQuote, setEditingQuote] = useState<any>(null);
+  const [bulkItemInput, setBulkItemInput] = useState({ location: '', type: '', height: '', width: '', qty: '1', unit_price: '' });
   const [formData, setFormData] = useState({
     customer_id: '',
     items: [{ location: '', type: '', height: 0, width: 0, qty: 1, area: 0, chargeable_area: 0, unit_price: 0, total: 0 }] as QuoteItem[],
@@ -86,6 +90,107 @@ export function Quotes() {
       ...formData,
       items: [...formData.items, { location: '', type: '', height: 0, width: 0, qty: 1, area: 0, chargeable_area: 0, unit_price: 0, total: 0 }],
     });
+  };
+
+  const addBulkItem = () => {
+    const height = parseFloat(bulkItemInput.height) || 0;
+    const width = parseFloat(bulkItemInput.width) || 0;
+    const qty = parseInt(bulkItemInput.qty) || 0;
+    const unitPrice = parseFloat(bulkItemInput.unit_price) || 0;
+    const minChargeableArea = Number(formData.minimum_chargeable_area) || 1.0;
+
+    const area = height > 0 && width > 0 && qty > 0 ? (height * width * qty) / 10000 : 0;
+    const chargeable_area = Math.max(area, minChargeableArea * qty);
+    const total = chargeable_area > 0 && unitPrice > 0 ? chargeable_area * unitPrice : 0;
+
+    const newItem = {
+      location: bulkItemInput.location,
+      type: bulkItemInput.type,
+      height,
+      width,
+      qty,
+      area,
+      chargeable_area,
+      unit_price: unitPrice,
+      total
+    };
+
+    setFormData({
+      ...formData,
+      items: [...formData.items, newItem]
+    });
+
+    setBulkItemInput({ location: '', type: '', height: '', width: '', qty: '1', unit_price: bulkItemInput.unit_price });
+  };
+
+  const duplicateItem = (index: number) => {
+    const itemToCopy = { ...formData.items[index] };
+    setFormData({
+      ...formData,
+      items: [...formData.items, itemToCopy]
+    });
+  };
+
+  const pasteItemsFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const rows = text.split('\n').filter(row => row.trim());
+
+      const newItems: QuoteItem[] = [];
+
+      for (const row of rows) {
+        const cells = row.split('\t');
+        if (cells.length >= 6) {
+          const height = parseFloat(cells[2]) || 0;
+          const width = parseFloat(cells[3]) || 0;
+          const qty = parseInt(cells[4]) || 0;
+          const unitPrice = parseFloat(cells[5]) || 0;
+          const minChargeableArea = Number(formData.minimum_chargeable_area) || 1.0;
+
+          const area = height > 0 && width > 0 && qty > 0 ? (height * width * qty) / 10000 : 0;
+          const chargeable_area = Math.max(area, minChargeableArea * qty);
+          const total = chargeable_area > 0 && unitPrice > 0 ? chargeable_area * unitPrice : 0;
+
+          newItems.push({
+            location: cells[0] || '',
+            type: cells[1] || '',
+            height,
+            width,
+            qty,
+            area,
+            chargeable_area,
+            unit_price: unitPrice,
+            total
+          });
+        }
+      }
+
+      if (newItems.length > 0) {
+        setFormData({
+          ...formData,
+          items: [...formData.items, ...newItems]
+        });
+        alert(`Successfully added ${newItems.length} items from clipboard`);
+      } else {
+        alert('No valid items found in clipboard. Format: Location\tType\tHeight\tWidth\tQty\tUnit Price');
+      }
+    } catch (error) {
+      console.error('Failed to read clipboard:', error);
+      alert('Failed to read clipboard. Please make sure you have copied the data.');
+    }
+  };
+
+  const applyItemTemplate = (template: string) => {
+    const templates: Record<string, Partial<typeof bulkItemInput>> = {
+      'window-standard': { type: 'Window', height: '150', width: '120', unit_price: '8' },
+      'door-standard': { type: 'Door', height: '220', width: '100', unit_price: '15' },
+      'sliding-door': { type: 'Sliding Door', height: '240', width: '200', unit_price: '25' },
+      'partition': { type: 'Glass Partition', height: '250', width: '100', unit_price: '20' },
+    };
+
+    if (templates[template]) {
+      setBulkItemInput({ ...bulkItemInput, ...templates[template] });
+    }
   };
 
   const updateItem = (index: number, field: keyof QuoteItem, value: any) => {
@@ -286,7 +391,7 @@ export function Quotes() {
                         </button>
                       ) : null}
                       <button
-                        onClick={() => exportQuoteToPDF(quote, quote.customers)}
+                        onClick={() => exportQuoteToPDF(quote, quote.customers, brand)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 hover:bg-green-50 rounded-lg transition-colors"
                       >
                         <Download className="w-4 h-4" />
@@ -385,14 +490,109 @@ export function Quotes() {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <label className="text-sm font-medium text-slate-700">Items</label>
-                  <button
-                    type="button"
-                    onClick={addItem}
-                    className="text-sm text-[#bb2738] hover:underline"
-                  >
-                    + Add Item
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowBulkAddItems(!showBulkAddItems)}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors text-sm font-medium"
+                    >
+                      <Zap className="w-4 h-4" />
+                      {showBulkAddItems ? 'Hide' : 'Show'} Quick Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={pasteItemsFromClipboard}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors text-sm"
+                      title="Paste from Excel (Location, Type, Height, Width, Qty, Unit Price)"
+                    >
+                      <ClipboardPaste className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addItem}
+                      className="text-sm text-[#bb2738] hover:underline font-medium"
+                    >
+                      + Add Row
+                    </button>
+                  </div>
                 </div>
+
+                {showBulkAddItems && (
+                  <div className="mb-4 p-4 bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-slate-800 flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-[#bb2738]" />
+                        Quick Add Items
+                      </h4>
+                      <select
+                        onChange={(e) => applyItemTemplate(e.target.value)}
+                        className="text-xs px-2 py-1 border border-slate-300 rounded"
+                        value=""
+                      >
+                        <option value="">Select Template...</option>
+                        <option value="window-standard">Standard Window (150x120)</option>
+                        <option value="door-standard">Standard Door (220x100)</option>
+                        <option value="sliding-door">Sliding Door (240x200)</option>
+                        <option value="partition">Glass Partition (250x100)</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-7 gap-2 mb-2">
+                      <input
+                        type="text"
+                        placeholder="Location"
+                        value={bulkItemInput.location}
+                        onChange={(e) => setBulkItemInput({ ...bulkItemInput, location: e.target.value })}
+                        className="px-2 py-2 border border-slate-300 rounded text-sm"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Type"
+                        value={bulkItemInput.type}
+                        onChange={(e) => setBulkItemInput({ ...bulkItemInput, type: e.target.value })}
+                        className="px-2 py-2 border border-slate-300 rounded text-sm"
+                      />
+                      <input
+                        type="number"
+                        placeholder="H (cm)"
+                        value={bulkItemInput.height}
+                        onChange={(e) => setBulkItemInput({ ...bulkItemInput, height: e.target.value })}
+                        className="px-2 py-2 border border-slate-300 rounded text-sm"
+                      />
+                      <input
+                        type="number"
+                        placeholder="W (cm)"
+                        value={bulkItemInput.width}
+                        onChange={(e) => setBulkItemInput({ ...bulkItemInput, width: e.target.value })}
+                        className="px-2 py-2 border border-slate-300 rounded text-sm"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Qty"
+                        value={bulkItemInput.qty}
+                        onChange={(e) => setBulkItemInput({ ...bulkItemInput, qty: e.target.value })}
+                        className="px-2 py-2 border border-slate-300 rounded text-sm"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Price"
+                        step="0.01"
+                        value={bulkItemInput.unit_price}
+                        onChange={(e) => setBulkItemInput({ ...bulkItemInput, unit_price: e.target.value })}
+                        className="px-2 py-2 border border-slate-300 rounded text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={addBulkItem}
+                        className="px-4 py-2 bg-[#bb2738] hover:bg-[#a01f2f] text-white rounded text-sm font-medium transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-2">
+                      💡 Tip: Fill in the fields and click "Add" to quickly add items. Unit price persists for batch entry.
+                    </p>
+                  </div>
+                )}
 
                 <div className="overflow-x-auto border border-slate-300 rounded-lg">
                   <table className="w-full text-sm">
@@ -480,13 +680,23 @@ export function Quotes() {
                           </td>
                           <td className="px-3 py-2 text-slate-600">{(item.total || 0).toFixed(2)}</td>
                           <td className="px-3 py-2">
-                            <button
-                              type="button"
-                              onClick={() => removeItem(idx)}
-                              className="text-red-600 hover:text-red-800"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => duplicateItem(idx)}
+                                className="text-blue-600 hover:text-blue-800"
+                                title="Duplicate item"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeItem(idx)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
