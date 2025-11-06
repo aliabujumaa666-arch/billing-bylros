@@ -19,6 +19,15 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
   const accentRgb = hexToRgb(accentColor);
 
+  for (let i = 0; i < 210; i += 20) {
+    doc.setFillColor(245, 245, 247, 0.3);
+    doc.circle(i, -10, 30, 'F');
+  }
+  for (let i = 0; i < 210; i += 25) {
+    doc.setFillColor(241, 245, 249, 0.5);
+    doc.circle(i + 10, 290, 40, 'F');
+  }
+
   if (pdfSettings.watermark.enableWatermark) {
     doc.saveGraphicsState();
     doc.setTextColor(128, 128, 128);
@@ -32,20 +41,6 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     });
     doc.setGState(new (doc as any).GState({ opacity: pdfSettings.watermark.watermarkOpacity }));
     doc.restoreGraphicsState();
-  }
-
-  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
-    for (let i = 0; i < 210; i += 20) {
-      doc.setFillColor(245, 245, 247, 0.3);
-      doc.circle(i, -10, 30, 'F');
-    }
-  }
-
-  if (pdfSettings.footer.showFooter && pdfSettings.footer.footerStyle === 'gradient') {
-    for (let i = 0; i < 210; i += 25) {
-      doc.setFillColor(241, 245, 249, 0.5);
-      doc.circle(i + 10, 290, 40, 'F');
-    }
   }
 
   if (pdfSettings.header.showHeader) {
