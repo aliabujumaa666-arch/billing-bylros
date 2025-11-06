@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
-import { MessageSquare, Search, Filter, Archive, Star, Clock, Bot, User, Settings } from 'lucide-react';
+import { MessageSquare, Search, Archive, Star, Clock, Bot, User, Settings } from 'lucide-react';
 import { WhatsAppDirectChat } from './WhatsAppDirectChat';
 
 interface Conversation {

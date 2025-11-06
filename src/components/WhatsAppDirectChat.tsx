@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
-import { X, Send, Loader, Bot, User, CheckCheck, Clock, Sparkles } from 'lucide-react';
+import { X, Send, Loader, Bot, CheckCheck, Clock, Sparkles } from 'lucide-react';
 
 interface Message {
   id: string;

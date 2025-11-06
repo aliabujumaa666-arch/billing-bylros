@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
-import { MessageSquare, Send, Settings, FileText, Clock, Users, CheckCircle, XCircle, Loader, History, Zap } from 'lucide-react';
+import { Send, Settings, FileText, CheckCircle, Loader, History, Zap } from 'lucide-react';
 import { MetaWhatsAppConnect } from './MetaWhatsAppConnect';
 
 interface WhatsAppSettings {

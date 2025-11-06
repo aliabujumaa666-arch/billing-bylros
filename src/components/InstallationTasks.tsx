@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Calendar, User, MapPin, Upload, Image, Shield, CheckCircle, CreditCard as Edit, Trash2 } from 'lucide-react';
+import { Plus, Calendar, MapPin, Upload, Shield, CheckCircle, CreditCard as Edit, Trash2 } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -100,10 +100,10 @@ export function InstallationTasks() {
 
       if (error) throw error;
 
-      const formattedOrders = (data || []).map(order => ({
+      const formattedOrders = (data || []).map((order: any) => ({
         id: order.id,
         order_number: order.order_number,
-        customer_name: order.customers?.name || 'Unknown Customer'
+        customer_name: Array.isArray(order.customers) ? order.customers[0]?.name : order.customers?.name || 'Unknown Customer'
       }));
 
       setOrders(formattedOrders);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
-import { MessageSquare, Download, Search, Filter } from 'lucide-react';
+import { MessageSquare, Search } from 'lucide-react';
 
 interface BulkMessage {
   id: string;

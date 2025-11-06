@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useBrand } from '../../contexts/BrandContext';
-import { Building2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export function CustomerLogin() {

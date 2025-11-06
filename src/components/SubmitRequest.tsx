@@ -4,10 +4,9 @@ import { supabase } from '../lib/supabase';
 
 interface SubmitRequestProps {
   onBack: () => void;
-  onLoginRequired: () => void;
 }
 
-export function SubmitRequest({ onBack, onLoginRequired }: SubmitRequestProps) {
+export function SubmitRequest({ onBack }: SubmitRequestProps) {
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -84,7 +83,7 @@ export function SubmitRequest({ onBack, onLoginRequired }: SubmitRequestProps) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${requestId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('request-attachments')
         .upload(fileName, file);
 

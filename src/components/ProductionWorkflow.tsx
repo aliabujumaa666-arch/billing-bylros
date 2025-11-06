@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Search, Filter, CheckCircle, Clock, AlertCircle, XCircle, User, Calendar } from 'lucide-react';
+import { Search, Filter, CheckCircle, Clock, AlertCircle, XCircle, User } from 'lucide-react';
 
 interface Order {
   id: string;

@@ -7,7 +7,6 @@ import {
 
 export function CustomerRequests() {
   const [requests, setRequests] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
@@ -22,16 +21,12 @@ export function CustomerRequests() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [requestsData, customersData] = await Promise.all([
-      supabase
-        .from('customer_requests')
-        .select('*, customers(*), quotes(*)')
-        .order('created_at', { ascending: false }),
-      supabase.from('customers').select('*').order('name'),
-    ]);
+    const requestsData = await supabase
+      .from('customer_requests')
+      .select('*, customers(*), quotes(*)')
+      .order('created_at', { ascending: false });
 
     setRequests(requestsData.data || []);
-    setCustomers(customersData.data || []);
     setLoading(false);
   };
 

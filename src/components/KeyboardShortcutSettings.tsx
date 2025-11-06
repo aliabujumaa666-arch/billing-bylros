@@ -417,9 +417,7 @@ export function KeyboardShortcutSettings() {
                       action: '',
                       description: '',
                       is_enabled: true,
-                      is_custom: false,
-                      created_at: '',
-                      updated_at: ''
+                      is_custom: false
                     })}
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsRecording(true)}

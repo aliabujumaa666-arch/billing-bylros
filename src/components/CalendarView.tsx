@@ -34,7 +34,7 @@ export function CalendarView() {
           order_number,
           delivery_date,
           status,
-          customers(name)
+          customers!inner(name)
         `)
         .gte('delivery_date', startOfMonth.toISOString().split('T')[0])
         .lte('delivery_date', endOfMonth.toISOString().split('T')[0]);
@@ -56,27 +56,29 @@ export function CalendarView() {
 
       const calendarEvents: CalendarEvent[] = [];
 
-      orders?.forEach(order => {
+      orders?.forEach((order: any) => {
         if (order.delivery_date) {
           calendarEvents.push({
             id: order.id,
             date: order.delivery_date,
             type: 'delivery',
             title: order.order_number,
-            customer: order.customers?.name || 'Unknown Customer',
+            customer: Array.isArray(order.customers) ? order.customers[0]?.name : order.customers?.name || 'Unknown Customer',
             status: order.status,
           });
         }
       });
 
-      tasks?.forEach(task => {
+      tasks?.forEach((task: any) => {
         if (task.scheduled_date) {
+          const customers = task.orders?.customers;
+          const customerName = Array.isArray(customers) ? customers[0]?.name : customers?.name;
           calendarEvents.push({
             id: task.id,
             date: task.scheduled_date,
             type: 'installation',
             title: task.task_title,
-            customer: task.orders?.customers?.name || 'Unknown Customer',
+            customer: customerName || 'Unknown Customer',
             status: task.status,
           });
         }

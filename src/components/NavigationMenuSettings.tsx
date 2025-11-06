@@ -157,7 +157,6 @@ export function NavigationMenuSettings() {
   const renderMenuItem = (
     item: MenuItem,
     index: number,
-    type: 'header' | 'footer',
     updateFn: (index: number, field: keyof MenuItem, value: any) => void,
     removeFn: (index: number) => void,
     moveFn: (index: number, direction: 'up' | 'down') => void,
@@ -307,7 +306,7 @@ export function NavigationMenuSettings() {
             </div>
           ) : (
             headerMenu.map((item, index) =>
-              renderMenuItem(item, index, 'header', updateHeaderItem, removeHeaderItem, moveHeaderItem, headerMenu.length)
+              renderMenuItem(item, index, updateHeaderItem, removeHeaderItem, moveHeaderItem, headerMenu.length)
             )
           )}
         </div>
@@ -332,7 +331,7 @@ export function NavigationMenuSettings() {
             </div>
           ) : (
             footerMenu.map((item, index) =>
-              renderMenuItem(item, index, 'footer', updateFooterItem, removeFooterItem, moveFooterItem, footerMenu.length)
+              renderMenuItem(item, index, updateFooterItem, removeFooterItem, moveFooterItem, footerMenu.length)
             )
           )}
         </div>

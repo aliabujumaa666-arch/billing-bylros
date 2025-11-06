@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Shield, AlertCircle, CheckCircle, Star } from 'lucide-react';
+import { Shield, AlertCircle, Star } from 'lucide-react';
 
 interface Warranty {
   id: string;

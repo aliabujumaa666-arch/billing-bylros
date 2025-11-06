@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Building2 } from 'lucide-react';
 
 export function Login() {
   const [email, setEmail] = useState('');

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Calendar, Plus, X, Edit2, Trash2, DollarSign, Link as LinkIcon,
-  Copy, CheckCircle, CreditCard, Loader2, AlertCircle, Share2
+  Copy, CheckCircle, Loader2, AlertCircle, Share2
 } from 'lucide-react';
 
 export function SiteVisits() {

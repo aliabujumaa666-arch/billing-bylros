@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Search, Plus, CreditCard as Edit2, AlertTriangle, Package, TrendingDown, TrendingUp, Filter } from 'lucide-react';
+import { Search, Plus, AlertTriangle, Package, TrendingDown, TrendingUp, Filter } from 'lucide-react';
 
 interface InventoryItem {
   id: string;
@@ -21,14 +21,6 @@ interface InventoryItem {
   notes: string | null;
   is_active: boolean;
   created_at: string;
-}
-
-interface Transaction {
-  id: string;
-  transaction_type: string;
-  quantity: number;
-  transaction_date: string;
-  notes: string | null;
 }
 
 export function InventoryManagement() {

@@ -229,7 +229,7 @@ function AppRouter() {
   if (viewMode === 'submit-request') {
     return (
       <BrandProvider>
-        <SubmitRequest onBack={navigateToPublic} onLoginRequired={navigateToCustomerLogin} />
+        <SubmitRequest onBack={navigateToPublic} />
       </BrandProvider>
     );
   }

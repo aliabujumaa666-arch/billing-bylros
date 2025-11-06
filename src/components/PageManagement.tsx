@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Eye, Edit, Trash2, X, FileText, Globe, Layout } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, X, FileText } from 'lucide-react';
 
 export function PageManagement() {
   const { user } = useAuth();
