@@ -35,6 +35,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
 
   const navigation = [
     { id: 'dashboard', icon: Building2, label: t('nav.dashboard') },
+    { id: 'customer-requests', icon: FileText, label: 'Customer Requests' },
     { id: 'customers', icon: Users, label: t('nav.customers') },
     { id: 'quotes', icon: FileText, label: t('nav.quotes') },
     { id: 'visits', icon: Calendar, label: t('nav.visits') },

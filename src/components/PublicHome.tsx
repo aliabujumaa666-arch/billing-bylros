@@ -6,9 +6,10 @@ interface PublicHomeProps {
   onNavigateToTracker: () => void;
   onNavigateToCustomerLogin: () => void;
   onNavigateToBooking: () => void;
+  onNavigateToSubmitRequest: () => void;
 }
 
-export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onNavigateToBooking }: PublicHomeProps) {
+export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onNavigateToBooking, onNavigateToSubmitRequest }: PublicHomeProps) {
   const { brand } = useBrand();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -34,6 +35,12 @@ export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onN
             </div>
 
             <nav className="hidden md:flex items-center gap-6">
+              <button
+                onClick={onNavigateToSubmitRequest}
+                className="text-slate-700 hover:text-[#bb2738] transition-colors font-medium"
+              >
+                Submit Request
+              </button>
               <button
                 onClick={onNavigateToBooking}
                 className="text-slate-700 hover:text-[#bb2738] transition-colors font-medium"
@@ -72,6 +79,15 @@ export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onN
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-slate-200 bg-white">
             <div className="px-4 py-3 space-y-3">
+              <button
+                onClick={() => {
+                  onNavigateToSubmitRequest();
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left py-2 text-slate-700 hover:text-[#bb2738] transition-colors font-medium"
+              >
+                Submit Request
+              </button>
               <button
                 onClick={() => {
                   onNavigateToBooking();

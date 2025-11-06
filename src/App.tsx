@@ -9,10 +9,12 @@ import { Layout } from './components/Layout';
 import { PublicHome } from './components/PublicHome';
 import { PublicBooking } from './components/PublicBooking';
 import { SiteVisitPayment } from './components/SiteVisitPayment';
+import { SubmitRequest } from './components/SubmitRequest';
 import { GlobalSearch } from './components/GlobalSearch';
 
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
 const Customers = lazy(() => import('./components/Customers').then(module => ({ default: module.Customers })));
+const CustomerRequests = lazy(() => import('./components/CustomerRequests').then(module => ({ default: module.CustomerRequests })));
 const Quotes = lazy(() => import('./components/Quotes').then(module => ({ default: module.Quotes })));
 const SiteVisits = lazy(() => import('./components/SiteVisits').then(module => ({ default: module.SiteVisits })));
 const Orders = lazy(() => import('./components/Orders').then(module => ({ default: module.Orders })));
@@ -72,6 +74,8 @@ function AdminApp() {
         return <Dashboard />;
       case 'customers':
         return <Customers />;
+      case 'customer-requests':
+        return <CustomerRequests />;
       case 'quotes':
         return <Quotes />;
       case 'visits':
@@ -158,11 +162,13 @@ function CustomerApp() {
 }
 
 function AppRouter() {
-  const [viewMode, setViewMode] = useState<'public' | 'admin' | 'customer' | 'booking' | 'site-visit-payment'>('public');
+  const [viewMode, setViewMode] = useState<'public' | 'admin' | 'customer' | 'booking' | 'site-visit-payment' | 'submit-request'>('public');
 
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.startsWith('/site-visit-payment')) {
+    if (path.startsWith('/submit-request')) {
+      setViewMode('submit-request');
+    } else if (path.startsWith('/site-visit-payment')) {
       setViewMode('site-visit-payment');
     } else if (path.startsWith('/book-visit')) {
       setViewMode('booking');
@@ -195,6 +201,11 @@ function AppRouter() {
     setViewMode('booking');
   };
 
+  const navigateToSubmitRequest = () => {
+    window.history.pushState({}, '', '/submit-request');
+    setViewMode('submit-request');
+  };
+
   const navigateToPublic = () => {
     window.history.pushState({}, '', '/');
     setViewMode('public');
@@ -202,6 +213,14 @@ function AppRouter() {
 
   // Prevent unused variable warning - this function is available for future use
   void navigateToAdmin;
+
+  if (viewMode === 'submit-request') {
+    return (
+      <BrandProvider>
+        <SubmitRequest onBack={navigateToPublic} onLoginRequired={navigateToCustomerLogin} />
+      </BrandProvider>
+    );
+  }
 
   if (viewMode === 'site-visit-payment') {
     return (
@@ -226,6 +245,7 @@ function AppRouter() {
           onNavigateToTracker={navigateToTracker}
           onNavigateToCustomerLogin={navigateToCustomerLogin}
           onNavigateToBooking={navigateToBooking}
+          onNavigateToSubmitRequest={navigateToSubmitRequest}
         />
       </BrandProvider>
     );
