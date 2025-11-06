@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '../contexts/ToastContext';
-import { Plus, Search, CreditCard as Edit, Trash2, X, Upload, Download } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, X, Upload, Download, Paperclip } from 'lucide-react';
 import { CustomerBulkImport } from './CustomerBulkImport';
+import { CustomerAttachments } from './CustomerAttachments';
 import { exportToExcel, exportToPDF } from '../utils/exportUtils';
 
 type Customer = {
@@ -15,6 +16,7 @@ type Customer = {
   status: 'Lead' | 'Quoted' | 'Ordered' | 'Delivered' | 'Installed';
   notes: string | null;
   created_at: string;
+  attachment_count?: number;
 };
 
 export function Customers() {
@@ -25,6 +27,8 @@ export function Customers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showAttachments, setShowAttachments] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState({
@@ -48,7 +52,25 @@ export function Customers() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCustomers(data || []);
+
+      const customersData = data || [];
+
+      const customersWithCounts = await Promise.all(
+        customersData.map(async (customer) => {
+          const { count } = await supabase
+            .from('attachments')
+            .select('*', { count: 'exact', head: true })
+            .eq('entity_type', 'customer')
+            .eq('entity_id', customer.id);
+
+          return {
+            ...customer,
+            attachment_count: count || 0
+          };
+        })
+      );
+
+      setCustomers(customersWithCounts);
     } catch (err) {
       console.error('Error fetching customers:', err);
       showError('Failed to load customers');
@@ -284,17 +306,18 @@ export function Customers() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">{t('customer.email')}</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">{t('customer.location')}</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">{t('common.status')}</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Files</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">Loading...</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">Loading...</td>
                 </tr>
               ) : filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">No customers found</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">No customers found</td>
                 </tr>
               ) : (
                 filteredCustomers.map((customer) => (
@@ -307,6 +330,18 @@ export function Customers() {
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(customer.status)}`}>
                         {t(`status.${customer.status.toLowerCase()}`)}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setShowAttachments(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                      >
+                        <Paperclip className="w-4 h-4" />
+                        {customer.attachment_count || 0}
+                      </button>
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <button
@@ -440,6 +475,18 @@ export function Customers() {
           onImportComplete={() => {
             fetchCustomers();
             setShowBulkImport(false);
+          }}
+        />
+      )}
+
+      {showAttachments && selectedCustomer && (
+        <CustomerAttachments
+          customerId={selectedCustomer.id}
+          customerName={selectedCustomer.name}
+          onClose={() => {
+            setShowAttachments(false);
+            setSelectedCustomer(null);
+            fetchCustomers();
           }}
         />
       )}

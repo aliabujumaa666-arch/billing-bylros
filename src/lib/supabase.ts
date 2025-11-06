@@ -111,6 +111,19 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['payments']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['payments']['Insert']>;
       };
+      attachments: {
+        Row: {
+          id: string;
+          entity_type: 'customer' | 'quote' | 'order' | 'invoice';
+          entity_id: string;
+          file_name: string;
+          file_url: string;
+          file_type: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['attachments']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['attachments']['Insert']>;
+      };
     };
   };
 };
