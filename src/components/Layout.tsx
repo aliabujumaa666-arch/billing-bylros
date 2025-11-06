@@ -40,13 +40,6 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     { id: 'cache-management', icon: HardDrive, label: 'Clear Cache' },
   ];
 
-  const whatsappNavigation = [
-    { id: 'whatsapp-settings', icon: Settings, label: 'WhatsApp Settings' },
-    { id: 'whatsapp-templates', icon: FileText, label: 'Message Templates' },
-    { id: 'whatsapp-bulk', icon: MessageCircle, label: 'Send Bulk Messages' },
-    { id: 'whatsapp-history', icon: MessageSquare, label: 'Message History' },
-  ];
-
   const supportNavigation = [
     { id: 'knowledge-base', icon: BookOpen, label: 'Knowledge Base' },
     { id: 'faq-management', icon: HelpCircle, label: 'FAQs' },
@@ -141,35 +134,6 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
           </nav>
 
           <div className="px-4 py-2 mt-6 mb-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">WhatsApp Messaging</p>
-            <div className="space-y-1">
-              {whatsappNavigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentPage === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onNavigate(item.id);
-                      setSidebarOpen(false);
-                    }}
-                    className={`
-                      w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm
-                      ${isActive
-                        ? 'bg-[#bb2738] text-white shadow-md'
-                        : 'text-slate-700 hover:bg-slate-100'
-                      }
-                    `}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="px-4 py-2 mb-4">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">Documentation & Support</p>
             <div className="space-y-1">
               {supportNavigation.map((item) => {
