@@ -40,8 +40,6 @@ const WarrantyManagement = lazy(() => import('./components/WarrantyManagement').
 const WhatsAppMessaging = lazy(() => import('./components/WhatsAppMessaging').then(module => ({ default: module.WhatsAppMessaging })));
 const WhatsAppInbox = lazy(() => import('./components/WhatsAppInbox').then(module => ({ default: module.WhatsAppInbox })));
 const WhatsAppAISettings = lazy(() => import('./components/WhatsAppAISettings').then(module => ({ default: module.WhatsAppAISettings })));
-const WhatsAppMarketingCampaigns = lazy(() => import('./components/WhatsAppMarketingCampaigns').then(module => ({ default: module.default })));
-const WhatsAppMarketingContacts = lazy(() => import('./components/WhatsAppMarketingContacts').then(module => ({ default: module.default })));
 const PageManagement = lazy(() => import('./components/PageManagement').then(module => ({ default: module.PageManagement })));
 const CustomerLogin = lazy(() => import('./components/customer/CustomerLogin').then(module => ({ default: module.CustomerLogin })));
 const CustomerDashboard = lazy(() => import('./components/customer/CustomerDashboard').then(module => ({ default: module.CustomerDashboard })));
@@ -129,10 +127,6 @@ function AdminApp() {
         return <WhatsAppInbox />;
       case 'whatsapp-ai-settings':
         return <WhatsAppAISettings />;
-      case 'whatsapp-marketing-campaigns':
-        return <WhatsAppMarketingCampaigns />;
-      case 'whatsapp-marketing-contacts':
-        return <WhatsAppMarketingContacts />;
       case 'page-management':
         return <PageManagement />;
       default:

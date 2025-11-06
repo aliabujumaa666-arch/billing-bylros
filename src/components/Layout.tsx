@@ -58,11 +58,6 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     { id: 'whatsapp-ai-settings', icon: Settings, label: 'AI Settings' },
   ];
 
-  const marketingNavigation = [
-    { id: 'whatsapp-marketing-campaigns', icon: MessageSquare, label: 'Marketing Campaigns' },
-    { id: 'whatsapp-marketing-contacts', icon: Users, label: 'Marketing Contacts' },
-  ];
-
   const supportNavigation = [
     { id: 'knowledge-base', icon: BookOpen, label: 'Knowledge Base' },
     { id: 'faq-management', icon: HelpCircle, label: 'FAQs' },
@@ -265,35 +260,6 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="px-4 py-2 mt-6 mb-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">WhatsApp Marketing</p>
-            <div className="space-y-1">
-              {marketingNavigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentPage === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onNavigate(item.id);
-                      setSidebarOpen(false);
-                    }}
-                    className={`
-                      w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm relative
-                      ${isActive
-                        ? 'bg-[#bb2738] text-white shadow-md'
-                        : 'text-slate-700 hover:bg-slate-100'
-                      }
-                    `}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="font-medium">{item.label}</span>
                   </button>
                 );
               })}
