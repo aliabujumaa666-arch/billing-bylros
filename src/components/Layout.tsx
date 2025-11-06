@@ -46,6 +46,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     { id: 'video-tutorials', icon: Video, label: 'Video Tutorials' },
     { id: 'support-tickets', icon: Ticket, label: 'Support Tickets' },
     { id: 'messages', icon: MessageSquare, label: 'Messages' },
+    { id: 'whatsapp-messaging', icon: MessageSquare, label: 'WhatsApp' },
     { id: 'feedback-management', icon: MessageSquare, label: 'Feedback' },
     { id: 'changelog-management', icon: PackageCheck, label: 'Changelog' },
     { id: 'email-templates', icon: FileText, label: 'Email Templates' },
