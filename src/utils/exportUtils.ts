@@ -198,10 +198,23 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
 
   const finalY = (doc as any).lastAutoTable.finalY + 8;
 
+  const totalChargeableArea = quote.items.reduce((sum: number, item: any) => sum + (item.chargeable_area || 0), 0);
+
+  doc.setFillColor(239, 246, 255);
+  doc.roundedRect(10, finalY, 70, 10, 2, 2, 'F');
+  doc.setDrawColor(191, 219, 254);
+  doc.roundedRect(10, finalY, 70, 10, 2, 2, 'S');
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 64, 175);
+  doc.text('Total Chargeable Area:', 14, finalY + 6);
+  doc.text(`${totalChargeableArea.toFixed(2)} m²`, 75, finalY + 6, { align: 'right' });
+
   doc.setFillColor(250, 250, 251);
-  doc.roundedRect(130, finalY, 70, 42, 2, 2, 'F');
+  doc.roundedRect(130, finalY, 70, 48, 2, 2, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(130, finalY, 70, 42, 2, 2, 'S');
+  doc.roundedRect(130, finalY, 70, 48, 2, 2, 'S');
 
   let currentY = finalY + 7;
   doc.setFontSize(9);
@@ -333,6 +346,8 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
 };
 
 export const exportQuoteToExcel = (quote: any, customer: any) => {
+  const totalChargeableArea = quote.items.reduce((sum: number, item: any) => sum + (item.chargeable_area || 0), 0);
+
   const worksheetData = [
     ['BYLROS - QUOTATION'],
     [],
@@ -355,6 +370,8 @@ export const exportQuoteToExcel = (quote: any, customer: any) => {
       item.unit_price?.toFixed(2) || '0.00',
       item.total?.toFixed(2) || '0.00',
     ]),
+    [],
+    ['', '', '', '', '', '', 'Total Chargeable Area:', totalChargeableArea.toFixed(2) + ' m²', ''],
     [],
     ['', '', '', '', '', '', '', 'Subtotal:', quote.subtotal.toFixed(2)],
     ...(quote.discount > 0 ? [['', '', '', '', '', '', '', `Discount${quote.discount_type === 'percentage' ? ` (${quote.discount_value}%)` : ''}:`, `-${quote.discount.toFixed(2)}`]] : []),

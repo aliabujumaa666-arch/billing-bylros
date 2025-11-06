@@ -70,6 +70,7 @@ export function Quotes() {
 
   const calculateTotals = (items: QuoteItem[]) => {
     const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+    const total_chargeable_area = items.reduce((sum, item) => sum + (item.chargeable_area || 0), 0);
 
     let discount_amount = 0;
     if (formData.discount_type === 'percentage') {
@@ -82,7 +83,7 @@ export function Quotes() {
     const vat_amount = subtotal_after_discount * 0.05;
     const total = subtotal_after_discount + vat_amount;
 
-    return { subtotal, discount: discount_amount, vat_amount, total };
+    return { subtotal, discount: discount_amount, vat_amount, total, total_chargeable_area };
   };
 
   const addItem = () => {
@@ -706,6 +707,10 @@ export function Quotes() {
 
                 <div className="mt-4 flex justify-end">
                   <div className="space-y-2 text-sm min-w-[280px]">
+                    <div className="flex justify-between gap-8 bg-blue-50 px-3 py-2 rounded-lg">
+                      <span className="text-blue-800 font-medium">Total Chargeable Area:</span>
+                      <span className="font-bold text-blue-900">{calculateTotals(formData.items).total_chargeable_area.toFixed(2)} m²</span>
+                    </div>
                     <div className="flex justify-between gap-8">
                       <span className="text-slate-600">Subtotal:</span>
                       <span className="font-medium">AED {calculateTotals(formData.items).subtotal.toFixed(2)}</span>
