@@ -19,15 +19,6 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
   const accentRgb = hexToRgb(accentColor);
 
-  for (let i = 0; i < 210; i += 20) {
-    doc.setFillColor(245, 245, 247, 0.3);
-    doc.circle(i, -10, 30, 'F');
-  }
-  for (let i = 0; i < 210; i += 25) {
-    doc.setFillColor(241, 245, 249, 0.5);
-    doc.circle(i + 10, 290, 40, 'F');
-  }
-
   if (pdfSettings.watermark.enableWatermark) {
     doc.saveGraphicsState();
     doc.setTextColor(128, 128, 128);
@@ -49,10 +40,6 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   }
 
   if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
-    doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b);
-    doc.triangle(180, 0, 210, 0, 210, 30, 'F');
-    doc.triangle(0, 45, 30, pdfSettings.layout.headerHeight, 0, pdfSettings.layout.headerHeight, 'F');
-
     doc.setDrawColor(255, 255, 255);
     doc.setLineWidth(0.5);
     doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
@@ -313,10 +300,6 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
       doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
       doc.rect(0, footerY, 210, pdfSettings.layout.footerHeight, 'F');
 
-      doc.setFillColor(255, 255, 255, 0.1);
-      doc.circle(15, footerY + 13, 15, 'F');
-      doc.circle(195, footerY + 13, 20, 'F');
-
       doc.setDrawColor(255, 255, 255, 0.3);
       doc.setLineWidth(0.3);
       doc.line(10, footerY + 12, 200, footerY + 12);
@@ -431,10 +414,6 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
   }
 
   if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
-    doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b);
-    doc.triangle(180, 0, 210, 0, 210, 30, 'F');
-    doc.triangle(0, 45, 30, pdfSettings.layout.headerHeight, 0, pdfSettings.layout.headerHeight, 'F');
-
     doc.setDrawColor(255, 255, 255);
     doc.setLineWidth(0.5);
     doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
@@ -601,10 +580,6 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
     if (pdfSettings.footer.footerStyle === 'gradient') {
       doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
       doc.rect(0, footerY, 210, pdfSettings.layout.footerHeight, 'F');
-
-      doc.setFillColor(255, 255, 255, 0.1);
-      doc.circle(15, footerY + 13, 15, 'F');
-      doc.circle(195, footerY + 13, 20, 'F');
 
       doc.setDrawColor(255, 255, 255, 0.3);
       doc.setLineWidth(0.3);
