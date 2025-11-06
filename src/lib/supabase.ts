@@ -142,6 +142,40 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['keyboard_shortcuts']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['keyboard_shortcuts']['Insert']>;
       };
+      customer_requests: {
+        Row: {
+          id: string;
+          request_number: string;
+          customer_name: string;
+          phone: string;
+          email: string;
+          project_description: string;
+          preferred_date: string | null;
+          status: 'New' | 'Under Review' | 'Converted to Quote' | 'Rejected' | 'Completed';
+          priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+          assigned_to: string | null;
+          customer_id: string | null;
+          quote_id: string | null;
+          admin_notes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['customer_requests']['Row'], 'id' | 'request_number' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['customer_requests']['Insert']>;
+      };
+      request_attachments: {
+        Row: {
+          id: string;
+          request_id: string;
+          file_name: string;
+          file_url: string;
+          file_type: string;
+          file_size: number;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['request_attachments']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['request_attachments']['Insert']>;
+      };
     };
   };
 };
