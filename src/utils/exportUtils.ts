@@ -7,8 +7,6 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   const doc = new jsPDF();
 
   const pdfSettings = brand?.pdfSettings?.quotes || brand?.pdf || getDefaultPDFSettings();
-  const primaryColor = brand?.visual?.primaryColor || '#bb2738';
-  const accentColor = brand?.visual?.accentColor || '#a01f2f';
   const companyName = brand?.company?.name || 'BYLROS';
   const companyFullName = brand?.company?.fullName || 'Middle East Aluminium & Glass LLC';
   const companyAddress = brand?.contact?.address?.fullAddress || 'Costra Business Park (Block B), Production City, Dubai, UAE';
@@ -17,7 +15,6 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
 
   const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
-  const accentRgb = hexToRgb(accentColor);
 
   if (pdfSettings.watermark.enableWatermark) {
     doc.saveGraphicsState();
@@ -139,7 +136,6 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     doc.text('ITEMS & SPECIFICATIONS', 14, 115);
 
     const tableHeaders: string[] = [];
-    const tableRow: any[] = [];
 
     if (pdfSettings.table.showItemNumbers) tableHeaders.push('#');
     if (pdfSettings.table.showLocation) tableHeaders.push('Location');
@@ -381,8 +377,6 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
   const doc = new jsPDF();
 
   const pdfSettings = brand?.pdfSettings?.invoices || getDefaultPDFSettings();
-  const primaryColor = brand?.visual?.primaryColor || '#bb2738';
-  const accentColor = brand?.visual?.accentColor || '#a01f2f';
   const companyName = brand?.company?.name || 'BYLROS';
   const companyFullName = brand?.company?.fullName || 'Middle East Aluminium & Glass LLC';
   const companyAddress = brand?.contact?.address?.fullAddress || 'Costra Business Park (Block B), Production City, Dubai, UAE';
@@ -391,7 +385,6 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
   const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
 
   const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
-  const accentRgb = hexToRgb(accentColor);
 
   if (pdfSettings.watermark.enableWatermark) {
     doc.saveGraphicsState();

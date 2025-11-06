@@ -91,13 +91,12 @@ export interface PDFSettings {
 export type DocumentType = 'quotes' | 'invoices' | 'orders' | 'warranties' | 'siteVisits';
 
 export interface DocumentPDFSettings {
-  [key: string]: PDFSettings;
   quotes: PDFSettings;
   invoices: PDFSettings;
   orders: PDFSettings;
   warranties: PDFSettings;
   siteVisits: PDFSettings;
-  global: {
+  global?: {
     useGlobalDefaults: boolean;
     defaultSettings: PDFSettings;
   };

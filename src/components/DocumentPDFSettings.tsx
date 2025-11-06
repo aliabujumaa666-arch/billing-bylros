@@ -9,7 +9,7 @@ interface DocumentPDFSettingsProps {
   onUpdate: (settings: PDFSettings) => void;
 }
 
-export function DocumentPDFSettings({ documentType, documentLabel, settings, onUpdate }: DocumentPDFSettingsProps) {
+export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: DocumentPDFSettingsProps) {
   const [activeTab, setActiveTab] = useState<'fonts' | 'colors' | 'layout' | 'sections' | 'advanced'>('fonts');
 
   const updateSettings = (section: keyof PDFSettings, field: string, value: any) => {
@@ -18,19 +18,6 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
       [section]: {
         ...settings[section],
         [field]: value,
-      },
-    });
-  };
-
-  const updateNestedSettings = (section: keyof PDFSettings, subsection: string, field: string, value: any) => {
-    onUpdate({
-      ...settings,
-      [section]: {
-        ...settings[section],
-        [subsection]: {
-          ...(settings[section] as any)[subsection],
-          [field]: value,
-        },
       },
     });
   };

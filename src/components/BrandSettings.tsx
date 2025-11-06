@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Save, Building2, Phone, Mail, MapPin, Palette, FileText, Globe, Upload, FileDown } from 'lucide-react';
+import { Save, Building2, Phone, Palette, FileText, Globe, Upload, FileDown } from 'lucide-react';
 import { PDFSettings, DocumentType, useBrand } from '../contexts/BrandContext';
 import { DocumentPDFSettings } from './DocumentPDFSettings';
 
