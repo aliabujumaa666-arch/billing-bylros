@@ -23,6 +23,7 @@ export function MetaWhatsAppConnect({ onSuccess }: MetaWhatsAppConnectProps) {
   const [selectedPhone, setSelectedPhone] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [step, setStep] = useState<'credentials' | 'authenticate' | 'select_phone' | 'complete'>('credentials');
+  const [errorDetails, setErrorDetails] = useState<any>(null);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -42,7 +43,7 @@ export function MetaWhatsAppConnect({ onSuccess }: MetaWhatsAppConnectProps) {
     const redirectUri = `${window.location.origin}${window.location.pathname}`;
     const scope = 'business_management,whatsapp_business_management,whatsapp_business_messaging';
 
-    const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code`;
+    const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code`;
 
     localStorage.setItem('meta_app_id', metaAppId);
     localStorage.setItem('meta_app_secret', metaAppSecret);
@@ -75,6 +76,7 @@ export function MetaWhatsAppConnect({ onSuccess }: MetaWhatsAppConnectProps) {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
+        setErrorDetails(data);
         throw new Error(data.error || 'Failed to authenticate with Meta');
       }
 
@@ -95,7 +97,19 @@ export function MetaWhatsAppConnect({ onSuccess }: MetaWhatsAppConnectProps) {
 
     } catch (err: any) {
       console.error('OAuth callback error:', err);
-      showError(err.message || 'Failed to connect to Meta');
+      console.error('Error details:', errorDetails);
+
+      let errorMessage = err.message || 'Failed to connect to Meta';
+
+      if (errorDetails?.step) {
+        errorMessage += ` (Step: ${errorDetails.step})`;
+      }
+
+      if (errorDetails?.hint) {
+        errorMessage += `. ${errorDetails.hint}`;
+      }
+
+      showError(errorMessage);
       setStep('credentials');
     } finally {
       setIsConnecting(false);
@@ -181,41 +195,97 @@ export function MetaWhatsAppConnect({ onSuccess }: MetaWhatsAppConnectProps) {
       {step === 'credentials' && (
         <>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-semibold text-blue-900 mb-2">Before You Start</h3>
-            <ol className="list-decimal list-inside text-sm text-blue-800 space-y-1">
-              <li>Create a Meta for Developers account at <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="underline">developers.facebook.com</a></li>
-              <li>Create a new app with WhatsApp Business API access</li>
-              <li>Add WhatsApp Business API to your app</li>
-              <li>Get your App ID and App Secret from App Settings</li>
-              <li>Add OAuth redirect URI: <code className="bg-blue-100 px-1 rounded">{window.location.origin}{window.location.pathname}</code></li>
+            <h3 className="font-semibold text-blue-900 mb-2">Setup Instructions</h3>
+            <ol className="list-decimal list-inside text-sm text-blue-800 space-y-2">
+              <li>
+                <strong>Create Meta App:</strong> Go to <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="underline font-semibold">developers.facebook.com</a> and create a Business app
+              </li>
+              <li>
+                <strong>Add WhatsApp Product:</strong> In your app dashboard, click "Add Product" and select "WhatsApp"
+              </li>
+              <li>
+                <strong>Get Credentials:</strong> Go to App Settings → Basic and copy your App ID and App Secret
+              </li>
+              <li>
+                <strong>Configure OAuth:</strong> In App Settings → Basic → Add Platform → Website, add this OAuth redirect URI:<br/>
+                <code className="bg-blue-100 px-2 py-1 rounded block mt-1 text-xs break-all">{window.location.origin}{window.location.pathname}</code>
+              </li>
+              <li>
+                <strong>Set Permissions:</strong> Make sure your app has these permissions enabled:
+                <ul className="list-disc list-inside ml-4 mt-1">
+                  <li>business_management</li>
+                  <li>whatsapp_business_management</li>
+                  <li>whatsapp_business_messaging</li>
+                </ul>
+              </li>
+              <li>
+                <strong>Link Business Account:</strong> In WhatsApp → Getting Started, link your Meta Business Account that contains your WhatsApp Business Account
+              </li>
             </ol>
           </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h3 className="font-semibold text-yellow-900 mb-2">Common Issues</h3>
+            <ul className="list-disc list-inside text-sm text-yellow-800 space-y-1">
+              <li><strong>No phone numbers found:</strong> Make sure your WhatsApp Business Account is linked to the Meta Business Account</li>
+              <li><strong>Permission errors:</strong> Verify all required permissions are granted in your app settings</li>
+              <li><strong>Redirect URI mismatch:</strong> Ensure the redirect URI in Meta matches exactly (including https://)</li>
+              <li><strong>App not approved:</strong> For testing, use your own phone number. For production, submit app for review</li>
+            </ul>
+          </div>
+
+          {errorDetails && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <h3 className="font-semibold text-red-900 mb-2">Connection Error Details</h3>
+              <div className="text-sm text-red-800 space-y-1">
+                <p><strong>Error:</strong> {errorDetails.error || 'Unknown error'}</p>
+                {errorDetails.step && <p><strong>Failed at:</strong> {errorDetails.step}</p>}
+                {errorDetails.hint && <p><strong>Suggestion:</strong> {errorDetails.hint}</p>}
+                {errorDetails.details && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer font-semibold">Technical Details</summary>
+                    <pre className="mt-2 p-2 bg-red-100 rounded text-xs overflow-auto">
+                      {JSON.stringify(errorDetails.details, null, 2)}
+                    </pre>
+                  </details>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Meta App ID
+                Meta App ID *
               </label>
               <input
                 type="text"
                 value={metaAppId}
-                onChange={(e) => setMetaAppId(e.target.value)}
-                placeholder="Enter your Meta App ID"
+                onChange={(e) => {
+                  setMetaAppId(e.target.value);
+                  setErrorDetails(null);
+                }}
+                placeholder="1234567890123456"
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
               />
+              <p className="text-xs text-slate-500 mt-1">Found in App Settings → Basic</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Meta App Secret
+                Meta App Secret *
               </label>
               <input
                 type="password"
                 value={metaAppSecret}
-                onChange={(e) => setMetaAppSecret(e.target.value)}
+                onChange={(e) => {
+                  setMetaAppSecret(e.target.value);
+                  setErrorDetails(null);
+                }}
                 placeholder="Enter your Meta App Secret"
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
               />
+              <p className="text-xs text-slate-500 mt-1">Found in App Settings → Basic (click "Show")</p>
             </div>
 
             <button
