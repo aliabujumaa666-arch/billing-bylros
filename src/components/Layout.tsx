@@ -23,6 +23,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
   const { t, language, setLanguage, isRTL } = useLanguage();
   const { brand } = useBrand();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [shortcuts, setShortcuts] = useState<Array<{
     key: string;
     description: string;
@@ -55,7 +56,9 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     { id: 'video-tutorials', icon: Video, label: 'Video Tutorials' },
     { id: 'support-tickets', icon: Ticket, label: 'Support Tickets' },
     { id: 'messages', icon: MessageSquare, label: 'Messages' },
-    { id: 'whatsapp-messaging', icon: MessageSquare, label: 'WhatsApp' },
+    { id: 'whatsapp-inbox', icon: MessageSquare, label: 'WhatsApp Inbox' },
+    { id: 'whatsapp-messaging', icon: MessageSquare, label: 'WhatsApp Bulk' },
+    { id: 'whatsapp-ai-settings', icon: Settings, label: 'AI Settings' },
     { id: 'feedback-management', icon: MessageSquare, label: 'Feedback' },
     { id: 'changelog-management', icon: PackageCheck, label: 'Changelog' },
     { id: 'email-templates', icon: FileText, label: 'Email Templates' },
@@ -63,7 +66,43 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
 
   useEffect(() => {
     loadShortcuts();
+    fetchUnreadCount();
+
+    const subscription = supabase
+      .channel('conversations-unread')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'whatsapp_conversations',
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('whatsapp_conversations')
+        .select('unread_count')
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      const total = (data || []).reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+      setUnreadCount(total);
+    } catch (err) {
+      console.error('Error fetching unread count:', err);
+    }
+  };
 
   const loadShortcuts = async () => {
     try {
@@ -192,6 +231,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
               {supportNavigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.id;
+                const showBadge = item.id === 'whatsapp-inbox' && unreadCount > 0;
                 return (
                   <button
                     key={item.id}
@@ -200,7 +240,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
                       setSidebarOpen(false);
                     }}
                     className={`
-                      w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm
+                      w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm relative
                       ${isActive
                         ? 'bg-[#bb2738] text-white shadow-md'
                         : 'text-slate-700 hover:bg-slate-100'
@@ -209,6 +249,11 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
                   >
                     <Icon className="w-4 h-4" />
                     <span className="font-medium">{item.label}</span>
+                    {showBadge && (
+                      <span className="ml-auto bg-[#25D366] text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                   </button>
                 );
               })}

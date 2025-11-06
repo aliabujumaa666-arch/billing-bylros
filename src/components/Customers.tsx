@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '../contexts/ToastContext';
-import { Plus, Search, CreditCard as Edit, Trash2, X, Upload, Download, Paperclip } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, X, Upload, Download, Paperclip, MessageCircle } from 'lucide-react';
 import { CustomerBulkImport } from './CustomerBulkImport';
 import { CustomerAttachments } from './CustomerAttachments';
+import { WhatsAppDirectChat } from './WhatsAppDirectChat';
 import { exportToExcel, exportToPDF } from '../utils/exportUtils';
 
 type Customer = {
@@ -28,6 +29,7 @@ export function Customers() {
   const [showModal, setShowModal] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
+  const [showWhatsAppChat, setShowWhatsAppChat] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -345,6 +347,17 @@ export function Customers() {
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <button
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setShowWhatsAppChat(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Contact via WhatsApp"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        WhatsApp
+                      </button>
+                      <button
                         onClick={() => openEditModal(customer)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                       >
@@ -487,6 +500,18 @@ export function Customers() {
             setShowAttachments(false);
             setSelectedCustomer(null);
             fetchCustomers();
+          }}
+        />
+      )}
+
+      {showWhatsAppChat && selectedCustomer && (
+        <WhatsAppDirectChat
+          customerId={selectedCustomer.id}
+          customerName={selectedCustomer.name}
+          customerPhone={selectedCustomer.phone}
+          onClose={() => {
+            setShowWhatsAppChat(false);
+            setSelectedCustomer(null);
           }}
         />
       )}

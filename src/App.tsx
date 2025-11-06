@@ -33,6 +33,8 @@ const CalendarView = lazy(() => import('./components/CalendarView').then(module 
 const InstallationTasks = lazy(() => import('./components/InstallationTasks').then(module => ({ default: module.InstallationTasks })));
 const WarrantyManagement = lazy(() => import('./components/WarrantyManagement').then(module => ({ default: module.WarrantyManagement })));
 const WhatsAppMessaging = lazy(() => import('./components/WhatsAppMessaging').then(module => ({ default: module.WhatsAppMessaging })));
+const WhatsAppInbox = lazy(() => import('./components/WhatsAppInbox').then(module => ({ default: module.WhatsAppInbox })));
+const WhatsAppAISettings = lazy(() => import('./components/WhatsAppAISettings').then(module => ({ default: module.WhatsAppAISettings })));
 const CustomerLogin = lazy(() => import('./components/customer/CustomerLogin').then(module => ({ default: module.CustomerLogin })));
 const CustomerDashboard = lazy(() => import('./components/customer/CustomerDashboard').then(module => ({ default: module.CustomerDashboard })));
 
@@ -111,6 +113,10 @@ function AdminApp() {
         return <WarrantyManagement />;
       case 'whatsapp-messaging':
         return <WhatsAppMessaging />;
+      case 'whatsapp-inbox':
+        return <WhatsAppInbox />;
+      case 'whatsapp-ai-settings':
+        return <WhatsAppAISettings />;
       default:
         return <Dashboard />;
     }
