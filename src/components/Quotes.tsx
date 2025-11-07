@@ -234,6 +234,11 @@ export function Quotes() {
       return;
     }
 
+    if (!formData.customer_id) {
+      alert('Please select a customer');
+      return;
+    }
+
     const validItems = formData.items.filter(item => item.location || item.type || item.height > 0 || item.width > 0);
     if (validItems.length === 0) {
       alert('Please fill in at least one item with valid data');
@@ -242,26 +247,43 @@ export function Quotes() {
 
     const totals = calculateTotals(validItems);
     const quoteData = {
-      ...formData,
+      customer_id: formData.customer_id,
       items: validItems,
+      remarks: formData.remarks || '',
+      status: formData.status,
+      valid_until: formData.valid_until || null,
+      minimum_chargeable_area: formData.minimum_chargeable_area || 1.0,
+      discount_type: formData.discount_type || 'none',
+      discount_value: formData.discount_value || 0,
+      shipping_amount: formData.shipping_amount || 0,
       quote_number: editingQuote?.quote_number || generateQuoteNumber(),
-      ...totals,
+      subtotal: totals.subtotal,
+      discount: totals.discount,
+      vat_amount: totals.vat_amount,
+      total: totals.total,
+      total_chargeable_area: totals.total_chargeable_area,
     };
 
     try {
+      let result;
       if (editingQuote) {
-        await supabase.from('quotes').update(quoteData).eq('id', editingQuote.id);
+        result = await supabase.from('quotes').update(quoteData).eq('id', editingQuote.id).select();
       } else {
-        await supabase.from('quotes').insert([quoteData]);
+        result = await supabase.from('quotes').insert([quoteData]).select();
       }
 
+      if (result.error) {
+        throw result.error;
+      }
+
+      alert(editingQuote ? 'Quote updated successfully!' : 'Quote created successfully!');
       setShowModal(false);
       setEditingQuote(null);
       resetForm();
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving quote:', error);
-      alert('Failed to save quote. Please try again.');
+      alert(`Failed to save quote: ${error.message || 'Please try again.'}`);
     }
   };
 
