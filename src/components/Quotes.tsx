@@ -261,7 +261,6 @@ export function Quotes() {
       discount: totals.discount,
       vat_amount: totals.vat_amount,
       total: totals.total,
-      total_chargeable_area: totals.total_chargeable_area,
     };
 
     try {
