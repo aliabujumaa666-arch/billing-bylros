@@ -170,6 +170,9 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     const tableBorderRgb = hexToRgb(pdfSettings.colors.tableBorder);
     const tableAltRowRgb = hexToRgb(pdfSettings.colors.tableRowAlternate);
 
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const footerHeightWithMargin = pdfSettings.layout.footerHeight + 15;
+
     autoTable(doc, {
       startY: 120,
       head: [tableHeaders],
@@ -181,11 +184,11 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
         fontSize: pdfSettings.fonts.tableFontSize,
         fontStyle: 'bold',
         halign: pdfSettings.table.headerAlignment as any,
-        cellPadding: 3,
+        cellPadding: 2,
       },
       styles: {
         fontSize: pdfSettings.fonts.tableFontSize,
-        cellPadding: 2.5,
+        cellPadding: 2,
         lineColor: [tableBorderRgb.r, tableBorderRgb.g, tableBorderRgb.b],
         lineWidth: 0.1,
         halign: pdfSettings.table.textAlignment as any,
@@ -193,10 +196,20 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
       alternateRowStyles: {
         fillColor: [tableAltRowRgb.r, tableAltRowRgb.g, tableAltRowRgb.b],
       },
+      margin: { bottom: footerHeightWithMargin },
+      pageBreak: 'auto',
+      showHead: 'everyPage',
     });
   }
 
-  const finalY = (doc as any).lastAutoTable.finalY + 8;
+  let finalY = (doc as any).lastAutoTable.finalY + 8;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const footerHeightWithMargin = pdfSettings.layout.footerHeight + 15;
+
+  if (finalY > pageHeight - footerHeightWithMargin - 60) {
+    doc.addPage();
+    finalY = 20;
+  }
 
   const totalChargeableArea = quote.items.reduce((sum: number, item: any) => sum + (item.chargeable_area || 0), 0);
 
@@ -205,7 +218,7 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   doc.setDrawColor(191, 219, 254);
   doc.roundedRect(10, finalY, 70, 10, 2, 2, 'S');
 
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setTextColor(30, 64, 175);
   doc.text('Total Chargeable Area:', 14, finalY + 6);
@@ -217,14 +230,14 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   doc.roundedRect(130, finalY, 70, 48, 2, 2, 'S');
 
   let currentY = finalY + 7;
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(71, 85, 105);
   doc.text('Subtotal:', 135, currentY);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setTextColor(30, 41, 59);
   doc.text(`AED ${quote.subtotal.toFixed(2)}`, 195, currentY, { align: 'right' });
-  currentY += 6;
+  currentY += 5;
 
   if (quote.discount > 0) {
     const discountLabel = quote.discount_type === 'percentage'
@@ -235,7 +248,7 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     doc.text(`${discountLabel}:`, 135, currentY);
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.text(`- AED ${quote.discount.toFixed(2)}`, 195, currentY, { align: 'right' });
-    currentY += 6;
+    currentY += 5;
   }
 
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
@@ -244,7 +257,7 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setTextColor(30, 41, 59);
   doc.text(`AED ${quote.vat_amount.toFixed(2)}`, 195, currentY, { align: 'right' });
-  currentY += 6;
+  currentY += 5;
 
   if (quote.shipping_amount && quote.shipping_amount > 0) {
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
@@ -253,7 +266,7 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setTextColor(30, 41, 59);
     doc.text(`AED ${quote.shipping_amount.toFixed(2)}`, 195, currentY, { align: 'right' });
-    currentY += 6;
+    currentY += 5;
   } else {
     currentY += 2;
   }
@@ -266,19 +279,24 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
   doc.roundedRect(133, currentY - 1, 65, 8, 1, 1, 'F');
 
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
   doc.text('TOTAL AMOUNT:', 135, currentY + 4);
-  doc.setFontSize(13);
+  doc.setFontSize(11);
   doc.text(`AED ${quote.total.toFixed(2)}`, 195, currentY + 4, { align: 'right' });
 
   let remarksY = currentY + 12;
 
   if (quote.remarks) {
+    if (remarksY > pageHeight - footerHeightWithMargin - 30) {
+      doc.addPage();
+      remarksY = 20;
+    }
+
     doc.setFillColor(254, 252, 232);
-    doc.roundedRect(10, remarksY, 120, 25, 2, 2, 'F');
+    doc.roundedRect(10, remarksY, 120, 22, 2, 2, 'F');
     doc.setDrawColor(250, 204, 21);
-    doc.roundedRect(10, remarksY, 120, 25, 2, 2, 'S');
+    doc.roundedRect(10, remarksY, 120, 22, 2, 2, 'S');
 
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setFontSize(8);
@@ -286,71 +304,82 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     doc.text('REMARKS & NOTES', 14, remarksY + 5);
 
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setTextColor(113, 63, 18);
     const splitRemarks = doc.splitTextToSize(quote.remarks, 110);
-    doc.text(splitRemarks, 14, remarksY + 11);
-    remarksY += 30;
+    doc.text(splitRemarks, 14, remarksY + 10);
+    remarksY += 27;
   }
 
   const termsY = remarksY > currentY + 12 ? remarksY : currentY + 12;
 
+  let adjustedTermsY = termsY;
   if (pdfSettings.terms.showTerms && pdfSettings.sections.showTerms) {
+    if (termsY > pageHeight - footerHeightWithMargin - 35) {
+      doc.addPage();
+      adjustedTermsY = 20;
+    }
+
     if (pdfSettings.terms.termsStyle === 'bordered' || pdfSettings.terms.termsStyle === 'box') {
       doc.setFillColor(239, 246, 255);
-      doc.roundedRect(10, termsY, 190, 32, 2, 2, 'F');
+      doc.roundedRect(10, adjustedTermsY, 190, 28, 2, 2, 'F');
       doc.setDrawColor(191, 219, 254);
-      doc.roundedRect(10, termsY, 190, 32, 2, 2, 'S');
+      doc.roundedRect(10, adjustedTermsY, 190, 28, 2, 2, 'S');
     }
 
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor(30, 64, 175);
-    doc.text(pdfSettings.terms.termsTitle, 14, termsY + 6);
+    doc.text(pdfSettings.terms.termsTitle, 14, adjustedTermsY + 6);
 
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     doc.setTextColor(30, 58, 138);
-    doc.text(pdfSettings.terms.termsContent, 14, termsY + 11);
+    doc.text(pdfSettings.terms.termsContent, 14, adjustedTermsY + 11);
   }
 
   if (pdfSettings.footer.showFooter) {
-    const footerY = 270;
+    const totalPages = (doc as any).internal.getNumberOfPages();
 
-    if (pdfSettings.footer.footerStyle === 'gradient') {
-      doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.rect(0, footerY, 210, pdfSettings.layout.footerHeight, 'F');
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      const footerY = pageHeight - pdfSettings.layout.footerHeight;
 
-      doc.setDrawColor(255, 255, 255, 0.3);
-      doc.setLineWidth(0.3);
-      doc.line(10, footerY + 12, 200, footerY + 12);
-    } else if (pdfSettings.footer.footerStyle === 'bordered') {
-      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.setLineWidth(1);
-      doc.line(10, footerY, 200, footerY);
-    }
+      if (pdfSettings.footer.footerStyle === 'gradient') {
+        doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+        doc.rect(0, footerY, 210, pdfSettings.layout.footerHeight, 'F');
 
-    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(255, 255, 255);
-    doc.text(pdfSettings.footer.footerText, 105, footerY + 8, { align: 'center' });
+        doc.setDrawColor(255, 255, 255, 0.3);
+        doc.setLineWidth(0.3);
+        doc.line(10, footerY + 12, 200, footerY + 12);
+      } else if (pdfSettings.footer.footerStyle === 'bordered') {
+        doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+        doc.setLineWidth(1);
+        doc.line(10, footerY, 200, footerY);
+      }
 
-    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-    doc.setFontSize(pdfSettings.fonts.footerFontSize);
-    doc.setTextColor(255, 255, 255, 0.9);
-    doc.text(companyFullName, 105, footerY + 14, { align: 'center' });
-    doc.text(`${companyPhone} | ${companyEmail}`, 105, footerY + 19, { align: 'center' });
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text(pdfSettings.footer.footerText, 105, footerY + 8, { align: 'center' });
 
-    if (pdfSettings.footer.showGenerationDate) {
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
       doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255, 0.7);
-      doc.text(`Quote generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, footerY + 24, { align: 'center' });
-    }
+      doc.setTextColor(255, 255, 255, 0.9);
+      doc.text(companyFullName, 105, footerY + 13, { align: 'center' });
+      doc.text(`${companyPhone} | ${companyEmail}`, 105, footerY + 17, { align: 'center' });
 
-    if (pdfSettings.footer.showPageNumbers) {
-      doc.setFontSize(pdfSettings.fonts.footerFontSize);
-      doc.setTextColor(148, 163, 184);
-      doc.text(`Page 1 of 1`, 200, footerY - 4, { align: 'right' });
+      if (pdfSettings.footer.showGenerationDate) {
+        doc.setFontSize(6.5);
+        doc.setTextColor(255, 255, 255, 0.7);
+        doc.text(`Quote generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, footerY + 22, { align: 'center' });
+      }
+
+      if (pdfSettings.footer.showPageNumbers) {
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`Page ${i} of ${totalPages}`, 200, footerY - 4, { align: 'right' });
+      }
     }
   }
 

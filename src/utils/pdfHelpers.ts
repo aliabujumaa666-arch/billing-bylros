@@ -26,9 +26,9 @@ export const getDefaultPDFSettings = (): PDFSettings => ({
     headerFont: 'helvetica',
     bodyFont: 'helvetica',
     headerFontSize: 22,
-    bodyFontSize: 9,
-    tableFontSize: 8,
-    footerFontSize: 8,
+    bodyFontSize: 8,
+    tableFontSize: 7.5,
+    footerFontSize: 7,
   },
   colors: {
     tableHeaderBg: '#bb2738',
