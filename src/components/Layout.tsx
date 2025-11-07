@@ -7,7 +7,7 @@ import {
   Building2, Users, FileText, Calendar, ShoppingCart,
   FileCheck, Package, LogOut, Menu, X, Globe, Settings,
   BookOpen, HelpCircle, Video, Ticket, MessageSquare, PackageCheck, HardDrive,
-  Workflow, Boxes, CalendarDays, Wrench, Shield, Receipt, Layout as LayoutIcon
+  Workflow, Boxes, CalendarDays, Wrench, Shield, Receipt, Layout as LayoutIcon, TrendingUp
 } from 'lucide-react';
 import { FeedbackWidget } from './FeedbackWidget';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
@@ -55,6 +55,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
   const whatsappNavigation = [
     { id: 'whatsapp-inbox', icon: MessageSquare, label: 'WhatsApp Inbox' },
     { id: 'whatsapp-messaging', icon: MessageSquare, label: 'Bulk Messaging' },
+    { id: 'whatsapp-marketing', icon: TrendingUp, label: 'Marketing' },
     { id: 'whatsapp-ai-settings', icon: Settings, label: 'AI Settings' },
   ];
 
