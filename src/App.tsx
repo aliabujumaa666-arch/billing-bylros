@@ -42,6 +42,7 @@ const WhatsAppInbox = lazy(() => import('./components/WhatsAppInbox').then(modul
 const WhatsAppAISettings = lazy(() => import('./components/WhatsAppAISettings').then(module => ({ default: module.WhatsAppAISettings })));
 const PageManagement = lazy(() => import('./components/PageManagement').then(module => ({ default: module.PageManagement })));
 const WhatsAppMarketing = lazy(() => import('./components/WhatsAppMarketing').then(module => ({ default: module.WhatsAppMarketing })));
+const EmailMarketing = lazy(() => import('./components/EmailMarketing').then(module => ({ default: module.default })));
 const CustomerLogin = lazy(() => import('./components/customer/CustomerLogin').then(module => ({ default: module.CustomerLogin })));
 const CustomerDashboard = lazy(() => import('./components/customer/CustomerDashboard').then(module => ({ default: module.CustomerDashboard })));
 
@@ -132,6 +133,8 @@ function AdminApp() {
         return <PageManagement />;
       case 'whatsapp-marketing':
         return <WhatsAppMarketing />;
+      case 'email-marketing':
+        return <EmailMarketing />;
       default:
         return <Dashboard />;
     }

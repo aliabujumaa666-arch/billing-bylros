@@ -7,7 +7,7 @@ import {
   Building2, Users, FileText, Calendar, ShoppingCart,
   FileCheck, Package, LogOut, Menu, X, Globe, Settings,
   BookOpen, HelpCircle, Video, Ticket, MessageSquare, PackageCheck, HardDrive,
-  Workflow, Boxes, CalendarDays, Wrench, Shield, Receipt, Layout as LayoutIcon, TrendingUp
+  Workflow, Boxes, CalendarDays, Wrench, Shield, Receipt, Layout as LayoutIcon, TrendingUp, Mail
 } from 'lucide-react';
 import { FeedbackWidget } from './FeedbackWidget';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
@@ -68,6 +68,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     { id: 'feedback-management', icon: MessageSquare, label: 'Feedback' },
     { id: 'changelog-management', icon: PackageCheck, label: 'Changelog' },
     { id: 'email-templates', icon: FileText, label: 'Email Templates' },
+    { id: 'email-marketing', icon: Mail, label: 'Email Marketing' },
     { id: 'page-management', icon: LayoutIcon, label: 'Pages' },
   ];
 
