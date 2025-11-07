@@ -58,11 +58,13 @@ export function BrandSettings() {
   const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType>('quotes');
   const { getPDFSettings, updatePDFSettings } = useBrand();
   const [currentPDFSettings, setCurrentPDFSettings] = useState<PDFSettings | null>(null);
+  const [pendingPDFSettings, setPendingPDFSettings] = useState<PDFSettings | null>(null);
 
   useEffect(() => {
     if (activeSection === 'pdf') {
       const pdfSettings = getPDFSettings(selectedDocumentType);
       setCurrentPDFSettings(pdfSettings);
+      setPendingPDFSettings(pdfSettings);
     }
   }, [selectedDocumentType, activeSection, getPDFSettings]);
 
@@ -96,20 +98,27 @@ export function BrandSettings() {
     setSaving(true);
 
     try {
-      const { error } = await supabase
-        .from('brand_settings')
-        .update({
-          setting_value: settings,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('setting_key', 'brand');
+      if (activeSection === 'brand') {
+        const { error } = await supabase
+          .from('brand_settings')
+          .update({
+            setting_value: settings,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('setting_key', 'brand');
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setSuccess('Brand settings saved successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+        setSuccess('Brand settings saved successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      } else if (activeSection === 'pdf' && pendingPDFSettings) {
+        await updatePDFSettings(selectedDocumentType, pendingPDFSettings);
+        setCurrentPDFSettings(pendingPDFSettings);
+        setSuccess(`PDF settings for ${selectedDocumentType} saved successfully!`);
+        setTimeout(() => setSuccess(''), 3000);
+      }
     } catch (err: any) {
-      setError('Failed to save brand settings: ' + err.message);
+      setError('Failed to save settings: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -634,19 +643,13 @@ export function BrandSettings() {
             </div>
           </div>
 
-          {currentPDFSettings && (
+          {pendingPDFSettings && (
             <DocumentPDFSettings
               documentType={selectedDocumentType}
               documentLabel={selectedDocumentType}
-              settings={currentPDFSettings}
-              onUpdate={async (pdfSettings) => {
-                try {
-                  await updatePDFSettings(selectedDocumentType, pdfSettings);
-                  setSuccess(`PDF settings for ${selectedDocumentType} saved successfully!`);
-                  setTimeout(() => setSuccess(''), 3000);
-                } catch (err: any) {
-                  setError(`Failed to save PDF settings: ${err.message}`);
-                }
+              settings={pendingPDFSettings}
+              onUpdate={(pdfSettings) => {
+                setPendingPDFSettings(pdfSettings);
               }}
             />
           )}
