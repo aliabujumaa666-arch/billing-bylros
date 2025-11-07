@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
-import { Send, Settings, FileText, CheckCircle, Loader, History, Zap } from 'lucide-react';
+import { Send, Settings, FileText, CheckCircle, Loader, History, Zap, Eye, Save } from 'lucide-react';
 import { MetaWhatsAppConnect } from './MetaWhatsAppConnect';
+import { WhatsAppHistory } from './WhatsAppHistory';
 
 interface WhatsAppSettings {
   id: string;
@@ -37,6 +38,7 @@ export function WhatsAppMessaging() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
 
   const [campaignName, setCampaignName] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
@@ -44,6 +46,7 @@ export function WhatsAppMessaging() {
   const [recipientFilter, setRecipientFilter] = useState<'all' | 'selected'>('all');
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   const [scheduleDate, setScheduleDate] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
 
   const [newTemplate, setNewTemplate] = useState({
     name: '',
@@ -188,6 +191,50 @@ export function WhatsAppMessaging() {
     return matches ? matches.map(m => m.slice(1, -1)) : [];
   };
 
+  const saveDraft = async () => {
+    if (!campaignName) {
+      showError('Please provide a campaign name');
+      return;
+    }
+
+    setSavingDraft(true);
+    try {
+      const recipients = recipientFilter === 'all'
+        ? customers
+        : customers.filter(c => selectedCustomers.includes(c.id));
+
+      const messageText = selectedTemplate
+        ? templates.find(t => t.id === selectedTemplate)?.message_text || customMessage
+        : customMessage;
+
+      const { error } = await supabase
+        .from('whatsapp_bulk_messages')
+        .insert({
+          campaign_name: `[DRAFT] ${campaignName}`,
+          message_text: messageText || 'Draft message pending',
+          total_recipients: recipients.length,
+          status: 'pending',
+          scheduled_at: scheduleDate || null,
+          recipient_filter: { type: recipientFilter, customer_ids: selectedCustomers },
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        });
+
+      if (error) throw error;
+
+      showSuccess('Draft saved successfully!');
+      setCampaignName('');
+      setCustomMessage('');
+      setSelectedTemplate('');
+      setSelectedCustomers([]);
+      setScheduleDate('');
+    } catch (err: any) {
+      console.error('Error saving draft:', err);
+      showError('Failed to save draft');
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
   const sendBulkMessage = async () => {
     if (!campaignName || (!selectedTemplate && !customMessage)) {
       showError('Please provide campaign name and message');
@@ -218,7 +265,8 @@ export function WhatsAppMessaging() {
           status: scheduleDate ? 'scheduled' : 'pending',
           scheduled_at: scheduleDate || null,
           recipient_filter: { type: recipientFilter, customer_ids: selectedCustomers },
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: (await supabase.auth.getUser()).data.user?.id,
+          started_at: scheduleDate ? null : new Date().toISOString()
         })
         .select()
         .single();
@@ -252,6 +300,14 @@ export function WhatsAppMessaging() {
     } finally {
       setSending(false);
     }
+  };
+
+  const getPreviewMessage = () => {
+    const messageText = selectedTemplate
+      ? templates.find(t => t.id === selectedTemplate)?.message_text || customMessage
+      : customMessage;
+
+    return messageText.replace(/{name}/g, 'John Doe').replace(/{(\w+)}/g, '[Variable: $1]');
   };
 
   const deleteTemplate = async (id: string) => {
@@ -459,6 +515,46 @@ export function WhatsAppMessaging() {
               className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
             />
           </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowPreview(!showPreview)}
+              disabled={!customMessage && !selectedTemplate}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Eye className="w-5 h-5" />
+              {showPreview ? 'Hide Preview' : 'Preview Message'}
+            </button>
+            <button
+              onClick={saveDraft}
+              disabled={savingDraft || !campaignName}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {savingDraft ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Save Draft
+                </>
+              )}
+            </button>
+          </div>
+
+          {showPreview && (customMessage || selectedTemplate) && (
+            <div className="p-4 bg-slate-50 border-2 border-slate-200 rounded-lg">
+              <p className="text-xs font-semibold text-slate-600 uppercase mb-2">Message Preview</p>
+              <div className="bg-white p-4 rounded-lg border border-slate-300">
+                <p className="text-sm text-slate-900 whitespace-pre-wrap">{getPreviewMessage()}</p>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                Variables like {'{name}'} will be replaced with actual customer data
+              </p>
+            </div>
+          )}
 
           <button
             onClick={sendBulkMessage}
@@ -720,11 +816,7 @@ export function WhatsAppMessaging() {
         </div>
       )}
 
-      {activeTab === 'history' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <p className="text-slate-600 text-center">Loading history component...</p>
-        </div>
-      )}
+      {activeTab === 'history' && <WhatsAppHistory />}
     </div>
   );
 }
