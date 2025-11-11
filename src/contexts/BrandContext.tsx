@@ -56,6 +56,11 @@ export interface PDFSettings {
     watermarkAngle: number;
     watermarkFontSize: number;
   };
+  remarks: {
+    remarksTitle: string;
+    remarksContent: string[];
+    showRemarks: boolean;
+  };
   terms: {
     termsTitle: string;
     termsContent: string[];

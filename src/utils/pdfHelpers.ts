@@ -75,6 +75,16 @@ export const getDefaultPDFSettings = (): PDFSettings => ({
     watermarkAngle: 45,
     watermarkFontSize: 80,
   },
+  remarks: {
+    remarksTitle: 'REMARKS & NOTES',
+    remarksContent: [
+      'Quotation valid for 30 days from issue date.',
+      'Delivery: 45-60 working days after advance payment and drawing approval.',
+      'Payment Terms: 50% advance, 30% before delivery, 20% after installation.',
+      'Warranty: 1 year on aluminium & hardware (glass breakage not covered).',
+    ],
+    showRemarks: true,
+  },
   terms: {
     termsTitle: 'TERMS & CONDITIONS',
     termsContent: [

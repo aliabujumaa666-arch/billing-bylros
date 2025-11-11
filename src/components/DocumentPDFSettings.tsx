@@ -25,6 +25,7 @@ export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: Docum
   const [showPreview, setShowPreview] = useState(true);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [draggedType, setDraggedType] = useState<'remarks' | 'terms' | null>(null);
 
   const updateSettings = (section: keyof PDFSettings, field: string, value: any) => {
     onUpdate({
@@ -71,6 +72,22 @@ export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: Docum
     }
   };
 
+  const addRemark = () => {
+    const newRemarks = [...(settings.remarks?.remarksContent || []), 'New remark...'];
+    updateSettings('remarks', 'remarksContent', newRemarks);
+  };
+
+  const updateRemark = (index: number, value: string) => {
+    const newRemarks = [...(settings.remarks?.remarksContent || [])];
+    newRemarks[index] = value;
+    updateSettings('remarks', 'remarksContent', newRemarks);
+  };
+
+  const removeRemark = (index: number) => {
+    const newRemarks = (settings.remarks?.remarksContent || []).filter((_, i) => i !== index);
+    updateSettings('remarks', 'remarksContent', newRemarks);
+  };
+
   const addTerm = () => {
     const newTerms = [...settings.terms.termsContent, 'New term...'];
     updateSettings('terms', 'termsContent', newTerms);
@@ -87,25 +104,35 @@ export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: Docum
     updateSettings('terms', 'termsContent', newTerms);
   };
 
-  const handleDragStart = (index: number) => {
+  const handleDragStart = (index: number, type: 'remarks' | 'terms') => {
     setDraggedIndex(index);
+    setDraggedType(type);
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragOver = (e: React.DragEvent, index: number, type: 'remarks' | 'terms') => {
     e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
+    if (draggedIndex === null || draggedIndex === index || draggedType !== type) return;
 
-    const newTerms = [...settings.terms.termsContent];
-    const draggedItem = newTerms[draggedIndex];
-    newTerms.splice(draggedIndex, 1);
-    newTerms.splice(index, 0, draggedItem);
+    if (type === 'remarks') {
+      const newRemarks = [...(settings.remarks?.remarksContent || [])];
+      const draggedItem = newRemarks[draggedIndex];
+      newRemarks.splice(draggedIndex, 1);
+      newRemarks.splice(index, 0, draggedItem);
+      updateSettings('remarks', 'remarksContent', newRemarks);
+    } else {
+      const newTerms = [...settings.terms.termsContent];
+      const draggedItem = newTerms[draggedIndex];
+      newTerms.splice(draggedIndex, 1);
+      newTerms.splice(index, 0, draggedItem);
+      updateSettings('terms', 'termsContent', newTerms);
+    }
 
-    updateSettings('terms', 'termsContent', newTerms);
     setDraggedIndex(index);
   };
 
   const handleDragEnd = () => {
     setDraggedIndex(null);
+    setDraggedType(null);
   };
 
   const tabs = [
@@ -970,89 +997,193 @@ export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: Docum
                 </div>
               </div>
 
-              <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                <h4 className="font-medium text-slate-700 mb-4 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Terms & Conditions
+              <div className="border border-slate-200 rounded-lg p-6 bg-gradient-to-br from-yellow-50 via-white to-blue-50">
+                <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2 text-lg">
+                  <FileText className="w-5 h-5 text-amber-600" />
+                  Document Notes & Legal Terms
+                  <span className="text-xs font-normal text-slate-500 ml-auto">Displayed on PDF</span>
                 </h4>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={settings.terms.showTerms}
-                      onChange={(e) => updateSettings('terms', 'showTerms', e.target.checked)}
-                      className="w-4 h-4 text-[#bb2738] border-slate-300 rounded focus:ring-[#bb2738]"
-                    />
-                    <label className="text-sm font-medium text-slate-700">Show Terms & Conditions</label>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Title</label>
-                    <input
-                      type="text"
-                      value={settings.terms.termsTitle}
-                      onChange={(e) => updateSettings('terms', 'termsTitle', e.target.value)}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Style</label>
-                    <select
-                      value={settings.terms.termsStyle}
-                      onChange={(e) => updateSettings('terms', 'termsStyle', e.target.value as any)}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
-                    >
-                      <option value="simple">Simple</option>
-                      <option value="bordered">Bordered</option>
-                      <option value="box">Box</option>
-                    </select>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-slate-700">Terms Content</label>
-                      <button
-                        type="button"
-                        onClick={addTerm}
-                        className="flex items-center gap-1 text-sm text-[#bb2738] hover:underline font-medium"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        Add Term
-                      </button>
-                    </div>
-                    <div className="space-y-2 max-h-96 overflow-y-auto bg-white p-3 rounded-lg border border-slate-200">
-                      {settings.terms.termsContent.map((term, index) => (
-                        <div
-                          key={index}
-                          draggable
-                          onDragStart={() => handleDragStart(index)}
-                          onDragOver={(e) => handleDragOver(e, index)}
-                          onDragEnd={handleDragEnd}
-                          className={`flex gap-2 p-2 rounded-lg transition-all ${
-                            draggedIndex === index ? 'opacity-50 bg-slate-100' : 'bg-white hover:bg-slate-50'
-                          } border border-slate-200`}
-                        >
-                          <button
-                            type="button"
-                            className="p-1 text-slate-400 hover:text-slate-600 cursor-move"
-                          >
-                            <GripVertical className="w-4 h-4" />
-                          </button>
-                          <input
-                            type="text"
-                            value={term}
-                            onChange={(e) => updateTerm(index, e.target.value)}
-                            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] text-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeTerm(index)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-lg p-4 border-2 border-amber-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                          <FileText className="w-4 h-4 text-amber-600" />
                         </div>
-                      ))}
+                        <div>
+                          <h5 className="font-semibold text-slate-800 text-sm">Remarks & Notes</h5>
+                          <p className="text-xs text-slate-500">Important information for customers</p>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={settings.remarks?.showRemarks !== false}
+                        onChange={(e) => updateSettings('remarks', 'showRemarks', e.target.checked)}
+                        className="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-600"
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Section Title</label>
+                      <input
+                        type="text"
+                        value={settings.remarks?.remarksTitle || 'REMARKS & NOTES'}
+                        onChange={(e) => updateSettings('remarks', 'remarksTitle', e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-600 bg-amber-50"
+                        placeholder="REMARKS & NOTES"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-medium text-slate-600">Content Lines</label>
+                        <button
+                          type="button"
+                          onClick={addRemark}
+                          className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-700 font-medium"
+                        >
+                          <PlusCircle className="w-3 h-3" />
+                          Add Line
+                        </button>
+                      </div>
+                      <div className="space-y-2 max-h-72 overflow-y-auto bg-amber-50/50 p-2 rounded-lg">
+                        {(settings.remarks?.remarksContent || []).map((remark, index) => (
+                          <div
+                            key={index}
+                            draggable
+                            onDragStart={() => handleDragStart(index, 'remarks')}
+                            onDragOver={(e) => handleDragOver(e, index, 'remarks')}
+                            onDragEnd={handleDragEnd}
+                            className={`flex gap-2 p-2 rounded-lg transition-all ${
+                              draggedIndex === index && draggedType === 'remarks' ? 'opacity-50 bg-amber-100' : 'bg-white hover:bg-amber-50'
+                            } border border-amber-200`}
+                          >
+                            <button
+                              type="button"
+                              className="p-1 text-slate-400 hover:text-slate-600 cursor-move"
+                            >
+                              <GripVertical className="w-3 h-3" />
+                            </button>
+                            <input
+                              type="text"
+                              value={remark}
+                              onChange={(e) => updateRemark(index, e.target.value)}
+                              className="flex-1 px-2 py-1.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-600 text-xs"
+                              placeholder="Add remark or note..."
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeRemark(index)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
+
+                  <div className="bg-white rounded-lg p-4 border-2 border-blue-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <FileText className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-slate-800 text-sm">Terms & Conditions</h5>
+                          <p className="text-xs text-slate-500">Legal terms and policies</p>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={settings.terms.showTerms}
+                        onChange={(e) => updateSettings('terms', 'showTerms', e.target.checked)}
+                        className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-600"
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Section Title</label>
+                      <input
+                        type="text"
+                        value={settings.terms.termsTitle}
+                        onChange={(e) => updateSettings('terms', 'termsTitle', e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-600 bg-blue-50"
+                        placeholder="TERMS & CONDITIONS"
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Display Style</label>
+                      <select
+                        value={settings.terms.termsStyle}
+                        onChange={(e) => updateSettings('terms', 'termsStyle', e.target.value as any)}
+                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-600"
+                      >
+                        <option value="simple">Simple</option>
+                        <option value="bordered">Bordered</option>
+                        <option value="box">Box</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-medium text-slate-600">Content Lines</label>
+                        <button
+                          type="button"
+                          onClick={addTerm}
+                          className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          <PlusCircle className="w-3 h-3" />
+                          Add Line
+                        </button>
+                      </div>
+                      <div className="space-y-2 max-h-72 overflow-y-auto bg-blue-50/50 p-2 rounded-lg">
+                        {settings.terms.termsContent.map((term, index) => (
+                          <div
+                            key={index}
+                            draggable
+                            onDragStart={() => handleDragStart(index, 'terms')}
+                            onDragOver={(e) => handleDragOver(e, index, 'terms')}
+                            onDragEnd={handleDragEnd}
+                            className={`flex gap-2 p-2 rounded-lg transition-all ${
+                              draggedIndex === index && draggedType === 'terms' ? 'opacity-50 bg-blue-100' : 'bg-white hover:bg-blue-50'
+                            } border border-blue-200`}
+                          >
+                            <button
+                              type="button"
+                              className="p-1 text-slate-400 hover:text-slate-600 cursor-move"
+                            >
+                              <GripVertical className="w-3 h-3" />
+                            </button>
+                            <input
+                              type="text"
+                              value={term}
+                              onChange={(e) => updateTerm(index, e.target.value)}
+                              className="flex-1 px-2 py-1.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-600 text-xs"
+                              placeholder="Add term or condition..."
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeTerm(index)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 bg-slate-50 rounded-lg p-3 border border-slate-200">
+                  <p className="text-xs text-slate-600 flex items-center gap-2">
+                    <Info className="w-4 h-4 text-slate-500" />
+                    <span><strong>Tip:</strong> Remarks appear in a yellow box, Terms in a blue box. Drag items to reorder them. Use clear, concise language.</span>
+                  </p>
                 </div>
               </div>
             </div>
