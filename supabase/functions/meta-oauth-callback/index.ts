@@ -57,7 +57,8 @@ Deno.serve(async (req: Request) => {
           success: false,
           error: 'Failed to exchange code for token',
           details: tokenData,
-          step: 'token_exchange'
+          step: 'token_exchange',
+          hint: 'Verify your Meta App ID and App Secret are correct and the redirect URI matches exactly.'
         }),
         {
           status: 400,
@@ -84,7 +85,7 @@ Deno.serve(async (req: Request) => {
           error: 'Failed to fetch business accounts',
           details: businessData,
           step: 'business_accounts',
-          hint: 'Make sure your app has business_management permission'
+          hint: 'Make sure your app has business_management permission granted.'
         }),
         {
           status: 400,
@@ -142,6 +143,18 @@ Deno.serve(async (req: Request) => {
       }
     } else {
       console.log('No business accounts found');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'No business accounts found',
+          step: 'business_accounts',
+          hint: 'Link a Meta Business Account to your Meta App in the WhatsApp section.'
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     console.log('Final results:', {
