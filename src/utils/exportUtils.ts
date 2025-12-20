@@ -61,7 +61,7 @@ const addLetterheadHeader = (
   doc.text(`Mobile: ${companyPhone}`, 40, 22);
   doc.text(`Website: ${companyWebsite}`, 40, 26);
 
-  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'italic');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setFontSize(7);
   doc.setTextColor(85, 85, 85);
   doc.text(`Address: ${companyAddress}`, 40, 30);
