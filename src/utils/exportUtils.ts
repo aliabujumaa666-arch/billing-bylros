@@ -4,7 +4,33 @@ import * as XLSX from 'xlsx';
 import { getDefaultPDFSettings, hexToRgb, getFontFamily } from './pdfHelpers';
 import { addQRCodeToPDF } from './qrCodeHelper';
 
-const addLogoToPDF = (doc: jsPDF, pdfSettings: any, brand: any) => {
+const convertImageToBase64 = (url: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
+      try {
+        const dataURL = canvas.toDataURL('image/png');
+        resolve(dataURL);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = url;
+  });
+};
+
+const addLogoToPDF = async (doc: jsPDF, pdfSettings: any, brand: any) => {
   if (!pdfSettings.logo.showLogo || !brand?.logos?.primary) return;
 
   try {
@@ -20,19 +46,20 @@ const addLogoToPDF = (doc: jsPDF, pdfSettings: any, brand: any) => {
       xPos = pageWidth - logoWidth - 14;
     }
 
-    doc.addImage(logoUrl, 'PNG', xPos, 8, logoWidth, logoHeight);
+    const base64Logo = await convertImageToBase64(logoUrl);
+    doc.addImage(base64Logo, 'PNG', xPos, 8, logoWidth, logoHeight);
   } catch (error) {
     console.warn('Failed to add logo to PDF:', error);
   }
 };
 
-const addLetterheadHeader = (
+const addLetterheadHeader = async (
   doc: jsPDF,
   brand: any,
   documentDate: string,
   documentNumber: string,
   pdfSettings: any
-): number => {
+): Promise<number> => {
   const companyFullName = brand?.company?.fullName || 'BYLROS MIDDLE EAST ALUMINUM & GLASS SYSTEM LLC';
   const companyPhone = brand?.contact?.phone || '+971 52 5458 968';
   const companyWebsite = brand?.contact?.website || 'www.bylros.ae';
@@ -45,7 +72,8 @@ const addLetterheadHeader = (
   if (pdfSettings.logo.showLogo && brand?.logos?.primary) {
     try {
       const logoUrl = brand.logos.primary;
-      doc.addImage(logoUrl, 'PNG', 14, 10, 20, 20);
+      const base64Logo = await convertImageToBase64(logoUrl);
+      doc.addImage(base64Logo, 'PNG', 14, 10, 20, 20);
     } catch (error) {
       console.warn('Failed to add logo to letterhead:', error);
     }
@@ -113,7 +141,7 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
   let contentStartY = 62;
 
   if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'letterhead') {
-    contentStartY = addLetterheadHeader(
+    contentStartY = await addLetterheadHeader(
       doc,
       brand,
       new Date(quote.created_at).toLocaleDateString(),
@@ -124,7 +152,7 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
     doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
 
-    addLogoToPDF(doc, pdfSettings, brand);
+    await addLogoToPDF(doc, pdfSettings, brand);
 
     if (pdfSettings.header.headerStyle === 'gradient') {
       doc.setDrawColor(255, 255, 255);
@@ -598,7 +626,7 @@ export const exportInvoiceToPDF = async (invoice: any, customer: any, payments: 
   let contentStartY = 62;
 
   if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'letterhead') {
-    contentStartY = addLetterheadHeader(
+    contentStartY = await addLetterheadHeader(
       doc,
       brand,
       new Date(invoice.created_at).toLocaleDateString(),
@@ -609,7 +637,7 @@ export const exportInvoiceToPDF = async (invoice: any, customer: any, payments: 
     doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
 
-    addLogoToPDF(doc, pdfSettings, brand);
+    await addLogoToPDF(doc, pdfSettings, brand);
 
     if (pdfSettings.header.headerStyle === 'gradient') {
       doc.setDrawColor(255, 255, 255);
@@ -855,7 +883,7 @@ export const exportReceiptToPDF = async (receipt: any, customer: any, invoice: a
   let contentStartY = 62;
 
   if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'letterhead') {
-    contentStartY = addLetterheadHeader(
+    contentStartY = await addLetterheadHeader(
       doc,
       brand,
       new Date(receipt.payment_date).toLocaleDateString(),
@@ -866,7 +894,7 @@ export const exportReceiptToPDF = async (receipt: any, customer: any, invoice: a
     doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
 
-    addLogoToPDF(doc, pdfSettings, brand);
+    await addLogoToPDF(doc, pdfSettings, brand);
 
     if (pdfSettings.header.headerStyle === 'gradient') {
       doc.setDrawColor(255, 255, 255);
