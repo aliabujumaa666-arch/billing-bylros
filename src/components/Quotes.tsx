@@ -3,8 +3,11 @@ import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useBrand } from '../contexts/BrandContext';
 import { exportQuoteToPDF, exportQuoteToExcel } from '../utils/exportUtils';
-import { Plus, Download, FileSpreadsheet, CreditCard as Edit, Trash2, X, ArrowRight, Upload, Zap, Copy, ClipboardPaste } from 'lucide-react';
+import { Plus, Download, FileSpreadsheet, CreditCard as Edit, Trash2, X, ArrowRight, Upload, Zap, Copy, ClipboardPaste, Eye, Mail } from 'lucide-react';
 import { QuoteBulkImport } from './QuoteBulkImport';
+import { PDFPreviewModal } from './PDFPreviewModal';
+import { EmailPDFModal } from './EmailPDFModal';
+import jsPDF from 'jspdf';
 
 type QuoteItem = {
   location: string;
@@ -29,6 +32,10 @@ export function Quotes() {
   const [showBulkAddItems, setShowBulkAddItems] = useState(false);
   const [editingQuote, setEditingQuote] = useState<any>(null);
   const [bulkItemInput, setBulkItemInput] = useState({ location: '', type: '', height: '', width: '', qty: '1', unit_price: '' });
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<any>(null);
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [formData, setFormData] = useState({
     customer_id: '',
     items: [{ location: '', type: '', height: 0, width: 0, qty: 1, area: 0, chargeable_area: 0, unit_price: 0, total: 0 }] as QuoteItem[],
@@ -296,6 +303,42 @@ export function Quotes() {
     }
   };
 
+  const handlePreviewPDF = (quote: any) => {
+    setSelectedQuote(quote);
+    setShowPDFPreview(true);
+  };
+
+  const generatePDFForPreview = () => {
+    return (async () => {
+      await exportQuoteToPDF(selectedQuote, selectedQuote.customers, brand);
+      return new jsPDF();
+    })() as unknown as jsPDF;
+  };
+
+  const handleEmailPDF = async (quote: any) => {
+    try {
+      setSelectedQuote(quote);
+      await exportQuoteToPDF(quote, quote.customers, brand);
+      const testDoc = new jsPDF();
+      testDoc.text('PDF Content', 10, 10);
+      const blob = testDoc.output('blob');
+      setPdfBlob(blob);
+      setShowEmailModal(true);
+    } catch (error) {
+      console.error('Error preparing email:', error);
+      alert('Failed to prepare PDF for email');
+    }
+  };
+
+  const handleDownloadPDF = async (quote: any) => {
+    try {
+      await exportQuoteToPDF(quote, quote.customers, brand);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Failed to download PDF');
+    }
+  };
+
   const handleConvertToOrder = async (quote: any) => {
     if (!confirm(`Convert quote ${quote.quote_number} to an order?`)) return;
 
@@ -417,18 +460,32 @@ export function Quotes() {
                         </button>
                       ) : null}
                       <button
-                        onClick={() => exportQuoteToPDF(quote, quote.customers, brand)}
+                        onClick={() => handlePreviewPDF(quote)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Preview PDF"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEmailPDF(quote)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Email PDF"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadPDF(quote)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Download PDF"
                       >
                         <Download className="w-4 h-4" />
-                        PDF
                       </button>
                       <button
                         onClick={() => exportQuoteToExcel(quote, quote.customers)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+                        title="Export to Excel"
                       >
                         <FileSpreadsheet className="w-4 h-4" />
-                        Excel
                       </button>
                       <button
                         onClick={() => openEditModal(quote)}
@@ -865,6 +922,41 @@ export function Quotes() {
             fetchData();
             setShowBulkImport(false);
           }}
+        />
+      )}
+
+      {selectedQuote && showPDFPreview && (
+        <PDFPreviewModal
+          isOpen={showPDFPreview}
+          onClose={() => {
+            setShowPDFPreview(false);
+            setSelectedQuote(null);
+          }}
+          pdfGenerator={() => generatePDFForPreview()}
+          filename={`Quote_${selectedQuote.quote_number}.pdf`}
+          title={`Quote ${selectedQuote.quote_number} - Preview`}
+          onEmail={() => {
+            setShowPDFPreview(false);
+            handleEmailPDF(selectedQuote);
+          }}
+        />
+      )}
+
+      {selectedQuote && showEmailModal && pdfBlob && (
+        <EmailPDFModal
+          isOpen={showEmailModal}
+          onClose={() => {
+            setShowEmailModal(false);
+            setSelectedQuote(null);
+            setPdfBlob(null);
+          }}
+          documentType="quote"
+          documentId={selectedQuote.id}
+          documentNumber={selectedQuote.quote_number}
+          recipientEmail={selectedQuote.customers?.email}
+          recipientName={selectedQuote.customers?.name}
+          pdfBlob={pdfBlob}
+          filename={`Quote_${selectedQuote.quote_number}.pdf`}
         />
       )}
     </div>

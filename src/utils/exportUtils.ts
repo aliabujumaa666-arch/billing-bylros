@@ -2,8 +2,31 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { getDefaultPDFSettings, hexToRgb, getFontFamily } from './pdfHelpers';
+import { addQRCodeToPDF } from './qrCodeHelper';
 
-export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
+const addLogoToPDF = (doc: jsPDF, pdfSettings: any, brand: any) => {
+  if (!pdfSettings.logo.showLogo || !brand?.logos?.primary) return;
+
+  try {
+    const logoUrl = brand.logos.primary;
+    const logoWidth = pdfSettings.logo.logoWidth;
+    const logoHeight = pdfSettings.logo.logoHeight;
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    let xPos = 14;
+    if (pdfSettings.logo.logoPosition === 'center') {
+      xPos = (pageWidth - logoWidth) / 2;
+    } else if (pdfSettings.logo.logoPosition === 'right') {
+      xPos = pageWidth - logoWidth - 14;
+    }
+
+    doc.addImage(logoUrl, 'PNG', xPos, 8, logoWidth, logoHeight);
+  } catch (error) {
+    console.warn('Failed to add logo to PDF:', error);
+  }
+};
+
+export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any) => {
   const doc = new jsPDF();
 
   const pdfSettings = brand?.pdfSettings?.quotes || brand?.pdf || getDefaultPDFSettings();
@@ -35,6 +58,8 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
   }
+
+  addLogoToPDF(doc, pdfSettings, brand);
 
   if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
     doc.setDrawColor(255, 255, 255);
@@ -383,6 +408,18 @@ export const exportQuoteToPDF = (quote: any, customer: any, brand?: any) => {
     }
   }
 
+  await addQRCodeToPDF(
+    doc,
+    'quote',
+    quote.quote_number,
+    quote.id,
+    quote.total,
+    new Date(quote.created_at).toLocaleDateString(),
+    170,
+    10,
+    25
+  );
+
   doc.save(`Quote_${quote.quote_number}.pdf`);
 };
 
@@ -432,7 +469,7 @@ export const exportQuoteToExcel = (quote: any, customer: any) => {
   XLSX.writeFile(workbook, `Quote_${quote.quote_number}.xlsx`);
 };
 
-export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[], brand?: any) => {
+export const exportInvoiceToPDF = async (invoice: any, customer: any, payments: any[], brand?: any) => {
   const doc = new jsPDF();
 
   const pdfSettings = brand?.pdfSettings?.invoices || getDefaultPDFSettings();
@@ -464,6 +501,8 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
     doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
   }
+
+  addLogoToPDF(doc, pdfSettings, brand);
 
   if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
     doc.setDrawColor(255, 255, 255);
@@ -660,10 +699,22 @@ export const exportInvoiceToPDF = (invoice: any, customer: any, payments: any[],
     }
   }
 
+  await addQRCodeToPDF(
+    doc,
+    'invoice',
+    invoice.invoice_number,
+    invoice.id,
+    invoice.total_amount,
+    new Date(invoice.created_at).toLocaleDateString(),
+    170,
+    10,
+    25
+  );
+
   doc.save(`Invoice_${invoice.invoice_number}.pdf`);
 };
 
-export const exportReceiptToPDF = (receipt: any, customer: any, invoice: any, brand?: any) => {
+export const exportReceiptToPDF = async (receipt: any, customer: any, invoice: any, brand?: any) => {
   const doc = new jsPDF();
 
   const pdfSettings = brand?.pdfSettings?.invoices || getDefaultPDFSettings();
@@ -695,6 +746,8 @@ export const exportReceiptToPDF = (receipt: any, customer: any, invoice: any, br
     doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
   }
+
+  addLogoToPDF(doc, pdfSettings, brand);
 
   if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
     doc.setDrawColor(255, 255, 255);
@@ -931,6 +984,18 @@ export const exportReceiptToPDF = (receipt: any, customer: any, invoice: any, br
       doc.text(`Receipt generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, footerY + 24, { align: 'center' });
     }
   }
+
+  await addQRCodeToPDF(
+    doc,
+    'receipt',
+    receipt.receipt_number,
+    receipt.id,
+    receipt.amount_paid,
+    new Date(receipt.payment_date).toLocaleDateString(),
+    170,
+    10,
+    25
+  );
 
   doc.save(`Receipt_${receipt.receipt_number}.pdf`);
 };
