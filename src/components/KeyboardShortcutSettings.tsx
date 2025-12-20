@@ -184,7 +184,7 @@ export function KeyboardShortcutSettings() {
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this shortcut?')) return;
+    if (!window.confirm('Are you sure you want to delete this shortcut?')) return;
 
     try {
       const { error } = await supabase

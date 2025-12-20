@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Trash2, GripVertical, ExternalLink, Save, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, GripVertical, ExternalLink, Save, ArrowUp, ArrowDown, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface MenuItem {
   label: string;
@@ -16,6 +16,8 @@ export function NavigationMenuSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [pages, setPages] = useState<any[]>([]);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetchMenus();
@@ -58,9 +60,25 @@ export function NavigationMenuSettings() {
   };
 
   const saveMenus = async () => {
+    setError('');
+    setSuccess('');
+
+    const hasEmptyLabels = [...headerMenu, ...footerMenu].some(item => !item.label.trim());
+    const hasEmptyUrls = [...headerMenu, ...footerMenu].some(item => !item.url.trim());
+
+    if (hasEmptyLabels) {
+      setError('Please fill in all menu item labels');
+      return;
+    }
+
+    if (hasEmptyUrls) {
+      setError('Please fill in all menu item URLs');
+      return;
+    }
+
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('portal_settings')
         .update({
           header_menu: headerMenu,
@@ -68,11 +86,12 @@ export function NavigationMenuSettings() {
         })
         .eq('setting_key', 'home_page');
 
-      if (error) throw error;
-      alert('Navigation menus saved successfully!');
-    } catch (error) {
-      console.error('Error saving menus:', error);
-      alert('Failed to save navigation menus');
+      if (updateError) throw updateError;
+      setSuccess('Navigation menus saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Error saving menus:', err);
+      setError('Failed to save navigation menus: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -283,9 +302,23 @@ export function NavigationMenuSettings() {
           className="flex items-center gap-2 px-6 py-2.5 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-colors disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          {saving ? 'Saving...' : 'Save Menus'}
+          {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="text-red-700">{error}</div>
+        </div>
+      )}
+
+      {success && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <div className="text-green-700">{success}</div>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-4">
