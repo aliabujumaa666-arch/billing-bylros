@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PDFSettings, DocumentType, PDFTemplate, useBrand } from '../contexts/BrandContext';
-import { Type, Palette, Layout, Image, FileText, Eye, Settings, PlusCircle, Trash2, HelpCircle, RotateCcw, Save, Sparkles, ChevronDown, ChevronUp, GripVertical, Info, Download, Upload, Copy, Layers, Star, Clock, Tag } from 'lucide-react';
+import { Type, Palette, Layout, Image, FileText, Eye, Settings, PlusCircle, Trash2, HelpCircle, RotateCcw, Save, Sparkles, ChevronDown, ChevronUp, GripVertical, Info, Download, Upload, Copy, Layers, Star, Clock, Tag, Edit } from 'lucide-react';
 import { getDefaultPDFSettings } from '../utils/pdfHelpers';
 
 interface DocumentPDFSettingsProps {
@@ -29,7 +29,9 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
   const [draggedType, setDraggedType] = useState<'remarks' | 'terms' | null>(null);
   const [templates, setTemplates] = useState<PDFTemplate[]>([]);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showCopyModal, setShowCopyModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<PDFTemplate | null>(null);
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
   const [templateTags, setTemplateTags] = useState('');
@@ -204,6 +206,45 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
         console.error('Failed to delete template:', error);
         alert('Failed to delete template. Please try again.');
       }
+    }
+  };
+
+  const handleEditTemplate = (template: PDFTemplate) => {
+    setEditingTemplate(template);
+    setTemplateName(template.name);
+    setTemplateDescription(template.description);
+    setTemplateTags(template.tags.join(', '));
+    setIsGlobalTemplate(template.is_global);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateTemplate = async () => {
+    if (!editingTemplate) return;
+
+    if (!templateName.trim()) {
+      alert('Please enter a template name');
+      return;
+    }
+
+    try {
+      const updates = {
+        name: templateName,
+        description: templateDescription,
+        tags: templateTags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        is_global: isGlobalTemplate,
+      };
+
+      await brandContext.updateTemplate(editingTemplate.id, updates);
+      await loadTemplates();
+      setShowEditModal(false);
+      setEditingTemplate(null);
+      setTemplateName('');
+      setTemplateDescription('');
+      setTemplateTags('');
+      setIsGlobalTemplate(false);
+    } catch (error) {
+      console.error('Failed to update template:', error);
+      alert('Failed to update template. Please try again.');
     }
   };
 
@@ -434,12 +475,22 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
                       Apply
                     </button>
                     {!template.is_system && (
-                      <button
-                        onClick={() => handleDeleteTemplate(template.id)}
-                        className="px-3 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleEditTemplate(template)}
+                          className="px-3 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-all"
+                          title="Edit template"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTemplate(template.id)}
+                          className="px-3 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all"
+                          title="Delete template"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -1884,6 +1935,82 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
                 className="flex-1 px-4 py-2.5 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save Template
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && editingTemplate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <Edit className="w-5 h-5 text-[#bb2738]" />
+              Edit Template
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Template Name</label>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                  placeholder="e.g., My Custom Design"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
+                <textarea
+                  value={templateDescription}
+                  onChange={(e) => setTemplateDescription(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                  rows={3}
+                  placeholder="Brief description of this template..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Tags (comma-separated)</label>
+                <input
+                  type="text"
+                  value={templateTags}
+                  onChange={(e) => setTemplateTags(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                  placeholder="e.g., professional, blue, modern"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={isGlobalTemplate}
+                  onChange={(e) => setIsGlobalTemplate(e.target.checked)}
+                  className="w-4 h-4 text-[#bb2738] border-slate-300 rounded focus:ring-[#bb2738]"
+                />
+                <label className="text-sm font-medium text-slate-700">
+                  Make this a global template (can be used for all document types)
+                </label>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingTemplate(null);
+                  setTemplateName('');
+                  setTemplateDescription('');
+                  setTemplateTags('');
+                  setIsGlobalTemplate(false);
+                }}
+                className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateTemplate}
+                disabled={!templateName.trim()}
+                className="flex-1 px-4 py-2.5 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Update Template
               </button>
             </div>
           </div>

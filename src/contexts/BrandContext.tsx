@@ -208,6 +208,7 @@ interface BrandContextType {
   updatePDFSettings: (documentType: DocumentType, settings: PDFSettings) => Promise<void>;
   loadTemplates: () => Promise<PDFTemplate[]>;
   saveTemplate: (template: Omit<PDFTemplate, 'id' | 'created_at' | 'updated_at' | 'usage_count' | 'created_by'>) => Promise<PDFTemplate>;
+  updateTemplate: (templateId: string, updates: Partial<Omit<PDFTemplate, 'id' | 'created_at' | 'updated_at' | 'usage_count' | 'created_by'>>) => Promise<void>;
   applyTemplate: (templateId: string, documentType: DocumentType) => Promise<void>;
   deleteTemplate: (templateId: string) => Promise<void>;
   copySettings: (fromType: DocumentType, toType: DocumentType) => Promise<void>;
@@ -444,6 +445,23 @@ export function BrandProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateTemplate = async (
+    templateId: string,
+    updates: Partial<Omit<PDFTemplate, 'id' | 'created_at' | 'updated_at' | 'usage_count' | 'created_by'>>
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('pdf_templates')
+        .update(updates)
+        .eq('id', templateId);
+
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Error updating template:', err);
+      throw err;
+    }
+  };
+
   const applyTemplate = async (templateId: string, documentType: DocumentType) => {
     try {
       const { data: template, error: fetchError } = await supabase
@@ -498,6 +516,7 @@ export function BrandProvider({ children }: { children: ReactNode }) {
         updatePDFSettings,
         loadTemplates,
         saveTemplate,
+        updateTemplate,
         applyTemplate,
         deleteTemplate,
         copySettings,
