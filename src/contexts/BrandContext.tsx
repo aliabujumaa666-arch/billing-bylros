@@ -152,6 +152,23 @@ interface BrandSettings {
   pdfSettings?: DocumentPDFSettings;
 }
 
+export interface PDFTemplate {
+  id: string;
+  name: string;
+  description: string;
+  document_type: DocumentType | 'global';
+  is_default: boolean;
+  is_global: boolean;
+  is_system: boolean;
+  settings: PDFSettings;
+  preview_image?: string;
+  tags: string[];
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  usage_count: number;
+}
+
 interface BrandContextType {
   brand: BrandSettings | null;
   loading: boolean;
@@ -159,6 +176,11 @@ interface BrandContextType {
   refreshBrand: () => Promise<void>;
   getPDFSettings: (documentType: DocumentType) => PDFSettings;
   updatePDFSettings: (documentType: DocumentType, settings: PDFSettings) => Promise<void>;
+  loadTemplates: () => Promise<PDFTemplate[]>;
+  saveTemplate: (template: Omit<PDFTemplate, 'id' | 'created_at' | 'updated_at' | 'usage_count' | 'created_by'>) => Promise<PDFTemplate>;
+  applyTemplate: (templateId: string, documentType: DocumentType) => Promise<void>;
+  deleteTemplate: (templateId: string) => Promise<void>;
+  copySettings: (fromType: DocumentType, toType: DocumentType) => Promise<void>;
 }
 
 const defaultBrandSettings: BrandSettings = {
@@ -350,8 +372,107 @@ export function BrandProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loadTemplates = async (): Promise<PDFTemplate[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('pdf_templates')
+        .select('*')
+        .order('is_system', { ascending: false })
+        .order('usage_count', { ascending: false });
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (err: any) {
+      console.error('Error loading templates:', err);
+      throw err;
+    }
+  };
+
+  const saveTemplate = async (
+    template: Omit<PDFTemplate, 'id' | 'created_at' | 'updated_at' | 'usage_count' | 'created_by'>
+  ): Promise<PDFTemplate> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('pdf_templates')
+        .insert({
+          ...template,
+          created_by: user.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return data;
+    } catch (err: any) {
+      console.error('Error saving template:', err);
+      throw err;
+    }
+  };
+
+  const applyTemplate = async (templateId: string, documentType: DocumentType) => {
+    try {
+      const { data: template, error: fetchError } = await supabase
+        .from('pdf_templates')
+        .select('settings')
+        .eq('id', templateId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      await supabase.rpc('increment_template_usage', { template_id: templateId });
+
+      await updatePDFSettings(documentType, template.settings as PDFSettings);
+    } catch (err: any) {
+      console.error('Error applying template:', err);
+      throw err;
+    }
+  };
+
+  const deleteTemplate = async (templateId: string) => {
+    try {
+      const { error } = await supabase
+        .from('pdf_templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Error deleting template:', err);
+      throw err;
+    }
+  };
+
+  const copySettings = async (fromType: DocumentType, toType: DocumentType) => {
+    try {
+      const settings = getPDFSettings(fromType);
+      await updatePDFSettings(toType, settings);
+    } catch (err: any) {
+      console.error('Error copying settings:', err);
+      throw err;
+    }
+  };
+
   return (
-    <BrandContext.Provider value={{ brand, loading, error, refreshBrand, getPDFSettings, updatePDFSettings }}>
+    <BrandContext.Provider
+      value={{
+        brand,
+        loading,
+        error,
+        refreshBrand,
+        getPDFSettings,
+        updatePDFSettings,
+        loadTemplates,
+        saveTemplate,
+        applyTemplate,
+        deleteTemplate,
+        copySettings,
+      }}
+    >
       {children}
     </BrandContext.Provider>
   );

@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { PDFSettings, DocumentType } from '../contexts/BrandContext';
-import { Type, Palette, Layout, Image, FileText, Eye, Settings, PlusCircle, Trash2, HelpCircle, RotateCcw, Save, Sparkles, ChevronDown, ChevronUp, GripVertical, Info } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { PDFSettings, DocumentType, PDFTemplate, useBrand } from '../contexts/BrandContext';
+import { Type, Palette, Layout, Image, FileText, Eye, Settings, PlusCircle, Trash2, HelpCircle, RotateCcw, Save, Sparkles, ChevronDown, ChevronUp, GripVertical, Info, Download, Upload, Copy, Layers, Star, Clock, Tag } from 'lucide-react';
 import { getDefaultPDFSettings } from '../utils/pdfHelpers';
 
 interface DocumentPDFSettingsProps {
@@ -19,13 +19,35 @@ interface ColorPreset {
   };
 }
 
-export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: DocumentPDFSettingsProps) {
-  const [activeTab, setActiveTab] = useState<'fonts' | 'colors' | 'layout' | 'sections' | 'advanced'>('fonts');
+export function DocumentPDFSettings({ documentType, documentLabel, settings, onUpdate }: DocumentPDFSettingsProps) {
+  const brandContext = useBrand();
+  const [activeTab, setActiveTab] = useState<'fonts' | 'colors' | 'layout' | 'sections' | 'advanced' | 'templates'>('fonts');
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [showPreview, setShowPreview] = useState(true);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [draggedType, setDraggedType] = useState<'remarks' | 'terms' | null>(null);
+  const [templates, setTemplates] = useState<PDFTemplate[]>([]);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [templateDescription, setTemplateDescription] = useState('');
+  const [templateTags, setTemplateTags] = useState('');
+  const [isGlobalTemplate, setIsGlobalTemplate] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  const loadTemplates = async () => {
+    try {
+      const data = await brandContext.loadTemplates();
+      setTemplates(data);
+    } catch (error) {
+      console.error('Failed to load templates:', error);
+    }
+  };
 
   const updateSettings = (section: keyof PDFSettings, field: string, value: any) => {
     onUpdate({
@@ -135,7 +157,110 @@ export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: Docum
     setDraggedType(null);
   };
 
+  const handleSaveTemplate = async () => {
+    try {
+      const tags = templateTags.split(',').map(tag => tag.trim()).filter(Boolean);
+      await brandContext.saveTemplate({
+        name: templateName,
+        description: templateDescription,
+        document_type: isGlobalTemplate ? 'global' : documentType,
+        is_default: false,
+        is_global: isGlobalTemplate,
+        is_system: false,
+        settings,
+        tags,
+      });
+      setShowSaveModal(false);
+      setTemplateName('');
+      setTemplateDescription('');
+      setTemplateTags('');
+      setIsGlobalTemplate(false);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+      await loadTemplates();
+    } catch (error) {
+      console.error('Failed to save template:', error);
+      alert('Failed to save template. Please try again.');
+    }
+  };
+
+  const handleApplyTemplate = async (templateId: string) => {
+    try {
+      await brandContext.applyTemplate(templateId, documentType);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Failed to apply template:', error);
+      alert('Failed to apply template. Please try again.');
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (confirm('Are you sure you want to delete this template?')) {
+      try {
+        await brandContext.deleteTemplate(templateId);
+        await loadTemplates();
+      } catch (error) {
+        console.error('Failed to delete template:', error);
+        alert('Failed to delete template. Please try again.');
+      }
+    }
+  };
+
+  const handleCopySettings = async (targetType: DocumentType) => {
+    try {
+      await brandContext.copySettings(documentType, targetType);
+      setShowCopyModal(false);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Failed to copy settings:', error);
+      alert('Failed to copy settings. Please try again.');
+    }
+  };
+
+  const handleExportSettings = () => {
+    const dataStr = JSON.stringify(settings, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${documentType}-pdf-settings.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const imported = JSON.parse(e.target?.result as string);
+        onUpdate(imported);
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      } catch (error) {
+        console.error('Failed to import settings:', error);
+        alert('Failed to import settings. Please check the file format.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const filteredTemplates = templates.filter(template => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      template.name.toLowerCase().includes(query) ||
+      template.description.toLowerCase().includes(query) ||
+      template.tags.some(tag => tag.toLowerCase().includes(query))
+    );
+  });
+
   const tabs = [
+    { id: 'templates', label: 'Templates', icon: Layers },
     { id: 'fonts', label: 'Fonts & Typography', icon: Type },
     { id: 'colors', label: 'Colors', icon: Palette },
     { id: 'layout', label: 'Layout & Spacing', icon: Layout },
@@ -173,6 +298,13 @@ export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: Docum
               </div>
             )}
             <button
+              onClick={() => setShowCopyModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all duration-200 shadow-sm hover:shadow"
+            >
+              <Copy className="w-4 h-4" />
+              <span className="text-sm font-medium hidden sm:inline">Copy Settings</span>
+            </button>
+            <button
               onClick={resetToDefaults}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all duration-200 shadow-sm hover:shadow"
             >
@@ -206,6 +338,126 @@ export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: Docum
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
+        {activeTab === 'templates' && (
+          <div className="space-y-6 p-6">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white p-2 rounded-lg shadow-sm">
+                    <Layers className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-800">PDF Templates</h3>
+                    <p className="text-sm text-slate-600">Save and reuse your PDF configurations</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleExportSettings}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="text-sm">Export JSON</span>
+                  </button>
+                  <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all cursor-pointer">
+                    <Upload className="w-4 h-4" />
+                    <span className="text-sm">Import JSON</span>
+                    <input type="file" accept=".json" onChange={handleImportSettings} className="hidden" />
+                  </label>
+                  <button
+                    onClick={() => setShowSaveModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-all shadow-sm"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span className="text-sm font-medium">Save Template</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search templates by name, description, or tags..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredTemplates.map((template) => (
+                <div
+                  key={template.id}
+                  className="border border-slate-200 rounded-lg p-4 hover:border-[#bb2738] transition-all hover:shadow-md bg-white"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-slate-800">{template.name}</h4>
+                        {template.is_system && (
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                            System
+                          </span>
+                        )}
+                        {template.is_global && (
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                            Global
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-600">{template.description}</p>
+                    </div>
+                  </div>
+
+                  {template.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {template.tags.map((tag, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mb-3">
+                    <Clock className="w-3 h-3" />
+                    <span>Used {template.usage_count} times</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleApplyTemplate(template.id)}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-all text-sm font-medium"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Apply
+                    </button>
+                    {!template.is_system && (
+                      <button
+                        onClick={() => handleDeleteTemplate(template.id)}
+                        className="px-3 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {filteredTemplates.length === 0 && (
+              <div className="text-center py-12">
+                <Layers className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-600 font-medium mb-2">No templates found</p>
+                <p className="text-sm text-slate-500">
+                  {searchQuery ? 'Try a different search term' : 'Create your first template to get started'}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'fonts' && (
           <div className="space-y-6 p-6">
             <div className="bg-gradient-to-r from-blue-50 to-slate-50 rounded-lg p-4 border border-blue-100">
@@ -1204,6 +1456,108 @@ export function DocumentPDFSettings({ documentLabel, settings, onUpdate }: Docum
           </div>
         </div>
       </div>
+
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <Save className="w-5 h-5 text-[#bb2738]" />
+              Save as Template
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Template Name</label>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                  placeholder="e.g., My Custom Design"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
+                <textarea
+                  value={templateDescription}
+                  onChange={(e) => setTemplateDescription(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                  rows={3}
+                  placeholder="Brief description of this template..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Tags (comma-separated)</label>
+                <input
+                  type="text"
+                  value={templateTags}
+                  onChange={(e) => setTemplateTags(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                  placeholder="e.g., professional, blue, modern"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={isGlobalTemplate}
+                  onChange={(e) => setIsGlobalTemplate(e.target.checked)}
+                  className="w-4 h-4 text-[#bb2738] border-slate-300 rounded focus:ring-[#bb2738]"
+                />
+                <label className="text-sm font-medium text-slate-700">
+                  Make this a global template (can be used for all document types)
+                </label>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                onClick={() => setShowSaveModal(false)}
+                className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveTemplate}
+                disabled={!templateName.trim()}
+                className="flex-1 px-4 py-2.5 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Save Template
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCopyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <Copy className="w-5 h-5 text-[#bb2738]" />
+              Copy Settings To
+            </h3>
+            <p className="text-sm text-slate-600 mb-4">
+              Copy current {documentLabel} settings to another document type
+            </p>
+            <div className="space-y-2">
+              {(['quotes', 'invoices', 'orders', 'warranties', 'siteVisits'] as DocumentType[])
+                .filter(type => type !== documentType)
+                .map(type => (
+                  <button
+                    key={type}
+                    onClick={() => handleCopySettings(type)}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg hover:border-[#bb2738] hover:bg-red-50 transition-all text-left font-medium text-slate-700 hover:text-[#bb2738]"
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+            </div>
+            <button
+              onClick={() => setShowCopyModal(false)}
+              className="w-full mt-4 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
