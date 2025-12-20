@@ -40,6 +40,8 @@ const addLetterheadHeader = (
   const companyAddress = brand?.contact?.address?.fullAddress || '599-0380 Jebel Ali Industrial Area 1, Dubai, UAE';
   const companyPOBox = brand?.contact?.poBox || '43048';
 
+  const accentRgb = hexToRgb(pdfSettings.colors.accentColor);
+
   if (pdfSettings.logo.showLogo && brand?.logos?.primary) {
     try {
       const logoUrl = brand.logos.primary;
@@ -61,7 +63,7 @@ const addLetterheadHeader = (
   doc.text(`Mobile: ${companyPhone}`, 40, 22);
   doc.text(`Website: ${companyWebsite}`, 40, 26);
 
-  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'italic');
   doc.setFontSize(7);
   doc.setTextColor(85, 85, 85);
   doc.text(`Address: ${companyAddress}`, 40, 30);
@@ -73,7 +75,7 @@ const addLetterheadHeader = (
   doc.text(`Email: ${companyEmail}`, 150, 17);
   doc.text(`P.O. Box: ${companyPOBox}`, 150, 22);
 
-  doc.setDrawColor(51, 51, 51);
+  doc.setDrawColor(accentRgb.r, accentRgb.g, accentRgb.b);
   doc.setLineWidth(0.5);
   doc.line(10, 35, 200, 35);
 

@@ -129,9 +129,9 @@ VALUES
     '{
       "fonts": {"headerFont": "helvetica", "bodyFont": "helvetica", "headerFontSize": 22, "bodyFontSize": 9, "tableFontSize": 8, "footerFontSize": 8},
       "colors": {"tableHeaderBg": "#bb2738", "tableHeaderText": "#ffffff", "tableRowAlternate": "#f8fafc", "tableBorder": "#e2e8f0", "accentColor": "#bb2738", "textPrimary": "#1e293b", "textSecondary": "#475569"},
-      "layout": {"marginTop": 10, "marginRight": 10, "marginBottom": 10, "marginLeft": 10, "headerHeight": 55, "footerHeight": 27, "contentSpacing": 8},
-      "logo": {"showLogo": true, "logoPosition": "left", "logoWidth": 40, "logoHeight": 40},
-      "header": {"showHeader": true, "headerStyle": "gradient", "showCompanyInfo": true, "headerTextColor": "#ffffff", "showTagline": true},
+      "layout": {"marginTop": 10, "marginRight": 10, "marginBottom": 10, "marginLeft": 10, "headerHeight": 42, "footerHeight": 27, "contentSpacing": 8},
+      "logo": {"showLogo": true, "logoPosition": "left", "logoWidth": 20, "logoHeight": 20},
+      "header": {"showHeader": true, "headerStyle": "letterhead", "showCompanyInfo": true, "headerTextColor": "#000000", "showTagline": false},
       "footer": {"showFooter": true, "footerText": "Thank you for your business!", "showPageNumbers": true, "showGenerationDate": true, "footerStyle": "gradient"},
       "watermark": {"enableWatermark": false, "watermarkText": "DRAFT", "watermarkOpacity": 0.1, "watermarkAngle": 45, "watermarkFontSize": 80},
       "terms": {"termsTitle": "TERMS & CONDITIONS", "termsContent": [], "termsStyle": "bordered", "showTerms": true},
