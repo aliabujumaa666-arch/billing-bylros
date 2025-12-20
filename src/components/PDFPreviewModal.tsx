@@ -5,7 +5,7 @@ import jsPDF from 'jspdf';
 interface PDFPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  pdfGenerator: () => jsPDF;
+  pdfGenerator: () => jsPDF | Promise<jsPDF>;
   filename: string;
   title: string;
   onEmail?: () => void;
@@ -29,25 +29,37 @@ export function PDFPreviewModal({ isOpen, onClose, pdfGenerator, filename, title
     };
   }, [isOpen]);
 
-  const generatePreview = () => {
+  const generatePreview = async () => {
     setLoading(true);
     try {
-      const doc = pdfGenerator();
+      const docOrPromise = pdfGenerator();
+      const doc = docOrPromise instanceof Promise ? await docOrPromise : docOrPromise;
+
+      if (!doc || typeof doc.output !== 'function') {
+        throw new Error('Invalid PDF document returned from generator');
+      }
+
       const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
     } catch (error) {
       console.error('Error generating PDF preview:', error);
-      alert('Failed to generate PDF preview');
+      alert(`Failed to generate PDF preview: ${error instanceof Error ? error.message : 'Unknown error'}`);
       onClose();
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDownload = () => {
-    const doc = pdfGenerator();
-    doc.save(filename);
+  const handleDownload = async () => {
+    try {
+      const docOrPromise = pdfGenerator();
+      const doc = docOrPromise instanceof Promise ? await docOrPromise : docOrPromise;
+      doc.save(filename);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Failed to download PDF');
+    }
   };
 
   const handlePrint = () => {

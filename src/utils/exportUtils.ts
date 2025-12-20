@@ -80,7 +80,7 @@ const addLetterheadHeader = (
   return 42;
 };
 
-export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any) => {
+export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, returnDoc: boolean = false): Promise<jsPDF | void> => {
   const doc = new jsPDF();
 
   const pdfSettings = brand?.pdfSettings?.quotes || brand?.pdf || getDefaultPDFSettings();
@@ -488,7 +488,11 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any) =
     25
   );
 
-  doc.save(`Quote_${quote.quote_number}.pdf`);
+  if (returnDoc) {
+    return doc;
+  } else {
+    doc.save(`Quote_${quote.quote_number}.pdf`);
+  }
 };
 
 export const exportQuoteToExcel = (quote: any, customer: any) => {

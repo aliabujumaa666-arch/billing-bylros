@@ -308,20 +308,27 @@ export function Quotes() {
     setShowPDFPreview(true);
   };
 
-  const generatePDFForPreview = () => {
-    return (async () => {
-      await exportQuoteToPDF(selectedQuote, selectedQuote.customers, brand);
-      return new jsPDF();
-    })() as unknown as jsPDF;
+  const generatePDFForPreview = async (): Promise<jsPDF> => {
+    try {
+      const doc = await exportQuoteToPDF(selectedQuote, selectedQuote.customers, brand, true);
+      if (!doc) {
+        throw new Error('Failed to generate PDF document');
+      }
+      return doc;
+    } catch (error) {
+      console.error('Error generating PDF for preview:', error);
+      throw error;
+    }
   };
 
   const handleEmailPDF = async (quote: any) => {
     try {
       setSelectedQuote(quote);
-      await exportQuoteToPDF(quote, quote.customers, brand);
-      const testDoc = new jsPDF();
-      testDoc.text('PDF Content', 10, 10);
-      const blob = testDoc.output('blob');
+      const doc = await exportQuoteToPDF(quote, quote.customers, brand, true);
+      if (!doc) {
+        throw new Error('Failed to generate PDF document');
+      }
+      const blob = doc.output('blob');
       setPdfBlob(blob);
       setShowEmailModal(true);
     } catch (error) {
