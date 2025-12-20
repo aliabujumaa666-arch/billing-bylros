@@ -56,10 +56,10 @@ export const getDefaultPDFSettings = (): PDFSettings => ({
   },
   header: {
     showHeader: true,
-    headerStyle: 'gradient',
+    headerStyle: 'letterhead',
     showCompanyInfo: true,
-    headerTextColor: '#ffffff',
-    showTagline: true,
+    headerTextColor: '#000000',
+    showTagline: false,
   },
   footer: {
     showFooter: true,

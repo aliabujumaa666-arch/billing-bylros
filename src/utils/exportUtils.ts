@@ -26,6 +26,60 @@ const addLogoToPDF = (doc: jsPDF, pdfSettings: any, brand: any) => {
   }
 };
 
+const addLetterheadHeader = (
+  doc: jsPDF,
+  brand: any,
+  documentDate: string,
+  documentNumber: string,
+  pdfSettings: any
+): number => {
+  const companyFullName = brand?.company?.fullName || 'BYLROS MIDDLE EAST ALUMINUM & GLASS SYSTEM LLC';
+  const companyPhone = brand?.contact?.phone || '+971 52 5458 968';
+  const companyWebsite = brand?.contact?.website || 'www.bylros.ae';
+  const companyEmail = brand?.contact?.email || 'info@bylros.com';
+  const companyAddress = brand?.contact?.address?.fullAddress || '599-0380 Jebel Ali Industrial Area 1, Dubai, UAE';
+  const companyPOBox = brand?.contact?.poBox || '43048';
+
+  if (pdfSettings.logo.showLogo && brand?.logos?.primary) {
+    try {
+      const logoUrl = brand.logos.primary;
+      doc.addImage(logoUrl, 'PNG', 14, 10, 20, 20);
+    } catch (error) {
+      console.warn('Failed to add logo to letterhead:', error);
+    }
+  }
+
+  doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
+  doc.text(companyFullName, 40, 15);
+
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(51, 51, 51);
+
+  doc.text(`Mobile: ${companyPhone}`, 40, 22);
+  doc.text(`Website: ${companyWebsite}`, 40, 26);
+
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'italic');
+  doc.setFontSize(7);
+  doc.setTextColor(85, 85, 85);
+  doc.text(`Address: ${companyAddress}`, 40, 30);
+
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(51, 51, 51);
+  doc.text(`Date: ${documentDate}`, 150, 12);
+  doc.text(`Email: ${companyEmail}`, 150, 17);
+  doc.text(`P.O. Box: ${companyPOBox}`, 150, 22);
+
+  doc.setDrawColor(51, 51, 51);
+  doc.setLineWidth(0.5);
+  doc.line(10, 35, 200, 35);
+
+  return 42;
+};
+
 export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any) => {
   const doc = new jsPDF();
 
@@ -54,111 +108,125 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any) =
     doc.restoreGraphicsState();
   }
 
-  if (pdfSettings.header.showHeader) {
+  let contentStartY = 62;
+
+  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'letterhead') {
+    contentStartY = addLetterheadHeader(
+      doc,
+      brand,
+      new Date(quote.created_at).toLocaleDateString(),
+      quote.quote_number,
+      pdfSettings
+    );
+  } else if (pdfSettings.header.showHeader) {
     doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
-  }
 
-  addLogoToPDF(doc, pdfSettings, brand);
+    addLogoToPDF(doc, pdfSettings, brand);
 
-  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
-    doc.setDrawColor(255, 255, 255);
-    doc.setLineWidth(0.5);
-    doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
-  }
-
-  if (pdfSettings.header.showHeader && pdfSettings.header.showCompanyInfo) {
-    const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
-    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
-    doc.setFontSize(32);
-    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
-    doc.text(companyName, 14, 22);
-
-    if (pdfSettings.header.showTagline) {
-      doc.setFontSize(9);
-      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
-      doc.text(tagline, 14, 29);
+    if (pdfSettings.header.headerStyle === 'gradient') {
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.5);
+      doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
     }
 
-    doc.setFontSize(8);
-    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
-    doc.text(companyFullName, 14, 37);
-    doc.text(companyAddress, 14, 42);
-    doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+    if (pdfSettings.header.showCompanyInfo) {
+      const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
+      doc.setFontSize(32);
+      doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+      doc.text(companyName, 14, 22);
+
+      if (pdfSettings.header.showTagline) {
+        doc.setFontSize(9);
+        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+        doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
+        doc.text(tagline, 14, 29);
+      }
+
+      doc.setFontSize(8);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
+      doc.text(companyFullName, 14, 37);
+      doc.text(companyAddress, 14, 42);
+      doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+    }
   }
 
   doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b, 0.1);
-  doc.roundedRect(10, 62, 190, 12, 2, 2, 'F');
+  doc.roundedRect(10, contentStartY, 190, 12, 2, 2, 'F');
 
   doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
   doc.setFontSize(22);
   doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
-  doc.text('QUOTATION', 14, 70);
+  doc.text('QUOTATION', 14, contentStartY + 8);
 
   doc.setFontSize(9);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(100, 100, 100);
-  doc.text(`Quote Reference: ${quote.quote_number}`, 140, 70, { align: 'right' });
+  doc.text(`Quote Reference: ${quote.quote_number}`, 140, contentStartY + 8, { align: 'right' });
+
+  const detailsY = contentStartY + 16;
 
   doc.setFillColor(250, 250, 251);
-  doc.roundedRect(10, 78, 90, 28, 2, 2, 'F');
+  doc.roundedRect(10, detailsY, 90, 28, 2, 2, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(10, 78, 90, 28, 2, 2, 'S');
+  doc.roundedRect(10, detailsY, 90, 28, 2, 2, 'S');
 
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text('QUOTE DETAILS', 14, 84);
+  doc.text('QUOTE DETAILS', 14, detailsY + 6);
 
   doc.setFontSize(9);
   doc.setTextColor(30, 41, 59);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-  doc.text(`Issue Date:`, 14, 91);
+  doc.text(`Issue Date:`, 14, detailsY + 13);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-  doc.text(`${new Date(quote.created_at).toLocaleDateString()}`, 42, 91);
+  doc.text(`${new Date(quote.created_at).toLocaleDateString()}`, 42, detailsY + 13);
 
   if (quote.valid_until) {
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-    doc.text(`Valid Until:`, 14, 97);
+    doc.text(`Valid Until:`, 14, detailsY + 19);
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-    doc.text(`${new Date(quote.valid_until).toLocaleDateString()}`, 42, 97);
+    doc.text(`${new Date(quote.valid_until).toLocaleDateString()}`, 42, detailsY + 19);
   }
 
   doc.setFontSize(9);
   doc.setTextColor(30, 41, 59);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-  doc.text(`Status:`, 14, 103);
+  doc.text(`Status:`, 14, detailsY + 25);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setTextColor(59, 130, 246);
-  doc.text(quote.status || 'Draft', 42, 103);
+  doc.text(quote.status || 'Draft', 42, detailsY + 25);
 
   doc.setFillColor(250, 250, 251);
-  doc.roundedRect(110, 78, 90, 28, 2, 2, 'F');
+  doc.roundedRect(110, detailsY, 90, 28, 2, 2, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(110, 78, 90, 28, 2, 2, 'S');
+  doc.roundedRect(110, detailsY, 90, 28, 2, 2, 'S');
 
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text('CUSTOMER INFORMATION', 114, 84);
+  doc.text('CUSTOMER INFORMATION', 114, detailsY + 6);
 
   doc.setFontSize(10);
   doc.setTextColor(30, 41, 59);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-  doc.text(customer.name, 114, 91);
+  doc.text(customer.name, 114, detailsY + 13);
 
   doc.setFontSize(9);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text(`📞 ${customer.phone}`, 114, 97);
-  if (customer.email) doc.text(`✉ ${customer.email}`, 114, 103);
+  doc.text(`📞 ${customer.phone}`, 114, detailsY + 19);
+  if (customer.email) doc.text(`✉ ${customer.email}`, 114, detailsY + 25);
+
+  const tableStartY = detailsY + 37;
 
   if (pdfSettings.sections.showItemsTable) {
     const textPrimaryRgb = hexToRgb(pdfSettings.colors.textPrimary);
     doc.setFontSize(10);
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
     doc.setTextColor(textPrimaryRgb.r, textPrimaryRgb.g, textPrimaryRgb.b);
-    doc.text('ITEMS & SPECIFICATIONS', 14, 115);
+    doc.text('ITEMS & SPECIFICATIONS', 14, tableStartY);
 
     const tableHeaders: string[] = [];
 
@@ -199,7 +267,7 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any) =
     const footerHeightWithMargin = pdfSettings.layout.footerHeight + 15;
 
     autoTable(doc, {
-      startY: 120,
+      startY: tableStartY + 5,
       head: [tableHeaders],
       body: tableData,
       theme: pdfSettings.table.tableStyle as any,
@@ -497,102 +565,114 @@ export const exportInvoiceToPDF = async (invoice: any, customer: any, payments: 
     doc.restoreGraphicsState();
   }
 
-  if (pdfSettings.header.showHeader) {
+  let contentStartY = 62;
+
+  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'letterhead') {
+    contentStartY = addLetterheadHeader(
+      doc,
+      brand,
+      new Date(invoice.created_at).toLocaleDateString(),
+      invoice.invoice_number,
+      pdfSettings
+    );
+  } else if (pdfSettings.header.showHeader) {
     doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
-  }
 
-  addLogoToPDF(doc, pdfSettings, brand);
+    addLogoToPDF(doc, pdfSettings, brand);
 
-  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
-    doc.setDrawColor(255, 255, 255);
-    doc.setLineWidth(0.5);
-    doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
-  }
-
-  if (pdfSettings.header.showHeader && pdfSettings.header.showCompanyInfo) {
-    const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
-    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
-    doc.setFontSize(32);
-    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
-    doc.text(companyName, 14, 22);
-
-    if (pdfSettings.header.showTagline) {
-      doc.setFontSize(9);
-      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
-      doc.text(tagline, 14, 29);
+    if (pdfSettings.header.headerStyle === 'gradient') {
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.5);
+      doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
     }
 
-    doc.setFontSize(8);
-    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
-    doc.text(companyFullName, 14, 37);
-    doc.text(companyAddress, 14, 42);
-    doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+    if (pdfSettings.header.showCompanyInfo) {
+      const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
+      doc.setFontSize(32);
+      doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+      doc.text(companyName, 14, 22);
+
+      if (pdfSettings.header.showTagline) {
+        doc.setFontSize(9);
+        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+        doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
+        doc.text(tagline, 14, 29);
+      }
+
+      doc.setFontSize(8);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
+      doc.text(companyFullName, 14, 37);
+      doc.text(companyAddress, 14, 42);
+      doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+    }
   }
 
   doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b, 0.1);
-  doc.roundedRect(10, 62, 190, 12, 2, 2, 'F');
+  doc.roundedRect(10, contentStartY, 190, 12, 2, 2, 'F');
 
   doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
   doc.setFontSize(22);
   doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
-  doc.text('INVOICE', 14, 70);
+  doc.text('INVOICE', 14, contentStartY + 8);
 
   doc.setFontSize(9);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(100, 100, 100);
-  doc.text(`Invoice Reference: ${invoice.invoice_number}`, 140, 70, { align: 'right' });
+  doc.text(`Invoice Reference: ${invoice.invoice_number}`, 140, contentStartY + 8, { align: 'right' });
+
+  const detailsY = contentStartY + 16;
 
   if (pdfSettings.sections.showQuoteDetails) {
     doc.setFillColor(250, 250, 251);
-    doc.roundedRect(10, 78, 90, 28, 2, 2, 'F');
+    doc.roundedRect(10, detailsY, 90, 28, 2, 2, 'F');
     doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(10, 78, 90, 28, 2, 2, 'S');
+    doc.roundedRect(10, detailsY, 90, 28, 2, 2, 'S');
 
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text('INVOICE DETAILS', 14, 84);
+    doc.text('INVOICE DETAILS', 14, detailsY + 6);
 
     doc.setFontSize(9);
     doc.setTextColor(30, 41, 59);
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-    doc.text(`Issue Date:`, 14, 91);
+    doc.text(`Issue Date:`, 14, detailsY + 13);
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-    doc.text(`${new Date(invoice.created_at).toLocaleDateString()}`, 42, 91);
+    doc.text(`${new Date(invoice.created_at).toLocaleDateString()}`, 42, detailsY + 13);
 
     if (invoice.due_date) {
       doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-      doc.text(`Due Date:`, 14, 97);
+      doc.text(`Due Date:`, 14, detailsY + 19);
       doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
       doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-      doc.text(`${new Date(invoice.due_date).toLocaleDateString()}`, 42, 97);
+      doc.text(`${new Date(invoice.due_date).toLocaleDateString()}`, 42, detailsY + 19);
     }
   }
 
   if (pdfSettings.sections.showCustomerInfo) {
     doc.setFillColor(250, 250, 251);
-    doc.roundedRect(110, 78, 90, 28, 2, 2, 'F');
+    doc.roundedRect(110, detailsY, 90, 28, 2, 2, 'F');
     doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(110, 78, 90, 28, 2, 2, 'S');
+    doc.roundedRect(110, detailsY, 90, 28, 2, 2, 'S');
 
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text('CUSTOMER INFORMATION', 114, 84);
+    doc.text('CUSTOMER INFORMATION', 114, detailsY + 6);
 
     doc.setFontSize(10);
     doc.setTextColor(30, 41, 59);
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-    doc.text(customer.name, 114, 91);
+    doc.text(customer.name, 114, detailsY + 13);
 
     doc.setFontSize(9);
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setTextColor(71, 85, 105);
-    doc.text(`📞 ${customer.phone}`, 114, 97);
-    if (customer.email) doc.text(`✉ ${customer.email}`, 114, 103);
+    doc.text(`📞 ${customer.phone}`, 114, detailsY + 19);
+    if (customer.email) doc.text(`✉ ${customer.email}`, 114, detailsY + 25);
   }
 
-  let yPos = 115;
+  let yPos = detailsY + 37;
 
   if (pdfSettings.sections.showTotals) {
     const textPrimaryRgb = hexToRgb(pdfSettings.colors.textPrimary);
@@ -742,101 +822,113 @@ export const exportReceiptToPDF = async (receipt: any, customer: any, invoice: a
     doc.restoreGraphicsState();
   }
 
-  if (pdfSettings.header.showHeader) {
+  let contentStartY = 62;
+
+  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'letterhead') {
+    contentStartY = addLetterheadHeader(
+      doc,
+      brand,
+      new Date(receipt.payment_date).toLocaleDateString(),
+      receipt.receipt_number,
+      pdfSettings
+    );
+  } else if (pdfSettings.header.showHeader) {
     doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
-  }
 
-  addLogoToPDF(doc, pdfSettings, brand);
+    addLogoToPDF(doc, pdfSettings, brand);
 
-  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'gradient') {
-    doc.setDrawColor(255, 255, 255);
-    doc.setLineWidth(0.5);
-    doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
-  }
-
-  if (pdfSettings.header.showHeader && pdfSettings.header.showCompanyInfo) {
-    const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
-    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
-    doc.setFontSize(32);
-    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
-    doc.text(companyName, 14, 22);
-
-    if (pdfSettings.header.showTagline) {
-      doc.setFontSize(9);
-      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
-      doc.text(tagline, 14, 29);
+    if (pdfSettings.header.headerStyle === 'gradient') {
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.5);
+      doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
     }
 
-    doc.setFontSize(8);
-    doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
-    doc.text(companyFullName, 14, 37);
-    doc.text(companyAddress, 14, 42);
-    doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+    if (pdfSettings.header.showCompanyInfo) {
+      const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
+      doc.setFontSize(32);
+      doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+      doc.text(companyName, 14, 22);
+
+      if (pdfSettings.header.showTagline) {
+        doc.setFontSize(9);
+        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+        doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
+        doc.text(tagline, 14, 29);
+      }
+
+      doc.setFontSize(8);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
+      doc.text(companyFullName, 14, 37);
+      doc.text(companyAddress, 14, 42);
+      doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+    }
   }
 
   doc.setFillColor(34, 197, 94, 0.1);
-  doc.roundedRect(10, 62, 190, 12, 2, 2, 'F');
+  doc.roundedRect(10, contentStartY, 190, 12, 2, 2, 'F');
 
   doc.setTextColor(34, 197, 94);
   doc.setFontSize(22);
   doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
-  doc.text('PAYMENT RECEIPT', 14, 70);
+  doc.text('PAYMENT RECEIPT', 14, contentStartY + 8);
 
   doc.setFontSize(9);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(100, 100, 100);
-  doc.text(`Receipt #: ${receipt.receipt_number}`, 140, 70, { align: 'right' });
+  doc.text(`Receipt #: ${receipt.receipt_number}`, 140, contentStartY + 8, { align: 'right' });
+
+  const detailsY = contentStartY + 16;
 
   doc.setFillColor(250, 250, 251);
-  doc.roundedRect(10, 78, 90, 32, 2, 2, 'F');
+  doc.roundedRect(10, detailsY, 90, 32, 2, 2, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(10, 78, 90, 32, 2, 2, 'S');
+  doc.roundedRect(10, detailsY, 90, 32, 2, 2, 'S');
 
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text('RECEIPT DETAILS', 14, 84);
+  doc.text('RECEIPT DETAILS', 14, detailsY + 6);
 
   doc.setFontSize(9);
   doc.setTextColor(30, 41, 59);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-  doc.text(`Payment Date:`, 14, 91);
+  doc.text(`Payment Date:`, 14, detailsY + 13);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-  doc.text(`${new Date(receipt.payment_date).toLocaleDateString()}`, 50, 91);
+  doc.text(`${new Date(receipt.payment_date).toLocaleDateString()}`, 50, detailsY + 13);
 
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-  doc.text(`Payment Time:`, 14, 97);
+  doc.text(`Payment Time:`, 14, detailsY + 19);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-  doc.text(`${new Date(receipt.created_at).toLocaleTimeString()}`, 50, 97);
+  doc.text(`${new Date(receipt.created_at).toLocaleTimeString()}`, 50, detailsY + 19);
 
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-  doc.text(`Payment Method:`, 14, 103);
+  doc.text(`Payment Method:`, 14, detailsY + 25);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
   doc.setTextColor(34, 197, 94);
-  doc.text(receipt.payment_method || 'N/A', 50, 103);
+  doc.text(receipt.payment_method || 'N/A', 50, detailsY + 25);
 
   doc.setFillColor(250, 250, 251);
-  doc.roundedRect(110, 78, 90, 32, 2, 2, 'F');
+  doc.roundedRect(110, detailsY, 90, 32, 2, 2, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(110, 78, 90, 32, 2, 2, 'S');
+  doc.roundedRect(110, detailsY, 90, 32, 2, 2, 'S');
 
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text('CUSTOMER INFORMATION', 114, 84);
+  doc.text('CUSTOMER INFORMATION', 114, detailsY + 6);
 
   doc.setFontSize(10);
   doc.setTextColor(30, 41, 59);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-  doc.text(customer.name, 114, 91);
+  doc.text(customer.name, 114, detailsY + 13);
 
   doc.setFontSize(9);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text(`📞 ${customer.phone}`, 114, 97);
-  if (customer.email) doc.text(`✉ ${customer.email}`, 114, 103);
+  doc.text(`📞 ${customer.phone}`, 114, detailsY + 19);
+  if (customer.email) doc.text(`✉ ${customer.email}`, 114, detailsY + 25);
 
-  let yPos = 120;
+  let yPos = detailsY + 40;
 
   doc.setFillColor(239, 246, 255);
   doc.roundedRect(10, yPos, 190, 12, 2, 2, 'F');
