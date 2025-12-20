@@ -154,74 +154,98 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
     }
   }
 
-  doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b, 0.1);
-  doc.roundedRect(10, contentStartY, 190, 12, 2, 2, 'F');
+  const titleBgRgb = hexToRgb(pdfSettings.documentTitle.backgroundColor);
+  const titleTextRgb = hexToRgb(pdfSettings.documentTitle.textColor);
 
-  doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-  doc.setFontSize(22);
-  doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
-  doc.text('QUOTATION', 14, contentStartY + 8);
+  doc.setFillColor(titleBgRgb.r, titleBgRgb.g, titleBgRgb.b, pdfSettings.documentTitle.backgroundOpacity);
+  doc.roundedRect(10, contentStartY, 190, pdfSettings.documentTitle.padding, pdfSettings.documentTitle.borderRadius, pdfSettings.documentTitle.borderRadius, 'F');
 
-  doc.setFontSize(9);
+  doc.setTextColor(titleTextRgb.r, titleTextRgb.g, titleTextRgb.b);
+  doc.setFontSize(pdfSettings.documentTitle.fontSize);
+  doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), pdfSettings.documentTitle.fontWeight);
+  doc.text(pdfSettings.documentTitle.titleText, 14, contentStartY + (pdfSettings.documentTitle.padding / 2) + 2);
+
+  if (pdfSettings.documentTitle.showReferenceNumber) {
+    doc.setFontSize(pdfSettings.documentTitle.referenceFontSize);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.setTextColor(100, 100, 100);
+    if (pdfSettings.documentTitle.referencePosition === 'right') {
+      doc.text(`Quote Reference: ${quote.quote_number}`, 196, contentStartY + (pdfSettings.documentTitle.padding / 2) + 2, { align: 'right' });
+    } else {
+      doc.text(`Quote Reference: ${quote.quote_number}`, 14, contentStartY + pdfSettings.documentTitle.padding + 4);
+    }
+  }
+
+  const detailsY = contentStartY + pdfSettings.documentTitle.padding + (pdfSettings.documentTitle.referencePosition === 'below' && pdfSettings.documentTitle.showReferenceNumber ? 8 : 4);
+
+  const boxBgRgb = hexToRgb(pdfSettings.infoBoxes.backgroundColor);
+  const boxBorderRgb = hexToRgb(pdfSettings.infoBoxes.borderColor);
+  const labelColorRgb = hexToRgb(pdfSettings.infoBoxes.labelColor);
+  const valueColorRgb = hexToRgb(pdfSettings.infoBoxes.valueColor);
+
+  const boxWidth = pdfSettings.infoBoxes.layout === 'side-by-side' ? 90 : 190;
+  const box1X = 10;
+  const box2X = pdfSettings.infoBoxes.layout === 'side-by-side' ? 110 : 10;
+  const box2Y = pdfSettings.infoBoxes.layout === 'side-by-side' ? detailsY : detailsY + 28 + pdfSettings.infoBoxes.boxSpacing;
+
+  doc.setFillColor(boxBgRgb.r, boxBgRgb.g, boxBgRgb.b);
+  doc.roundedRect(box1X, detailsY, boxWidth, 28, pdfSettings.infoBoxes.borderRadius, pdfSettings.infoBoxes.borderRadius, 'F');
+  doc.setDrawColor(boxBorderRgb.r, boxBorderRgb.g, boxBorderRgb.b);
+  doc.setLineWidth(pdfSettings.infoBoxes.borderWidth);
+  doc.roundedRect(box1X, detailsY, boxWidth, 28, pdfSettings.infoBoxes.borderRadius, pdfSettings.infoBoxes.borderRadius, 'S');
+
+  doc.setFontSize(pdfSettings.infoBoxes.labelFontSize);
+  doc.setTextColor(labelColorRgb.r, labelColorRgb.g, labelColorRgb.b);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), pdfSettings.infoBoxes.labelFontWeight);
+  doc.text('QUOTE DETAILS', box1X + pdfSettings.infoBoxes.padding, detailsY + 6);
+
+  doc.setFontSize(pdfSettings.infoBoxes.valueFontSize);
+  doc.setTextColor(valueColorRgb.r, valueColorRgb.g, valueColorRgb.b);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-  doc.setTextColor(100, 100, 100);
-  doc.text(`Quote Reference: ${quote.quote_number}`, 140, contentStartY + 8, { align: 'right' });
-
-  const detailsY = contentStartY + 16;
-
-  doc.setFillColor(250, 250, 251);
-  doc.roundedRect(10, detailsY, 90, 28, 2, 2, 'F');
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(10, detailsY, 90, 28, 2, 2, 'S');
-
-  doc.setFontSize(8);
-  doc.setTextColor(100, 116, 139);
-  doc.text('QUOTE DETAILS', 14, detailsY + 6);
-
-  doc.setFontSize(9);
-  doc.setTextColor(30, 41, 59);
-  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-  doc.text(`Issue Date:`, 14, detailsY + 13);
-  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-  doc.text(`${new Date(quote.created_at).toLocaleDateString()}`, 42, detailsY + 13);
+  doc.text(`Issue Date:`, box1X + pdfSettings.infoBoxes.padding, detailsY + 13);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), pdfSettings.infoBoxes.valueFontWeight);
+  doc.text(`${new Date(quote.created_at).toLocaleDateString()}`, box1X + pdfSettings.infoBoxes.padding + 28, detailsY + 13);
 
   if (quote.valid_until) {
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-    doc.text(`Valid Until:`, 14, detailsY + 19);
-    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.text(`Valid Until:`, box1X + pdfSettings.infoBoxes.padding, detailsY + 19);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), pdfSettings.infoBoxes.valueFontWeight);
     doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
-    doc.text(`${new Date(quote.valid_until).toLocaleDateString()}`, 42, detailsY + 19);
+    doc.text(`${new Date(quote.valid_until).toLocaleDateString()}`, box1X + pdfSettings.infoBoxes.padding + 28, detailsY + 19);
   }
 
-  doc.setFontSize(9);
-  doc.setTextColor(30, 41, 59);
+  doc.setFontSize(pdfSettings.infoBoxes.valueFontSize);
+  doc.setTextColor(valueColorRgb.r, valueColorRgb.g, valueColorRgb.b);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-  doc.text(`Status:`, 14, detailsY + 25);
-  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.text(`Status:`, box1X + pdfSettings.infoBoxes.padding, detailsY + 25);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), pdfSettings.infoBoxes.valueFontWeight);
   doc.setTextColor(59, 130, 246);
-  doc.text(quote.status || 'Draft', 42, detailsY + 25);
+  doc.text(quote.status || 'Draft', box1X + pdfSettings.infoBoxes.padding + 28, detailsY + 25);
 
-  doc.setFillColor(250, 250, 251);
-  doc.roundedRect(110, detailsY, 90, 28, 2, 2, 'F');
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(110, detailsY, 90, 28, 2, 2, 'S');
+  doc.setFillColor(boxBgRgb.r, boxBgRgb.g, boxBgRgb.b);
+  doc.roundedRect(box2X, box2Y, boxWidth, 28, pdfSettings.infoBoxes.borderRadius, pdfSettings.infoBoxes.borderRadius, 'F');
+  doc.setDrawColor(boxBorderRgb.r, boxBorderRgb.g, boxBorderRgb.b);
+  doc.setLineWidth(pdfSettings.infoBoxes.borderWidth);
+  doc.roundedRect(box2X, box2Y, boxWidth, 28, pdfSettings.infoBoxes.borderRadius, pdfSettings.infoBoxes.borderRadius, 'S');
 
-  doc.setFontSize(8);
-  doc.setTextColor(100, 116, 139);
-  doc.text('CUSTOMER INFORMATION', 114, detailsY + 6);
+  doc.setFontSize(pdfSettings.infoBoxes.labelFontSize);
+  doc.setTextColor(labelColorRgb.r, labelColorRgb.g, labelColorRgb.b);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), pdfSettings.infoBoxes.labelFontWeight);
+  doc.text('CUSTOMER INFORMATION', box2X + pdfSettings.infoBoxes.padding, box2Y + 6);
 
-  doc.setFontSize(10);
-  doc.setTextColor(30, 41, 59);
-  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-  doc.text(customer.name, 114, detailsY + 13);
+  doc.setFontSize(pdfSettings.infoBoxes.valueFontSize + 1);
+  doc.setTextColor(valueColorRgb.r, valueColorRgb.g, valueColorRgb.b);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), pdfSettings.infoBoxes.valueFontWeight);
+  doc.text(customer.name, box2X + pdfSettings.infoBoxes.padding, box2Y + 13);
 
-  doc.setFontSize(9);
+  doc.setFontSize(pdfSettings.infoBoxes.valueFontSize);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-  doc.setTextColor(71, 85, 105);
-  doc.text(`📞 ${customer.phone}`, 114, detailsY + 19);
-  if (customer.email) doc.text(`✉ ${customer.email}`, 114, detailsY + 25);
+  const phonePrefix = pdfSettings.infoBoxes.showIcons ? '📞 ' : '';
+  const emailPrefix = pdfSettings.infoBoxes.showIcons ? '✉ ' : '';
+  doc.text(`${phonePrefix}${customer.phone}`, box2X + pdfSettings.infoBoxes.padding, box2Y + 19);
+  if (customer.email) doc.text(`${emailPrefix}${customer.email}`, box2X + pdfSettings.infoBoxes.padding, box2Y + 25);
 
-  const tableStartY = detailsY + 37;
+  const tableStartY = pdfSettings.infoBoxes.layout === 'side-by-side' ? detailsY + 37 : box2Y + 37;
 
   if (pdfSettings.sections.showItemsTable) {
     const textPrimaryRgb = hexToRgb(pdfSettings.colors.textPrimary);

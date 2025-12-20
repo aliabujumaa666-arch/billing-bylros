@@ -136,7 +136,9 @@ VALUES
       "watermark": {"enableWatermark": false, "watermarkText": "DRAFT", "watermarkOpacity": 0.1, "watermarkAngle": 45, "watermarkFontSize": 80},
       "terms": {"termsTitle": "TERMS & CONDITIONS", "termsContent": [], "termsStyle": "bordered", "showTerms": true},
       "sections": {"showQuoteDetails": true, "showCustomerInfo": true, "showItemsTable": true, "showTotals": true, "showRemarks": true, "showTerms": true},
-      "table": {"showItemNumbers": true, "showLocation": true, "showType": true, "showDimensions": true, "showQuantity": true, "showArea": true, "showChargeableArea": true, "showUnitPrice": true, "showTotal": true, "tableStyle": "striped", "headerAlignment": "center", "numberAlignment": "center", "textAlignment": "left", "amountAlignment": "right"}
+      "table": {"showItemNumbers": true, "showLocation": true, "showType": true, "showDimensions": true, "showQuantity": true, "showArea": true, "showChargeableArea": true, "showUnitPrice": true, "showTotal": true, "tableStyle": "striped", "headerAlignment": "center", "numberAlignment": "center", "textAlignment": "left", "amountAlignment": "right"},
+      "documentTitle": {"fontSize": 22, "fontWeight": "bold", "textColor": "#bb2738", "backgroundColor": "#bb2738", "backgroundOpacity": 0.1, "borderRadius": 2, "padding": 12, "showReferenceNumber": true, "referencePosition": "right", "referenceFontSize": 9, "titleText": "QUOTATION"},
+      "infoBoxes": {"backgroundColor": "#fafbfc", "borderColor": "#e2e8f0", "borderWidth": 1, "borderRadius": 2, "padding": 4, "labelColor": "#64748b", "labelFontSize": 8, "labelFontWeight": "normal", "valueColor": "#1e293b", "valueFontSize": 9, "valueFontWeight": "bold", "boxSpacing": 10, "boxShadow": false, "layout": "side-by-side", "showIcons": false}
     }'::jsonb,
     ARRAY['professional', 'red', 'corporate', 'default'],
     NULL

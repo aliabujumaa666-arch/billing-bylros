@@ -985,6 +985,369 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
                 </div>
               </div>
             </div>
+
+            <div className="border-t border-slate-300 pt-6 mt-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#bb2738]" />
+                Document Title Section
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <h4 className="font-medium text-slate-700">Title Text & Style</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Title Text</label>
+                      <input
+                        type="text"
+                        value={settings.documentTitle.titleText}
+                        onChange={(e) => updateSettings('documentTitle', 'titleText', e.target.value)}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                        placeholder="QUOTATION"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Font Size: {settings.documentTitle.fontSize}pt</label>
+                      <input
+                        type="range"
+                        min="12"
+                        max="36"
+                        value={settings.documentTitle.fontSize}
+                        onChange={(e) => updateSettings('documentTitle', 'fontSize', parseInt(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#bb2738]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Font Weight</label>
+                      <select
+                        value={settings.documentTitle.fontWeight}
+                        onChange={(e) => updateSettings('documentTitle', 'fontWeight', e.target.value as any)}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                      >
+                        <option value="normal">Normal</option>
+                        <option value="bold">Bold</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <h4 className="font-medium text-slate-700">Background & Colors</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Text Color</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={settings.documentTitle.textColor}
+                          onChange={(e) => updateSettings('documentTitle', 'textColor', e.target.value)}
+                          className="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={settings.documentTitle.textColor}
+                          onChange={(e) => updateSettings('documentTitle', 'textColor', e.target.value)}
+                          className="flex-1 px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Background Color</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={settings.documentTitle.backgroundColor}
+                          onChange={(e) => updateSettings('documentTitle', 'backgroundColor', e.target.value)}
+                          className="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={settings.documentTitle.backgroundColor}
+                          onChange={(e) => updateSettings('documentTitle', 'backgroundColor', e.target.value)}
+                          className="flex-1 px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Background Opacity: {Math.round(settings.documentTitle.backgroundOpacity * 100)}%</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={settings.documentTitle.backgroundOpacity}
+                        onChange={(e) => updateSettings('documentTitle', 'backgroundOpacity', parseFloat(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#bb2738]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <h4 className="font-medium text-slate-700">Reference Number</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={settings.documentTitle.showReferenceNumber}
+                        onChange={(e) => updateSettings('documentTitle', 'showReferenceNumber', e.target.checked)}
+                        className="w-4 h-4 text-[#bb2738] border-slate-300 rounded focus:ring-[#bb2738]"
+                      />
+                      <label className="text-sm font-medium text-slate-700">Show Reference Number</label>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Reference Position</label>
+                      <select
+                        value={settings.documentTitle.referencePosition}
+                        onChange={(e) => updateSettings('documentTitle', 'referencePosition', e.target.value as any)}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                        disabled={!settings.documentTitle.showReferenceNumber}
+                      >
+                        <option value="right">Right (Same Line)</option>
+                        <option value="below">Below Title</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Reference Font Size: {settings.documentTitle.referenceFontSize}pt</label>
+                      <input
+                        type="range"
+                        min="6"
+                        max="16"
+                        value={settings.documentTitle.referenceFontSize}
+                        onChange={(e) => updateSettings('documentTitle', 'referenceFontSize', parseInt(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#bb2738]"
+                        disabled={!settings.documentTitle.showReferenceNumber}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <h4 className="font-medium text-slate-700">Layout Settings</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Border Radius: {settings.documentTitle.borderRadius}mm</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        value={settings.documentTitle.borderRadius}
+                        onChange={(e) => updateSettings('documentTitle', 'borderRadius', parseInt(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#bb2738]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Padding: {settings.documentTitle.padding}mm</label>
+                      <input
+                        type="range"
+                        min="6"
+                        max="24"
+                        value={settings.documentTitle.padding}
+                        onChange={(e) => updateSettings('documentTitle', 'padding', parseInt(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#bb2738]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-300 pt-6 mt-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <Layout className="w-5 h-5 text-[#bb2738]" />
+                Info Boxes (Quote Details & Customer Info)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <h4 className="font-medium text-slate-700">Box Layout</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Layout Style</label>
+                      <select
+                        value={settings.infoBoxes.layout}
+                        onChange={(e) => updateSettings('infoBoxes', 'layout', e.target.value as any)}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                      >
+                        <option value="side-by-side">Side by Side</option>
+                        <option value="stacked">Stacked (Vertical)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Box Spacing: {settings.infoBoxes.boxSpacing}mm</label>
+                      <input
+                        type="range"
+                        min="2"
+                        max="20"
+                        value={settings.infoBoxes.boxSpacing}
+                        onChange={(e) => updateSettings('infoBoxes', 'boxSpacing', parseInt(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#bb2738]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={settings.infoBoxes.showIcons}
+                        onChange={(e) => updateSettings('infoBoxes', 'showIcons', e.target.checked)}
+                        className="w-4 h-4 text-[#bb2738] border-slate-300 rounded focus:ring-[#bb2738]"
+                      />
+                      <label className="text-sm font-medium text-slate-700">Show Icons (📞, ✉)</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <h4 className="font-medium text-slate-700">Box Styling</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Background Color</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={settings.infoBoxes.backgroundColor}
+                          onChange={(e) => updateSettings('infoBoxes', 'backgroundColor', e.target.value)}
+                          className="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={settings.infoBoxes.backgroundColor}
+                          onChange={(e) => updateSettings('infoBoxes', 'backgroundColor', e.target.value)}
+                          className="flex-1 px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Border Color</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={settings.infoBoxes.borderColor}
+                          onChange={(e) => updateSettings('infoBoxes', 'borderColor', e.target.value)}
+                          className="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={settings.infoBoxes.borderColor}
+                          onChange={(e) => updateSettings('infoBoxes', 'borderColor', e.target.value)}
+                          className="flex-1 px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Border Width: {settings.infoBoxes.borderWidth}px</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="4"
+                        step="0.5"
+                        value={settings.infoBoxes.borderWidth}
+                        onChange={(e) => updateSettings('infoBoxes', 'borderWidth', parseFloat(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#bb2738]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Border Radius: {settings.infoBoxes.borderRadius}mm</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        value={settings.infoBoxes.borderRadius}
+                        onChange={(e) => updateSettings('infoBoxes', 'borderRadius', parseInt(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#bb2738]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <h4 className="font-medium text-slate-700">Label Text</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Label Color</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={settings.infoBoxes.labelColor}
+                          onChange={(e) => updateSettings('infoBoxes', 'labelColor', e.target.value)}
+                          className="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={settings.infoBoxes.labelColor}
+                          onChange={(e) => updateSettings('infoBoxes', 'labelColor', e.target.value)}
+                          className="flex-1 px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Label Font Size: {settings.infoBoxes.labelFontSize}pt</label>
+                      <input
+                        type="range"
+                        min="6"
+                        max="14"
+                        value={settings.infoBoxes.labelFontSize}
+                        onChange={(e) => updateSettings('infoBoxes', 'labelFontSize', parseInt(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#bb2738]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Label Font Weight</label>
+                      <select
+                        value={settings.infoBoxes.labelFontWeight}
+                        onChange={(e) => updateSettings('infoBoxes', 'labelFontWeight', e.target.value as any)}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                      >
+                        <option value="normal">Normal</option>
+                        <option value="bold">Bold</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <h4 className="font-medium text-slate-700">Value Text</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Value Color</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={settings.infoBoxes.valueColor}
+                          onChange={(e) => updateSettings('infoBoxes', 'valueColor', e.target.value)}
+                          className="w-12 h-10 border border-slate-300 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={settings.infoBoxes.valueColor}
+                          onChange={(e) => updateSettings('infoBoxes', 'valueColor', e.target.value)}
+                          className="flex-1 px-4 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Value Font Size: {settings.infoBoxes.valueFontSize}pt</label>
+                      <input
+                        type="range"
+                        min="6"
+                        max="14"
+                        value={settings.infoBoxes.valueFontSize}
+                        onChange={(e) => updateSettings('infoBoxes', 'valueFontSize', parseInt(e.target.value))}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#bb2738]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Value Font Weight</label>
+                      <select
+                        value={settings.infoBoxes.valueFontWeight}
+                        onChange={(e) => updateSettings('infoBoxes', 'valueFontWeight', e.target.value as any)}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                      >
+                        <option value="normal">Normal</option>
+                        <option value="bold">Bold</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1103,6 +1466,7 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
                       <option value="simple">Simple</option>
                       <option value="gradient">Gradient</option>
                       <option value="bordered">Bordered</option>
+                      <option value="letterhead">Letterhead</option>
                     </select>
                   </div>
                   <div className="flex items-center gap-2">

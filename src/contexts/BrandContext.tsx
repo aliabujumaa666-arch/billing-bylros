@@ -37,7 +37,7 @@ export interface PDFSettings {
   };
   header: {
     showHeader: boolean;
-    headerStyle: 'simple' | 'gradient' | 'bordered';
+    headerStyle: 'simple' | 'gradient' | 'bordered' | 'letterhead';
     showCompanyInfo: boolean;
     headerTextColor: string;
     showTagline: boolean;
@@ -90,6 +90,36 @@ export interface PDFSettings {
     numberAlignment: 'left' | 'center' | 'right';
     textAlignment: 'left' | 'center' | 'right';
     amountAlignment: 'left' | 'center' | 'right';
+  };
+  documentTitle: {
+    fontSize: number;
+    fontWeight: 'normal' | 'bold';
+    textColor: string;
+    backgroundColor: string;
+    backgroundOpacity: number;
+    borderRadius: number;
+    padding: number;
+    showReferenceNumber: boolean;
+    referencePosition: 'right' | 'below';
+    referenceFontSize: number;
+    titleText: string;
+  };
+  infoBoxes: {
+    backgroundColor: string;
+    borderColor: string;
+    borderWidth: number;
+    borderRadius: number;
+    padding: number;
+    labelColor: string;
+    labelFontSize: number;
+    labelFontWeight: 'normal' | 'bold';
+    valueColor: string;
+    valueFontSize: number;
+    valueFontWeight: 'normal' | 'bold';
+    boxSpacing: number;
+    boxShadow: boolean;
+    layout: 'side-by-side' | 'stacked';
+    showIcons: boolean;
   };
 }
 
