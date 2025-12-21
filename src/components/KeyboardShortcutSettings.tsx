@@ -118,6 +118,28 @@ export function KeyboardShortcutSettings() {
       return;
     }
 
+    const reservedShortcuts = [
+      { key: 'c', ctrl: true, description: 'Ctrl+C (Copy)' },
+      { key: 'v', ctrl: true, description: 'Ctrl+V (Paste)' },
+      { key: 'x', ctrl: true, description: 'Ctrl+X (Cut)' },
+    ];
+
+    const isReserved = reservedShortcuts.some(
+      reserved =>
+        formData.shortcut_key.toLowerCase() === reserved.key &&
+        formData.ctrl_key === reserved.ctrl &&
+        !formData.shift_key &&
+        !formData.alt_key
+    );
+
+    if (isReserved) {
+      const reserved = reservedShortcuts.find(
+        r => formData.shortcut_key.toLowerCase() === r.key && formData.ctrl_key
+      );
+      showError(`${reserved?.description} is a reserved system shortcut and cannot be used`);
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
