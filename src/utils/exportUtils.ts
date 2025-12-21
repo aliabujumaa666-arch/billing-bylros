@@ -122,14 +122,14 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
   const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
 
   const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
   if (pdfSettings.watermark.enableWatermark) {
     doc.saveGraphicsState();
     doc.setTextColor(128, 128, 128);
     doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
     doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
     doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
       align: 'center',
       angle: pdfSettings.watermark.watermarkAngle,
@@ -349,7 +349,6 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
   }
 
   let finalY = (doc as any).lastAutoTable.finalY + 8;
-  const pageHeight = doc.internal.pageSize.getHeight();
   const footerHeightWithMargin = pdfSettings.layout.footerHeight + 15;
 
   if (finalY > pageHeight - footerHeightWithMargin - 60) {
@@ -612,14 +611,14 @@ export const exportInvoiceToPDF = async (invoice: any, customer: any, payments: 
   const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
 
   const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
   if (pdfSettings.watermark.enableWatermark) {
     doc.saveGraphicsState();
     doc.setTextColor(128, 128, 128);
     doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
     doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
     doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
       align: 'center',
       angle: pdfSettings.watermark.watermarkAngle,
@@ -875,14 +874,14 @@ export const exportReceiptToPDF = async (receipt: any, customer: any, invoice: a
   const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
 
   const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
   if (pdfSettings.watermark.enableWatermark) {
     doc.saveGraphicsState();
     doc.setTextColor(128, 128, 128);
     doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
     doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
     doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
       align: 'center',
       angle: pdfSettings.watermark.watermarkAngle,
