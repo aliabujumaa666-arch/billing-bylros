@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Package, CreditCard as Edit, Trash2, X, ArrowRight, Download } from 'lucide-react';
+import { Plus, Package, CreditCard as Edit, Trash2, X, ArrowRight, Download, Workflow } from 'lucide-react';
 import { exportOrderToPDF } from '../utils/exportUtils';
 import { useBrand } from '../contexts/BrandContext';
 
@@ -121,6 +121,26 @@ export function Orders() {
     }
   };
 
+  const handleCreateWorkflow = async (order: any) => {
+    try {
+      const { data, error } = await supabase.rpc('create_workflow_for_order', {
+        p_order_id: order.id
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        alert(`Production workflow created for order ${order.order_number}!`);
+        fetchData();
+      } else {
+        alert(data?.message || 'Workflow already exists for this order');
+      }
+    } catch (error) {
+      console.error('Error creating workflow:', error);
+      alert('Failed to create workflow');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       customer_id: '',
@@ -229,6 +249,13 @@ export function Orders() {
                         title="Download PDF"
                       >
                         <Download className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleCreateWorkflow(order)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Create Production Workflow"
+                      >
+                        <Workflow className="w-4 h-4" />
                       </button>
                       {(order.status === 'Delivered' || order.status === 'Installed') && (
                         <button

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Search, Filter, CheckCircle, Clock, AlertCircle, XCircle, User } from 'lucide-react';
+import { Search, Filter, CheckCircle, Clock, AlertCircle, XCircle, User, Plus } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -55,10 +55,13 @@ export function ProductionWorkflow() {
     assignedTo: '',
   });
   const [users, setUsers] = useState<{ id: string; email: string }[]>([]);
+  const [ordersWithoutWorkflows, setOrdersWithoutWorkflows] = useState<any[]>([]);
+  const [showOrdersWithoutWorkflows, setShowOrdersWithoutWorkflows] = useState(false);
 
   useEffect(() => {
     loadWorkflows();
     loadUsers();
+    loadOrdersWithoutWorkflows();
   }, []);
 
   const loadWorkflows = async () => {
@@ -92,6 +95,51 @@ export function ProductionWorkflow() {
       setUsers(data.users.map(u => ({ id: u.id, email: u.email || '' })));
     } catch (error) {
       console.error('Error loading users:', error);
+    }
+  };
+
+  const loadOrdersWithoutWorkflows = async () => {
+    try {
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, order_number, customer_name, order_date, status')
+        .order('created_at', { ascending: false });
+
+      if (ordersError) throw ordersError;
+
+      const { data: workflows, error: workflowsError } = await supabase
+        .from('production_workflows')
+        .select('order_id');
+
+      if (workflowsError) throw workflowsError;
+
+      const workflowOrderIds = new Set(workflows?.map(w => w.order_id) || []);
+      const ordersWithout = orders?.filter(order => !workflowOrderIds.has(order.id)) || [];
+
+      setOrdersWithoutWorkflows(ordersWithout);
+    } catch (error) {
+      console.error('Error loading orders without workflows:', error);
+    }
+  };
+
+  const handleCreateWorkflowForOrder = async (orderId: string, orderNumber: string) => {
+    try {
+      const { data, error } = await supabase.rpc('create_workflow_for_order', {
+        p_order_id: orderId
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        alert(`Production workflow created for order ${orderNumber}!`);
+        loadWorkflows();
+        loadOrdersWithoutWorkflows();
+      } else {
+        alert(data?.message || 'Workflow already exists for this order');
+      }
+    } catch (error) {
+      console.error('Error creating workflow:', error);
+      alert('Failed to create workflow');
     }
   };
 
@@ -201,6 +249,15 @@ export function ProductionWorkflow() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-slate-800">Production Workflow</h2>
+        {ordersWithoutWorkflows.length > 0 && (
+          <button
+            onClick={() => setShowOrdersWithoutWorkflows(!showOrdersWithoutWorkflows)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            {showOrdersWithoutWorkflows ? 'Hide' : `Show ${ordersWithoutWorkflows.length} Order${ordersWithoutWorkflows.length !== 1 ? 's' : ''} Without Workflow`}
+          </button>
+        )}
       </div>
 
       <div className="flex gap-4">
@@ -233,6 +290,29 @@ export function ProductionWorkflow() {
           </select>
         </div>
       </div>
+
+      {showOrdersWithoutWorkflows && ordersWithoutWorkflows.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">Orders Without Production Workflow</h3>
+          <div className="space-y-2">
+            {ordersWithoutWorkflows.map(order => (
+              <div key={order.id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-blue-100">
+                <div className="flex-1">
+                  <div className="font-medium text-slate-800">{order.order_number}</div>
+                  <div className="text-sm text-slate-600">{order.customer_name} • {new Date(order.order_date).toLocaleDateString()}</div>
+                </div>
+                <button
+                  onClick={() => handleCreateWorkflowForOrder(order.id, order.order_number)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Workflow
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
