@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import {
   Save, Eye, Plus, Trash2, Settings, CreditCard, Building2, Mail,
   Keyboard, Menu, Search, ChevronLeft, ChevronRight, X, AlertCircle,
-  CheckCircle, FileText, Globe, Palette, Phone, Upload, GripVertical,
+  CheckCircle, FileText, Phone, GripVertical,
   Monitor, Smartphone, Home, Info
 } from 'lucide-react';
 import { PayPalSettings } from './PayPalSettings';
