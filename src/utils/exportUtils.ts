@@ -269,10 +269,8 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
 
   doc.setFontSize(pdfSettings.infoBoxes.valueFontSize);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-  const phonePrefix = pdfSettings.infoBoxes.showIcons ? '📞 ' : '';
-  const emailPrefix = pdfSettings.infoBoxes.showIcons ? '✉ ' : '';
-  doc.text(`${phonePrefix}${customer.phone}`, box2X + pdfSettings.infoBoxes.padding, box2Y + 19);
-  if (customer.email) doc.text(`${emailPrefix}${customer.email}`, box2X + pdfSettings.infoBoxes.padding, box2Y + 25);
+  doc.text(customer.phone, box2X + pdfSettings.infoBoxes.padding, box2Y + 19);
+  if (customer.email) doc.text(customer.email, box2X + pdfSettings.infoBoxes.padding, box2Y + 25);
 
   const tableStartY = pdfSettings.infoBoxes.layout === 'side-by-side' ? detailsY + 37 : box2Y + 37;
 
@@ -733,8 +731,8 @@ export const exportInvoiceToPDF = async (invoice: any, customer: any, payments: 
     doc.setFontSize(9);
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.setTextColor(71, 85, 105);
-    doc.text(`📞 ${customer.phone}`, 114, detailsY + 19);
-    if (customer.email) doc.text(`✉ ${customer.email}`, 114, detailsY + 25);
+    doc.text(customer.phone, 114, detailsY + 19);
+    if (customer.email) doc.text(customer.email, 114, detailsY + 25);
   }
 
   let yPos = detailsY + 37;
@@ -996,8 +994,8 @@ export const exportReceiptToPDF = async (receipt: any, customer: any, invoice: a
   doc.setFontSize(9);
   doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
   doc.setTextColor(71, 85, 105);
-  doc.text(`📞 ${customer.phone}`, 114, detailsY + 19);
-  if (customer.email) doc.text(`✉ ${customer.email}`, 114, detailsY + 25);
+  doc.text(customer.phone, 114, detailsY + 19);
+  if (customer.email) doc.text(customer.email, 114, detailsY + 25);
 
   let yPos = detailsY + 40;
 
