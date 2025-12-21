@@ -36,12 +36,19 @@ export function Quotes() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+
+  const getValidUntilDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    return date.toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState({
     customer_id: '',
     items: [{ location: '', type: '', height: 0, width: 0, qty: 1, area: 0, chargeable_area: 0, unit_price: 0, total: 0 }] as QuoteItem[],
     remarks: '',
     status: 'Draft',
-    valid_until: '',
+    valid_until: getValidUntilDate(),
     minimum_chargeable_area: 1.0,
     discount_type: 'none' as 'none' | 'percentage' | 'fixed',
     discount_value: 0,
@@ -376,7 +383,7 @@ export function Quotes() {
       items: [{ location: '', type: '', height: 0, width: 0, qty: 1, area: 0, chargeable_area: 0, unit_price: 0, total: 0 }],
       remarks: '',
       status: 'Draft',
-      valid_until: '',
+      valid_until: getValidUntilDate(),
       minimum_chargeable_area: 1.0,
       discount_type: 'none',
       discount_value: 0,
@@ -391,7 +398,7 @@ export function Quotes() {
       items: quote.items && quote.items.length > 0 ? quote.items : [{ location: '', type: '', height: 0, width: 0, qty: 1, area: 0, chargeable_area: 0, unit_price: 0, total: 0 }],
       remarks: quote.remarks || '',
       status: quote.status,
-      valid_until: quote.valid_until || '',
+      valid_until: quote.valid_until || getValidUntilDate(),
       minimum_chargeable_area: quote.minimum_chargeable_area || 1.0,
       discount_type: quote.discount_type || 'none',
       discount_value: quote.discount_value || 0,
