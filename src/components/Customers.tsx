@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '../contexts/ToastContext';
-import { Plus, Search, CreditCard as Edit, Trash2, X, Upload, Download, Paperclip, MessageCircle } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, X, Upload, Download, Paperclip, MessageCircle, Mail } from 'lucide-react';
 import { CustomerBulkImport } from './CustomerBulkImport';
 import { CustomerAttachments } from './CustomerAttachments';
 import { WhatsAppDirectChat } from './WhatsAppDirectChat';
@@ -32,6 +32,9 @@ export function Customers() {
   const [showWhatsAppChat, setShowWhatsAppChat] = useState(false);
   const [showWhatsAppPopup, setShowWhatsAppPopup] = useState(false);
   const [whatsappMessage, setWhatsappMessage] = useState('');
+  const [showEmailPopup, setShowEmailPopup] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -249,6 +252,22 @@ export function Customers() {
     setSelectedCustomer(null);
   };
 
+  const handleEmailSend = () => {
+    if (!selectedCustomer || !selectedCustomer.email) return;
+
+    const encodedSubject = encodeURIComponent(emailSubject);
+    const encodedBody = encodeURIComponent(emailBody);
+
+    const mailtoUrl = `mailto:${selectedCustomer.email}${emailSubject || emailBody ? '?' : ''}${emailSubject ? `subject=${encodedSubject}` : ''}${emailSubject && emailBody ? '&' : ''}${emailBody ? `body=${encodedBody}` : ''}`;
+
+    window.location.href = mailtoUrl;
+
+    setShowEmailPopup(false);
+    setEmailSubject('');
+    setEmailBody('');
+    setSelectedCustomer(null);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -379,9 +398,24 @@ export function Customers() {
                         <MessageCircle className="w-4 h-4" />
                         WhatsApp
                       </button>
+                      {customer.email && (
+                        <button
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setEmailSubject('');
+                            setEmailBody('');
+                            setShowEmailPopup(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Send Email"
+                        >
+                          <Mail className="w-4 h-4" />
+                          Email
+                        </button>
+                      )}
                       <button
                         onClick={() => openEditModal(customer)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                       >
                         <Edit className="w-4 h-4" />
                         {t('common.edit')}
@@ -593,6 +627,85 @@ export function Customers() {
               >
                 <MessageCircle className="w-4 h-4" />
                 Open WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEmailPopup && selectedCustomer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+            <div className="flex justify-between items-center p-6 border-b border-slate-200">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Send Email</h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  To: {selectedCustomer.name} ({selectedCustomer.email})
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowEmailPopup(false);
+                  setEmailSubject('');
+                  setEmailBody('');
+                  setSelectedCustomer(null);
+                }}
+                className="p-2 hover:bg-slate-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Subject (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Email subject..."
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Message (Optional)
+                </label>
+                <textarea
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  placeholder="Type your message here..."
+                  rows={6}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+
+              <p className="text-xs text-slate-500">
+                This will open your default email client with a pre-filled message. You can edit it before sending.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3 p-6 border-t border-slate-200">
+              <button
+                onClick={() => {
+                  setShowEmailPopup(false);
+                  setEmailSubject('');
+                  setEmailBody('');
+                  setSelectedCustomer(null);
+                }}
+                className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEmailSend}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                Open Email Client
               </button>
             </div>
           </div>
