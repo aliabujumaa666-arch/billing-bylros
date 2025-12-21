@@ -532,8 +532,8 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
   const lastPage = doc.internal.pages.length - 1;
   doc.setPage(lastPage);
   const qrFooterY = pageHeight - pdfSettings.layout.footerHeight;
-  const qrSize = 25;
-  const qrYPosition = qrFooterY - qrSize - 5;
+  const qrSize = 28;
+  const qrYPosition = qrFooterY - qrSize - 8;
 
   await addQRCodeToPDF(
     doc,
@@ -542,7 +542,7 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
     quote.id,
     quote.total,
     new Date(quote.created_at).toLocaleDateString(),
-    170,
+    168,
     qrYPosition,
     qrSize
   );
@@ -845,8 +845,8 @@ export const exportInvoiceToPDF = async (invoice: any, customer: any, payments: 
   const lastPage = doc.internal.pages.length - 1;
   doc.setPage(lastPage);
   const qrFooterY = pageHeight - pdfSettings.layout.footerHeight;
-  const qrSize = 25;
-  const qrYPosition = qrFooterY - qrSize - 5;
+  const qrSize = 28;
+  const qrYPosition = qrFooterY - qrSize - 8;
 
   await addQRCodeToPDF(
     doc,
@@ -855,7 +855,7 @@ export const exportInvoiceToPDF = async (invoice: any, customer: any, payments: 
     invoice.id,
     invoice.total_amount,
     new Date(invoice.created_at).toLocaleDateString(),
-    170,
+    168,
     qrYPosition,
     qrSize
   );
@@ -1149,8 +1149,8 @@ export const exportReceiptToPDF = async (receipt: any, customer: any, invoice: a
   const lastPage = doc.internal.pages.length - 1;
   doc.setPage(lastPage);
   const qrFooterY = pageHeight - pdfSettings.layout.footerHeight;
-  const qrSize = 25;
-  const qrYPosition = qrFooterY - qrSize - 5;
+  const qrSize = 28;
+  const qrYPosition = qrFooterY - qrSize - 8;
 
   await addQRCodeToPDF(
     doc,
@@ -1159,7 +1159,7 @@ export const exportReceiptToPDF = async (receipt: any, customer: any, invoice: a
     receipt.id,
     receipt.amount_paid,
     new Date(receipt.payment_date).toLocaleDateString(),
-    170,
+    168,
     qrYPosition,
     qrSize
   );
