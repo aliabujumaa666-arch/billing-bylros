@@ -137,21 +137,41 @@ export function Customers() {
 
   const handleLoginAsCustomer = async (customer: Customer) => {
     try {
-      const { data: customerUser } = await supabase
+      if (!customer.email) {
+        showError('Customer must have an email address to access the portal');
+        return;
+      }
+
+      let customerUser = await supabase
         .from('customer_users')
         .select('id, customer_id, email')
         .eq('customer_id', customer.id)
         .maybeSingle();
 
-      if (!customerUser) {
-        showError('This customer does not have a portal account');
-        return;
+      if (!customerUser.data) {
+        const { data: newUser, error: createError } = await supabase
+          .from('customer_users')
+          .insert({
+            customer_id: customer.id,
+            email: customer.email
+          })
+          .select('id, customer_id, email')
+          .single();
+
+        if (createError) {
+          console.error('Error creating customer portal account:', createError);
+          showError('Failed to create customer portal account');
+          return;
+        }
+
+        customerUser.data = newUser;
+        success('Customer portal account created successfully');
       }
 
       sessionStorage.setItem('admin_impersonation', JSON.stringify({
         customer_id: customer.id,
-        customer_user_id: customerUser.id,
-        customer_email: customerUser.email,
+        customer_user_id: customerUser.data.id,
+        customer_email: customerUser.data.email,
         customer_name: customer.name
       }));
 
