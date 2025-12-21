@@ -30,6 +30,8 @@ export function Customers() {
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
   const [showWhatsAppChat, setShowWhatsAppChat] = useState(false);
+  const [showWhatsAppPopup, setShowWhatsAppPopup] = useState(false);
+  const [whatsappMessage, setWhatsappMessage] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -228,6 +230,25 @@ export function Customers() {
     return colors[status as keyof typeof colors] || 'bg-slate-100 text-slate-800';
   };
 
+  const handleWhatsAppSend = () => {
+    if (!selectedCustomer) return;
+
+    let phoneNumber = selectedCustomer.phone.replace(/\D/g, '');
+
+    if (!phoneNumber.startsWith('966')) {
+      phoneNumber = '966' + phoneNumber;
+    }
+
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const whatsappUrl = `https://wa.me/${phoneNumber}${whatsappMessage ? `?text=${encodedMessage}` : ''}`;
+
+    window.open(whatsappUrl, '_blank');
+
+    setShowWhatsAppPopup(false);
+    setWhatsappMessage('');
+    setSelectedCustomer(null);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -349,7 +370,8 @@ export function Customers() {
                       <button
                         onClick={() => {
                           setSelectedCustomer(customer);
-                          setShowWhatsAppChat(true);
+                          setWhatsappMessage('');
+                          setShowWhatsAppPopup(true);
                         }}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 hover:bg-green-50 rounded-lg transition-colors"
                         title="Contact via WhatsApp"
@@ -514,6 +536,67 @@ export function Customers() {
             setSelectedCustomer(null);
           }}
         />
+      )}
+
+      {showWhatsAppPopup && selectedCustomer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+            <div className="flex justify-between items-center p-6 border-b border-slate-200">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Send WhatsApp Message</h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  To: {selectedCustomer.name} ({selectedCustomer.phone})
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowWhatsAppPopup(false);
+                  setWhatsappMessage('');
+                  setSelectedCustomer(null);
+                }}
+                className="p-2 hover:bg-slate-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Message (Optional)
+              </label>
+              <textarea
+                value={whatsappMessage}
+                onChange={(e) => setWhatsappMessage(e.target.value)}
+                placeholder="Type your message here..."
+                rows={6}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                This will open WhatsApp with a pre-filled message. You can edit it before sending.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3 p-6 border-t border-slate-200">
+              <button
+                onClick={() => {
+                  setShowWhatsAppPopup(false);
+                  setWhatsappMessage('');
+                  setSelectedCustomer(null);
+                }}
+                className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleWhatsAppSend}
+                className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Open WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
