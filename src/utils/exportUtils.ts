@@ -235,10 +235,11 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
   doc.text(`${new Date(quote.created_at).toLocaleDateString()}`, box1X + pdfSettings.infoBoxes.padding + 28, detailsY + 13);
 
   if (quote.valid_until) {
+    doc.setFontSize(pdfSettings.infoBoxes.valueFontSize);
+    doc.setTextColor(valueColorRgb.r, valueColorRgb.g, valueColorRgb.b);
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
     doc.text(`Valid Until:`, box1X + pdfSettings.infoBoxes.padding, detailsY + 19);
     doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), pdfSettings.infoBoxes.valueFontWeight);
-    doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
     doc.text(`${new Date(quote.valid_until).toLocaleDateString()}`, box1X + pdfSettings.infoBoxes.padding + 28, detailsY + 19);
   }
 
