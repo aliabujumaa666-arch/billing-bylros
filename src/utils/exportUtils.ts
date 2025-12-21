@@ -1166,6 +1166,651 @@ export const exportReceiptToPDF = async (receipt: any, customer: any, invoice: a
   doc.save(`Receipt_${receipt.receipt_number}.pdf`);
 };
 
+export const exportOrderToPDF = async (order: any, customer: any, brand?: any) => {
+  const doc = new jsPDF();
+
+  const pdfSettings = brand?.pdfSettings?.invoices || getDefaultPDFSettings();
+  const companyName = brand?.company?.name || 'BYLROS';
+  const companyFullName = brand?.company?.fullName || 'Middle East Aluminium & Glass LLC';
+  const companyAddress = brand?.contact?.address?.fullAddress || 'Costra Business Park (Block B), Production City, Dubai, UAE';
+  const companyPhone = brand?.contact?.phone || '+971-52-5458-968';
+  const companyEmail = brand?.contact?.email || 'info@bylros.ae';
+  const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
+
+  const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  if (pdfSettings.watermark.enableWatermark) {
+    doc.saveGraphicsState();
+    doc.setTextColor(128, 128, 128);
+    doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
+    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+    doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
+      align: 'center',
+      angle: pdfSettings.watermark.watermarkAngle,
+    });
+    doc.setGState(new (doc as any).GState({ opacity: pdfSettings.watermark.watermarkOpacity }));
+    doc.restoreGraphicsState();
+  }
+
+  let contentStartY = 62;
+
+  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'letterhead') {
+    contentStartY = await addLetterheadHeader(
+      doc,
+      brand,
+      new Date(order.created_at).toLocaleDateString(),
+      order.order_number,
+      pdfSettings
+    );
+  } else if (pdfSettings.header.showHeader) {
+    doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
+
+    await addLogoToPDF(doc, pdfSettings, brand);
+
+    if (pdfSettings.header.headerStyle === 'gradient') {
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.5);
+      doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
+    }
+
+    if (pdfSettings.header.showCompanyInfo) {
+      const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
+      doc.setFontSize(32);
+      doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+      doc.text(companyName, 14, 22);
+
+      if (pdfSettings.header.showTagline) {
+        doc.setFontSize(9);
+        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+        doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
+        doc.text(tagline, 14, 29);
+      }
+
+      doc.setFontSize(8);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
+      doc.text(companyFullName, 14, 37);
+      doc.text(companyAddress, 14, 42);
+      doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+    }
+  }
+
+  doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b, 0.1);
+  doc.roundedRect(10, contentStartY, 190, 12, 2, 2, 'F');
+
+  doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+  doc.setFontSize(22);
+  doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+  doc.text('ORDER CONFIRMATION', 14, contentStartY + 8);
+
+  doc.setFontSize(9);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Order Number: ${order.order_number}`, 140, contentStartY + 8, { align: 'right' });
+
+  const detailsY = contentStartY + 16;
+
+  if (pdfSettings.sections.showQuoteDetails) {
+    doc.setFillColor(250, 250, 251);
+    doc.roundedRect(10, detailsY, 90, 34, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(10, detailsY, 90, 34, 2, 2, 'S');
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('ORDER DETAILS', 14, detailsY + 6);
+
+    doc.setFontSize(9);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.text(`Order Date:`, 14, detailsY + 13);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.text(`${new Date(order.order_date).toLocaleDateString()}`, 42, detailsY + 13);
+
+    if (order.delivery_date) {
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+      doc.text(`Delivery:`, 14, detailsY + 19);
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+      doc.text(`${new Date(order.delivery_date).toLocaleDateString()}`, 42, detailsY + 19);
+    }
+
+    if (order.installation_date) {
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+      doc.text(`Installation:`, 14, detailsY + 25);
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+      doc.text(`${new Date(order.installation_date).toLocaleDateString()}`, 42, detailsY + 25);
+    }
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.text(`Status:`, 14, detailsY + 31);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.text(order.status, 42, detailsY + 31);
+  }
+
+  if (pdfSettings.sections.showCustomerInfo) {
+    doc.setFillColor(250, 250, 251);
+    doc.roundedRect(110, detailsY, 90, 34, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(110, detailsY, 90, 34, 2, 2, 'S');
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('CUSTOMER INFORMATION', 114, detailsY + 6);
+
+    doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.text(customer.name, 114, detailsY + 13);
+
+    doc.setFontSize(9);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text(customer.phone, 114, detailsY + 19);
+    if (customer.email) doc.text(customer.email, 114, detailsY + 25);
+    if (customer.location) doc.text(customer.location, 114, detailsY + 31);
+  }
+
+  if (pdfSettings.footer.showFooter) {
+    const footerY = 270;
+
+    if (pdfSettings.footer.footerStyle === 'gradient') {
+      doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.rect(0, footerY, 210, pdfSettings.layout.footerHeight, 'F');
+
+      doc.setDrawColor(255, 255, 255, 0.3);
+      doc.setLineWidth(0.3);
+      doc.line(10, footerY + 12, 200, footerY + 12);
+    } else if (pdfSettings.footer.footerStyle === 'bordered') {
+      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.setLineWidth(1);
+      doc.line(10, footerY, 200, footerY);
+    }
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(pdfSettings.footer.footerText, 105, footerY + 8, { align: 'center' });
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.setFontSize(pdfSettings.fonts.footerFontSize);
+    doc.setTextColor(255, 255, 255, 0.9);
+    doc.text(companyFullName, 105, footerY + 14, { align: 'center' });
+    doc.text(`${companyPhone} | ${companyEmail}`, 105, footerY + 19, { align: 'center' });
+
+    if (pdfSettings.footer.showGenerationDate) {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255, 0.7);
+      doc.text(`Order confirmation generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, footerY + 24, { align: 'center' });
+    }
+  }
+
+  const lastPage = doc.internal.pages.length - 1;
+  doc.setPage(lastPage);
+  const qrFooterY = pageHeight - pdfSettings.layout.footerHeight;
+  const qrSize = 28;
+  const qrYPosition = qrFooterY - qrSize - 8;
+
+  await addQRCodeToPDF(
+    doc,
+    'order',
+    order.order_number,
+    order.id,
+    0,
+    new Date(order.order_date).toLocaleDateString(),
+    168,
+    qrYPosition,
+    qrSize
+  );
+
+  doc.save(`Order_${order.order_number}.pdf`);
+};
+
+export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any) => {
+  const doc = new jsPDF();
+
+  const pdfSettings = brand?.pdfSettings?.invoices || getDefaultPDFSettings();
+  const companyName = brand?.company?.name || 'BYLROS';
+  const companyFullName = brand?.company?.fullName || 'Middle East Aluminium & Glass LLC';
+  const companyAddress = brand?.contact?.address?.fullAddress || 'Costra Business Park (Block B), Production City, Dubai, UAE';
+  const companyPhone = brand?.contact?.phone || '+971-52-5458-968';
+  const companyEmail = brand?.contact?.email || 'info@bylros.ae';
+  const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
+
+  const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  if (pdfSettings.watermark.enableWatermark) {
+    doc.saveGraphicsState();
+    doc.setTextColor(128, 128, 128);
+    doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
+    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+    doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
+      align: 'center',
+      angle: pdfSettings.watermark.watermarkAngle,
+    });
+    doc.setGState(new (doc as any).GState({ opacity: pdfSettings.watermark.watermarkOpacity }));
+    doc.restoreGraphicsState();
+  }
+
+  let contentStartY = 62;
+
+  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'letterhead') {
+    contentStartY = await addLetterheadHeader(
+      doc,
+      brand,
+      new Date(warranty.start_date).toLocaleDateString(),
+      warranty.warranty_number,
+      pdfSettings
+    );
+  } else if (pdfSettings.header.showHeader) {
+    doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
+
+    await addLogoToPDF(doc, pdfSettings, brand);
+
+    if (pdfSettings.header.headerStyle === 'gradient') {
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.5);
+      doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
+    }
+
+    if (pdfSettings.header.showCompanyInfo) {
+      const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
+      doc.setFontSize(32);
+      doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+      doc.text(companyName, 14, 22);
+
+      if (pdfSettings.header.showTagline) {
+        doc.setFontSize(9);
+        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+        doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
+        doc.text(tagline, 14, 29);
+      }
+
+      doc.setFontSize(8);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
+      doc.text(companyFullName, 14, 37);
+      doc.text(companyAddress, 14, 42);
+      doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+    }
+  }
+
+  doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b, 0.1);
+  doc.roundedRect(10, contentStartY, 190, 12, 2, 2, 'F');
+
+  doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+  doc.setFontSize(22);
+  doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+  doc.text('WARRANTY CERTIFICATE', 14, contentStartY + 8);
+
+  doc.setFontSize(9);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Warranty Number: ${warranty.warranty_number}`, 140, contentStartY + 8, { align: 'right' });
+
+  const detailsY = contentStartY + 16;
+
+  if (pdfSettings.sections.showQuoteDetails) {
+    doc.setFillColor(250, 250, 251);
+    doc.roundedRect(10, detailsY, 90, 40, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(10, detailsY, 90, 40, 2, 2, 'S');
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('WARRANTY DETAILS', 14, detailsY + 6);
+
+    doc.setFontSize(9);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.text(`Product:`, 14, detailsY + 13);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.text(`${warranty.product_name}`, 35, detailsY + 13);
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.text(`Start Date:`, 14, detailsY + 19);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.text(`${new Date(warranty.start_date).toLocaleDateString()}`, 35, detailsY + 19);
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.text(`End Date:`, 14, detailsY + 25);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.text(`${new Date(warranty.end_date).toLocaleDateString()}`, 35, detailsY + 25);
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.text(`Coverage:`, 14, detailsY + 31);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.text(warranty.coverage_type || 'Standard', 35, detailsY + 31);
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.text(`Status:`, 14, detailsY + 37);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.text(warranty.status, 35, detailsY + 37);
+  }
+
+  if (pdfSettings.sections.showCustomerInfo && order) {
+    doc.setFillColor(250, 250, 251);
+    doc.roundedRect(110, detailsY, 90, 40, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(110, detailsY, 90, 40, 2, 2, 'S');
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('ORDER INFORMATION', 114, detailsY + 6);
+
+    doc.setFontSize(9);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.text(`Order Number:`, 114, detailsY + 13);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.text(order.order_number || 'N/A', 114, detailsY + 19);
+
+    if (order.customer_name) {
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+      doc.text(`Customer:`, 114, detailsY + 25);
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+      doc.text(order.customer_name, 114, detailsY + 31);
+    }
+  }
+
+  const termsY = detailsY + 50;
+  doc.setFontSize(10);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.setTextColor(30, 41, 59);
+  doc.text('WARRANTY TERMS & CONDITIONS', 14, termsY);
+
+  doc.setFontSize(8);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(71, 85, 105);
+  const terms = warranty.terms || 'This warranty covers manufacturing defects and material failures under normal use conditions. It does not cover damage from improper installation, misuse, or normal wear and tear.';
+  const splitTerms = doc.splitTextToSize(terms, 182);
+  doc.text(splitTerms, 14, termsY + 8);
+
+  if (pdfSettings.footer.showFooter) {
+    const footerY = 270;
+
+    if (pdfSettings.footer.footerStyle === 'gradient') {
+      doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.rect(0, footerY, 210, pdfSettings.layout.footerHeight, 'F');
+
+      doc.setDrawColor(255, 255, 255, 0.3);
+      doc.setLineWidth(0.3);
+      doc.line(10, footerY + 12, 200, footerY + 12);
+    } else if (pdfSettings.footer.footerStyle === 'bordered') {
+      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.setLineWidth(1);
+      doc.line(10, footerY, 200, footerY);
+    }
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(pdfSettings.footer.footerText, 105, footerY + 8, { align: 'center' });
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.setFontSize(pdfSettings.fonts.footerFontSize);
+    doc.setTextColor(255, 255, 255, 0.9);
+    doc.text(companyFullName, 105, footerY + 14, { align: 'center' });
+    doc.text(`${companyPhone} | ${companyEmail}`, 105, footerY + 19, { align: 'center' });
+
+    if (pdfSettings.footer.showGenerationDate) {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255, 0.7);
+      doc.text(`Warranty certificate generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, footerY + 24, { align: 'center' });
+    }
+  }
+
+  const lastPage = doc.internal.pages.length - 1;
+  doc.setPage(lastPage);
+  const qrFooterY = pageHeight - pdfSettings.layout.footerHeight;
+  const qrSize = 28;
+  const qrYPosition = qrFooterY - qrSize - 8;
+
+  await addQRCodeToPDF(
+    doc,
+    'warranty',
+    warranty.warranty_number,
+    warranty.id,
+    0,
+    new Date(warranty.start_date).toLocaleDateString(),
+    168,
+    qrYPosition,
+    qrSize
+  );
+
+  doc.save(`Warranty_${warranty.warranty_number}.pdf`);
+};
+
+export const exportSiteVisitToPDF = async (visit: any, customer: any, brand?: any) => {
+  const doc = new jsPDF();
+
+  const pdfSettings = brand?.pdfSettings?.invoices || getDefaultPDFSettings();
+  const companyName = brand?.company?.name || 'BYLROS';
+  const companyFullName = brand?.company?.fullName || 'Middle East Aluminium & Glass LLC';
+  const companyAddress = brand?.contact?.address?.fullAddress || 'Costra Business Park (Block B), Production City, Dubai, UAE';
+  const companyPhone = brand?.contact?.phone || '+971-52-5458-968';
+  const companyEmail = brand?.contact?.email || 'info@bylros.ae';
+  const tagline = brand?.company?.tagline || 'Premium Glass & Aluminum Solutions';
+
+  const primaryRgb = hexToRgb(pdfSettings.colors.accentColor);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  if (pdfSettings.watermark.enableWatermark) {
+    doc.saveGraphicsState();
+    doc.setTextColor(128, 128, 128);
+    doc.setFontSize(pdfSettings.watermark.watermarkFontSize);
+    doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+    doc.text(pdfSettings.watermark.watermarkText, pageWidth / 2, pageHeight / 2, {
+      align: 'center',
+      angle: pdfSettings.watermark.watermarkAngle,
+    });
+    doc.setGState(new (doc as any).GState({ opacity: pdfSettings.watermark.watermarkOpacity }));
+    doc.restoreGraphicsState();
+  }
+
+  let contentStartY = 62;
+
+  if (pdfSettings.header.showHeader && pdfSettings.header.headerStyle === 'letterhead') {
+    contentStartY = await addLetterheadHeader(
+      doc,
+      brand,
+      new Date(visit.visit_date).toLocaleDateString(),
+      `SV-${visit.id.substring(0, 8)}`,
+      pdfSettings
+    );
+  } else if (pdfSettings.header.showHeader) {
+    doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.rect(0, 0, 210, pdfSettings.layout.headerHeight, 'F');
+
+    await addLogoToPDF(doc, pdfSettings, brand);
+
+    if (pdfSettings.header.headerStyle === 'gradient') {
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.5);
+      doc.line(14, pdfSettings.layout.headerHeight - 3, 196, pdfSettings.layout.headerHeight - 3);
+    }
+
+    if (pdfSettings.header.showCompanyInfo) {
+      const headerTextRgb = hexToRgb(pdfSettings.header.headerTextColor);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b);
+      doc.setFontSize(32);
+      doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+      doc.text(companyName, 14, 22);
+
+      if (pdfSettings.header.showTagline) {
+        doc.setFontSize(9);
+        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+        doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.9);
+        doc.text(tagline, 14, 29);
+      }
+
+      doc.setFontSize(8);
+      doc.setTextColor(headerTextRgb.r, headerTextRgb.g, headerTextRgb.b, 0.85);
+      doc.text(companyFullName, 14, 37);
+      doc.text(companyAddress, 14, 42);
+      doc.text(`${companyPhone} | ${companyEmail}`, 14, 47);
+    }
+  }
+
+  doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b, 0.1);
+  doc.roundedRect(10, contentStartY, 190, 12, 2, 2, 'F');
+
+  doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+  doc.setFontSize(22);
+  doc.setFont(getFontFamily(pdfSettings.fonts.headerFont), 'bold');
+  doc.text('SITE VISIT REPORT', 14, contentStartY + 8);
+
+  doc.setFontSize(9);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Visit ID: SV-${visit.id.substring(0, 8)}`, 140, contentStartY + 8, { align: 'right' });
+
+  const detailsY = contentStartY + 16;
+
+  if (pdfSettings.sections.showQuoteDetails) {
+    doc.setFillColor(250, 250, 251);
+    doc.roundedRect(10, detailsY, 90, 28, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(10, detailsY, 90, 28, 2, 2, 'S');
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('VISIT DETAILS', 14, detailsY + 6);
+
+    doc.setFontSize(9);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.text(`Visit Date:`, 14, detailsY + 13);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.text(`${new Date(visit.visit_date).toLocaleDateString()}`, 42, detailsY + 13);
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.text(`Status:`, 14, detailsY + 19);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+    doc.text(visit.status || 'Scheduled', 42, detailsY + 19);
+
+    if (visit.payment_required) {
+      doc.setTextColor(30, 41, 59);
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+      doc.text(`Amount:`, 14, detailsY + 25);
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+      doc.text(`AED ${visit.payment_amount?.toFixed(2) || '0.00'}`, 42, detailsY + 25);
+    }
+  }
+
+  if (pdfSettings.sections.showCustomerInfo) {
+    doc.setFillColor(250, 250, 251);
+    doc.roundedRect(110, detailsY, 90, 28, 2, 2, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(110, detailsY, 90, 28, 2, 2, 'S');
+
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('CUSTOMER INFORMATION', 114, detailsY + 6);
+
+    doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.text(customer.name, 114, detailsY + 13);
+
+    doc.setFontSize(9);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text(customer.phone, 114, detailsY + 19);
+    if (customer.email) doc.text(customer.email, 114, detailsY + 25);
+  }
+
+  const locationY = detailsY + 36;
+  doc.setFontSize(10);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+  doc.setTextColor(30, 41, 59);
+  doc.text('VISIT LOCATION', 14, locationY);
+
+  doc.setFontSize(9);
+  doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+  doc.setTextColor(71, 85, 105);
+  const location = visit.location || customer.location || 'Not specified';
+  const splitLocation = doc.splitTextToSize(location, 182);
+  doc.text(splitLocation, 14, locationY + 8);
+
+  if (visit.remarks) {
+    const remarksY = locationY + 20;
+    doc.setFontSize(10);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setTextColor(30, 41, 59);
+    doc.text('REMARKS', 14, remarksY);
+
+    doc.setFontSize(9);
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.setTextColor(71, 85, 105);
+    const splitRemarks = doc.splitTextToSize(visit.remarks, 182);
+    doc.text(splitRemarks, 14, remarksY + 8);
+  }
+
+  if (pdfSettings.footer.showFooter) {
+    const footerY = 270;
+
+    if (pdfSettings.footer.footerStyle === 'gradient') {
+      doc.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.rect(0, footerY, 210, pdfSettings.layout.footerHeight, 'F');
+
+      doc.setDrawColor(255, 255, 255, 0.3);
+      doc.setLineWidth(0.3);
+      doc.line(10, footerY + 12, 200, footerY + 12);
+    } else if (pdfSettings.footer.footerStyle === 'bordered') {
+      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.setLineWidth(1);
+      doc.line(10, footerY, 200, footerY);
+    }
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(pdfSettings.footer.footerText, 105, footerY + 8, { align: 'center' });
+
+    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+    doc.setFontSize(pdfSettings.fonts.footerFontSize);
+    doc.setTextColor(255, 255, 255, 0.9);
+    doc.text(companyFullName, 105, footerY + 14, { align: 'center' });
+    doc.text(`${companyPhone} | ${companyEmail}`, 105, footerY + 19, { align: 'center' });
+
+    if (pdfSettings.footer.showGenerationDate) {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255, 0.7);
+      doc.text(`Site visit report generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, footerY + 24, { align: 'center' });
+    }
+  }
+
+  const lastPage = doc.internal.pages.length - 1;
+  doc.setPage(lastPage);
+  const qrFooterY = pageHeight - pdfSettings.layout.footerHeight;
+  const qrSize = 28;
+  const qrYPosition = qrFooterY - qrSize - 8;
+
+  await addQRCodeToPDF(
+    doc,
+    'sitevisit',
+    `SV-${visit.id.substring(0, 8)}`,
+    visit.id,
+    visit.payment_amount || 0,
+    new Date(visit.visit_date).toLocaleDateString(),
+    168,
+    qrYPosition,
+    qrSize
+  );
+
+  doc.save(`SiteVisit_${visit.id.substring(0, 8)}.pdf`);
+};
+
 export const exportToExcel = (data: any[], filename: string) => {
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();

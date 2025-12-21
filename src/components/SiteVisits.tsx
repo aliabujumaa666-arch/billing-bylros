@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Calendar, Plus, X, Edit2, Trash2, DollarSign, Link as LinkIcon,
-  Copy, CheckCircle, Loader2, AlertCircle, Share2
+  Copy, CheckCircle, Loader2, AlertCircle, Share2, Download
 } from 'lucide-react';
+import { exportSiteVisitToPDF } from '../utils/exportUtils';
+import { useBrand } from '../contexts/BrandContext';
 
 export function SiteVisits() {
+  const { brand } = useBrand();
   const [visits, setVisits] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
@@ -185,6 +188,10 @@ export function SiteVisits() {
     }
   };
 
+  const handleDownloadPDF = async (visit: any) => {
+    await exportSiteVisitToPDF(visit, visit.customers, brand);
+  };
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(paymentLink);
     setCopied(true);
@@ -263,6 +270,13 @@ export function SiteVisits() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDownloadPDF(visit)}
+                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Download PDF"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => handleEdit(visit)}
                       className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"

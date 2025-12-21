@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Shield, AlertCircle, Star } from 'lucide-react';
+import { Shield, AlertCircle, Star, Download } from 'lucide-react';
+import { exportWarrantyToPDF } from '../utils/exportUtils';
+import { useBrand } from '../contexts/BrandContext';
 
 interface Warranty {
   id: string;
@@ -24,6 +26,7 @@ interface Feedback {
 }
 
 export function WarrantyManagement() {
+  const { brand } = useBrand();
   const [warranties, setWarranties] = useState<Warranty[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,6 +111,10 @@ export function WarrantyManagement() {
     ));
   };
 
+  const handleDownloadPDF = async (warranty: Warranty) => {
+    await exportWarrantyToPDF(warranty, warranty.orders, brand);
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#bb2738]"></div></div>;
   }
@@ -187,6 +194,16 @@ export function WarrantyManagement() {
                     Expires in {daysUntilExpiry} days
                   </div>
                 )}
+
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => handleDownloadPDF(warranty)}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm text-green-700 hover:bg-green-50 rounded-lg transition-colors font-medium"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Certificate
+                  </button>
+                </div>
               </div>
             );
           })}

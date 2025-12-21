@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Package, CreditCard as Edit, Trash2, X, ArrowRight } from 'lucide-react';
+import { Plus, Package, CreditCard as Edit, Trash2, X, ArrowRight, Download } from 'lucide-react';
+import { exportOrderToPDF } from '../utils/exportUtils';
+import { useBrand } from '../contexts/BrandContext';
 
 export function Orders() {
+  const { brand } = useBrand();
   const [orders, setOrders] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [quotes, setQuotes] = useState<any[]>([]);
@@ -156,6 +159,10 @@ export function Orders() {
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
+  const handleDownloadPDF = async (order: any) => {
+    await exportOrderToPDF(order, order.customers, brand);
+  };
+
   const filteredQuotes = quotes.filter(q => q.customer_id === formData.customer_id);
   const filteredVisits = siteVisits.filter(v => v.customer_id === formData.customer_id);
 
@@ -216,6 +223,13 @@ export function Orders() {
                       {order.delivery_date ? new Date(order.delivery_date).toLocaleDateString() : '-'}
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
+                      <button
+                        onClick={() => handleDownloadPDF(order)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Download PDF"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
                       {(order.status === 'Delivered' || order.status === 'Installed') && (
                         <button
                           onClick={() => handleConvertToInvoice(order)}
