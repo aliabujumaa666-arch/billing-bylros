@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '../contexts/ToastContext';
-import { Plus, Search, CreditCard as Edit, Trash2, X, Upload, Download, Paperclip, MessageCircle, Mail } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit, Trash2, X, Upload, Download, Paperclip, MessageCircle, Mail, LogIn } from 'lucide-react';
 import { CustomerBulkImport } from './CustomerBulkImport';
 import { CustomerAttachments } from './CustomerAttachments';
 import { WhatsAppDirectChat } from './WhatsAppDirectChat';
@@ -132,6 +132,33 @@ export function Customers() {
     } catch (err) {
       console.error('Error deleting customer:', err);
       showError('Failed to delete customer');
+    }
+  };
+
+  const handleLoginAsCustomer = async (customer: Customer) => {
+    try {
+      const { data: customerUser } = await supabase
+        .from('customer_users')
+        .select('id, customer_id, email')
+        .eq('customer_id', customer.id)
+        .maybeSingle();
+
+      if (!customerUser) {
+        showError('This customer does not have a portal account');
+        return;
+      }
+
+      sessionStorage.setItem('admin_impersonation', JSON.stringify({
+        customer_id: customer.id,
+        customer_user_id: customerUser.id,
+        customer_email: customerUser.email,
+        customer_name: customer.name
+      }));
+
+      window.location.href = '/customer';
+    } catch (err) {
+      console.error('Error logging in as customer:', err);
+      showError('Failed to login as customer');
     }
   };
 
@@ -413,6 +440,14 @@ export function Customers() {
                           Email
                         </button>
                       )}
+                      <button
+                        onClick={() => handleLoginAsCustomer(customer)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Login as Customer"
+                      >
+                        <LogIn className="w-4 h-4" />
+                        Login
+                      </button>
                       <button
                         onClick={() => openEditModal(customer)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"

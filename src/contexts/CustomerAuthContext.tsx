@@ -28,6 +28,23 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const checkImpersonation = sessionStorage.getItem('admin_impersonation');
+
+    if (checkImpersonation) {
+      const impersonationData = JSON.parse(checkImpersonation);
+      setUser({ id: impersonationData.customer_user_id, email: impersonationData.customer_email } as User);
+      setCustomerData({
+        id: impersonationData.customer_user_id,
+        customer_id: impersonationData.customer_id,
+        email: impersonationData.customer_email,
+        name: impersonationData.customer_name,
+        created_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
+      });
+      setLoading(false);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -108,6 +125,7 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
   };
 
   const signOut = async () => {
+    sessionStorage.removeItem('admin_impersonation');
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };

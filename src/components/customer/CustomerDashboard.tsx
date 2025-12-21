@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { useBrand } from '../../contexts/BrandContext';
 import { supabase } from '../../lib/supabase';
-import { Package, FileText, Calendar, DollarSign, User, LogOut, Home, HelpCircle, Bell, MessageSquare, PackageCheck, Menu, X, Shield, Receipt } from 'lucide-react';
+import { Package, FileText, Calendar, DollarSign, User, LogOut, Home, HelpCircle, Bell, MessageSquare, PackageCheck, Menu, X, Shield, Receipt, UserCog, ArrowLeft } from 'lucide-react';
 import { CustomerHome } from './CustomerHome';
 import { CustomerProfile } from './CustomerProfile';
 import { CustomerQuotes } from './CustomerQuotes';
@@ -36,6 +36,7 @@ export function CustomerDashboard() {
   });
   const [customer, setCustomer] = useState<any>(null);
   const isAdmin = user && !customerData;
+  const isImpersonating = sessionStorage.getItem('admin_impersonation') !== null;
 
   useEffect(() => {
     if (customerData) {
@@ -92,6 +93,11 @@ export function CustomerDashboard() {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const handleExitImpersonation = () => {
+    sessionStorage.removeItem('admin_impersonation');
+    window.location.href = '/admin';
   };
 
   const renderView = () => {
@@ -265,8 +271,28 @@ export function CustomerDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {isImpersonating && (
+        <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 z-50 shadow-lg">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <UserCog className="w-5 h-5" />
+              <div>
+                <p className="text-sm font-semibold">Admin View</p>
+                <p className="text-xs text-purple-100">You are viewing as: {customer?.name || 'Customer'}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleExitImpersonation}
+              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Return to Admin Panel
+            </button>
+          </div>
+        </div>
+      )}
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-40">
+      <div className={`lg:hidden fixed left-0 right-0 bg-white border-b border-slate-200 z-40 ${isImpersonating ? 'top-[52px]' : 'top-0'}`}>
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <img
@@ -286,9 +312,10 @@ export function CustomerDashboard() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 h-full bg-white border-r border-slate-200 z-50
+        fixed left-0 bg-white border-r border-slate-200 z-40
         w-64 transform transition-transform duration-200 ease-in-out flex flex-col
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${isImpersonating ? 'top-[52px] h-[calc(100vh-52px)]' : 'top-0 h-full'}
       `}>
         <div className="p-6 border-b border-slate-200 flex-shrink-0">
           <div className="flex flex-col items-center">
@@ -379,7 +406,7 @@ export function CustomerDashboard() {
       )}
 
       {/* Main content */}
-      <main className="pt-20 lg:pt-8 lg:ml-64">
+      <main className={`lg:ml-64 ${isImpersonating ? 'pt-[132px] lg:pt-[68px]' : 'pt-20 lg:pt-8'}`}>
         <div className="p-6 lg:p-8">
           {renderView()}
         </div>
