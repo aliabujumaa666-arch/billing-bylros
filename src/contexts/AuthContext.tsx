@@ -36,8 +36,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+
+    if (data.user) {
+      const { data: customerUser } = await supabase
+        .from('customer_users')
+        .select('id')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      if (customerUser) {
+        await supabase.auth.signOut();
+        throw new Error('Customer accounts cannot access the admin panel. Please use the customer portal.');
+      }
+    }
   };
 
   const signUp = async (email: string, password: string) => {

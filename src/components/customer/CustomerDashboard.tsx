@@ -22,7 +22,7 @@ import { FeedbackWidget } from '../FeedbackWidget';
 type View = 'home' | 'overview' | 'profile' | 'quotes' | 'orders' | 'invoices' | 'receipts' | 'visits' | 'warranties' | 'help' | 'changelog' | 'notifications' | 'messages' | 'payment-success' | 'payment-cancel';
 
 export function CustomerDashboard() {
-  const { customerData, signOut } = useCustomerAuth();
+  const { user, customerData, signOut } = useCustomerAuth();
   const { brand } = useBrand();
   const [activeView, setActiveView] = useState<View>('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -35,6 +35,7 @@ export function CustomerDashboard() {
     totalSpent: 0,
   });
   const [customer, setCustomer] = useState<any>(null);
+  const isAdmin = user && !customerData;
 
   useEffect(() => {
     if (customerData) {
@@ -224,6 +225,43 @@ export function CustomerDashboard() {
     { id: 'notifications', icon: Bell, label: 'Notifications' },
     { id: 'profile', icon: User, label: 'Profile' },
   ];
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-blue-50 rounded-full">
+              <Shield className="w-12 h-12 text-blue-600" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-800 mb-3">Admin Access</h2>
+          <p className="text-slate-600 mb-6">
+            You are logged in as an administrator. This portal is designed for customers to view their orders, quotes, and invoices.
+          </p>
+          <p className="text-slate-600 mb-6">
+            To access the admin panel, please visit the admin portal.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                window.location.href = '/admin';
+              }}
+              className="w-full bg-[#bb2738] hover:bg-[#a01f2f] text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl"
+            >
+              Go to Admin Panel
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 px-6 rounded-lg transition-all"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">

@@ -221,19 +221,7 @@ export function CustomerLogin() {
             </button>
           </div>
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => {
-                window.history.pushState({}, '', '/admin');
-                window.location.href = '/admin';
-              }}
-              className="text-sm text-slate-500 hover:text-slate-700 hover:underline"
-            >
-              Admin Login
-            </button>
-          </div>
-
-          <div className="mt-4 text-center text-xs text-slate-500">
+          <div className="mt-6 text-center text-xs text-slate-500">
             {brand?.company.fullName || 'BYLROS Middle East Aluminium & Glass LLC'}
           </div>
         </div>

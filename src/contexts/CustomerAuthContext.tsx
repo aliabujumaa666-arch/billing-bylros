@@ -75,25 +75,12 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) throw error;
-
-    if (data.user) {
-      const { data: customerUser } = await supabase
-        .from('customer_users')
-        .select('*')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      if (!customerUser) {
-        await supabase.auth.signOut();
-        throw new Error('This account is not registered as a customer');
-      }
-    }
   };
 
   const signUp = async (email: string, password: string, customerId: string) => {
