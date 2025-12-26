@@ -12,6 +12,7 @@ import { PublicPage } from './components/PublicPage';
 import { SiteVisitPayment } from './components/SiteVisitPayment';
 import { SubmitRequest } from './components/SubmitRequest';
 import { GlobalSearch } from './components/GlobalSearch';
+import { DocumentVerification } from './components/DocumentVerification';
 
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
 const Customers = lazy(() => import('./components/Customers').then(module => ({ default: module.Customers })));
@@ -175,12 +176,19 @@ function CustomerApp() {
 }
 
 function AppRouter() {
-  const [viewMode, setViewMode] = useState<'public' | 'admin' | 'customer' | 'booking' | 'site-visit-payment' | 'submit-request' | 'page'>('public');
+  const [viewMode, setViewMode] = useState<'public' | 'admin' | 'customer' | 'booking' | 'site-visit-payment' | 'submit-request' | 'page' | 'verification'>('public');
   const [pageSlug, setPageSlug] = useState<string>('');
+  const [verificationData, setVerificationData] = useState<{ documentType: string; documentId: string }>({ documentType: '', documentId: '' });
 
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.startsWith('/submit-request')) {
+    if (path.startsWith('/verify/')) {
+      setViewMode('verification');
+      const pathParts = path.split('/');
+      const documentType = pathParts[2] || '';
+      const documentId = pathParts[3] || '';
+      setVerificationData({ documentType, documentId });
+    } else if (path.startsWith('/submit-request')) {
       setViewMode('submit-request');
     } else if (path.startsWith('/site-visit-payment')) {
       setViewMode('site-visit-payment');
@@ -231,6 +239,17 @@ function AppRouter() {
 
   // Prevent unused variable warning - this function is available for future use
   void navigateToAdmin;
+
+  if (viewMode === 'verification') {
+    return (
+      <BrandProvider>
+        <DocumentVerification
+          documentType={verificationData.documentType}
+          documentId={verificationData.documentId}
+        />
+      </BrandProvider>
+    );
+  }
 
   if (viewMode === 'submit-request') {
     return (

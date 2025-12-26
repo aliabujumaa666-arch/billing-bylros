@@ -27,18 +27,7 @@ export const generateDocumentVerificationData = (
   date: string
 ): string => {
   const verificationUrl = `${window.location.origin}/verify/${documentType}/${documentId}`;
-
-  const verificationData = {
-    type: documentType,
-    number: documentNumber,
-    id: documentId,
-    total: total.toFixed(2),
-    date,
-    url: verificationUrl,
-    timestamp: new Date().toISOString(),
-  };
-
-  return JSON.stringify(verificationData);
+  return verificationUrl;
 };
 
 export const addQRCodeToPDF = async (
@@ -48,7 +37,7 @@ export const addQRCodeToPDF = async (
   documentId: string,
   total: number,
   date: string,
-  xPos: number = 170,
+  xPos: number = 10,
   yPos: number = 10,
   size: number = 30
 ): Promise<void> => {

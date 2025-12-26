@@ -541,7 +541,7 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
     quote.id,
     quote.total,
     new Date(quote.created_at).toLocaleDateString(),
-    168,
+    10,
     qrYPosition,
     qrSize
   );
@@ -854,7 +854,7 @@ export const exportInvoiceToPDF = async (invoice: any, customer: any, payments: 
     invoice.id,
     invoice.total_amount,
     new Date(invoice.created_at).toLocaleDateString(),
-    168,
+    10,
     qrYPosition,
     qrSize
   );
@@ -1158,7 +1158,7 @@ export const exportReceiptToPDF = async (receipt: any, customer: any, invoice: a
     receipt.id,
     receipt.amount_paid,
     new Date(receipt.payment_date).toLocaleDateString(),
-    168,
+    10,
     qrYPosition,
     qrSize
   );
@@ -1361,7 +1361,7 @@ export const exportOrderToPDF = async (order: any, customer: any, brand?: any) =
     order.id,
     0,
     new Date(order.order_date).toLocaleDateString(),
-    168,
+    10,
     qrYPosition,
     qrSize
   );
@@ -1580,7 +1580,7 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
     warranty.id,
     0,
     new Date(warranty.start_date).toLocaleDateString(),
-    168,
+    10,
     qrYPosition,
     qrSize
   );
@@ -1803,7 +1803,7 @@ export const exportSiteVisitToPDF = async (visit: any, customer: any, brand?: an
     visit.id,
     visit.payment_amount || 0,
     new Date(visit.visit_date).toLocaleDateString(),
-    168,
+    10,
     qrYPosition,
     qrSize
   );
