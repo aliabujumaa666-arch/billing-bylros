@@ -109,17 +109,15 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     if (error) throw error;
 
     if (data.user) {
-      const { error: insertError } = await supabase
-        .from('customer_users')
-        .insert({
-          id: data.user.id,
-          customer_id: customerId,
-          email: email,
-        });
+      const { error: rpcError } = await supabase.rpc('create_customer_portal_user', {
+        user_id: data.user.id,
+        customer_id_param: customerId,
+        email_param: email.toLowerCase(),
+      });
 
-      if (insertError) {
+      if (rpcError) {
         await supabase.auth.signOut();
-        throw insertError;
+        throw new Error('Failed to create customer portal account');
       }
     }
   };
