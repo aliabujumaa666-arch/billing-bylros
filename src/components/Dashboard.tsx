@@ -1,22 +1,45 @@
 import { useState, useEffect, useMemo, memo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Users, FileText, Calendar, ShoppingCart, TrendingUp } from 'lucide-react';
+import {
+  Users,
+  FileText,
+  Calendar,
+  ShoppingCart,
+  TrendingUp,
+  RefreshCw,
+  AlertCircle,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Activity
+} from 'lucide-react';
 import { LoadingSpinner } from './LoadingSpinner';
+import { cache, getCacheKey } from '../utils/cacheUtils';
+import { getErrorMessage } from '../utils/errorHandling';
 
 interface StatCardProps {
   label: string;
   value: string | number;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
+  trend?: {
+    value: number | string;
+    positive: boolean;
+  };
 }
 
-const StatCard = memo(({ label, value, icon: Icon, color }: StatCardProps) => (
+const StatCard = memo(({ label, value, icon: Icon, color, trend }: StatCardProps) => (
   <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
     <div className="flex items-center justify-between mb-4">
       <div className={`w-12 h-12 ${color} rounded-lg flex items-center justify-center`}>
         <Icon className="w-6 h-6 text-white" />
       </div>
+      {trend && (
+        <div className={`text-xs font-medium ${trend.positive ? 'text-green-600' : 'text-red-600'}`}>
+          {trend.positive ? '+' : ''}{trend.value}
+        </div>
+      )}
     </div>
     <div className="text-2xl font-bold text-slate-800 mb-1">{value}</div>
     <div className="text-sm text-slate-600">{label}</div>
@@ -25,65 +48,227 @@ const StatCard = memo(({ label, value, icon: Icon, color }: StatCardProps) => (
 
 StatCard.displayName = 'StatCard';
 
+interface DashboardStats {
+  total_customers: number;
+  new_customers_30d: number;
+  total_quotes: number;
+  pending_quotes: number;
+  new_quotes_30d: number;
+  pending_quotes_value: number;
+  total_invoices: number;
+  pending_invoices: number;
+  overdue_invoices: number;
+  pending_invoices_value: number;
+  overdue_invoices_value: number;
+  total_revenue: number;
+  revenue_30d: number;
+  total_orders: number;
+  pending_orders: number;
+  in_progress_orders: number;
+  new_orders_30d: number;
+  scheduled_visits: number;
+  today_visits: number;
+  open_tickets: number;
+  high_priority_tickets: number;
+  unread_messages: number;
+}
+
+interface RecentActivity {
+  activity_type: string;
+  reference_number: string;
+  customer_name: string;
+  status: string;
+  amount: number;
+  created_at: string;
+}
+
 export function Dashboard() {
   const { t } = useLanguage();
-  const [stats, setStats] = useState({
-    customers: 0,
-    quotes: 0,
-    visits: 0,
-    orders: 0,
-    revenue: 0,
-  });
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStats();
+    fetchDashboardData();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchDashboardData = async (forceRefresh = false) => {
     try {
-      setLoading(true);
-      const [customersData, quotesData, visitsData, ordersData, invoicesData] = await Promise.all([
-        supabase.from('customers').select('id', { count: 'exact', head: true }),
-        supabase.from('quotes').select('id', { count: 'exact', head: true }),
-        supabase.from('site_visits').select('id', { count: 'exact', head: true }),
-        supabase.from('orders').select('id', { count: 'exact', head: true }),
-        supabase.from('invoices').select('total_amount'),
+      setError(null);
+      if (forceRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      const cacheKeyStats = getCacheKey('dashboard', 'stats');
+      const cacheKeyActivity = getCacheKey('dashboard', 'activity');
+
+      if (!forceRefresh) {
+        const cachedStats = cache.get<DashboardStats>(cacheKeyStats);
+        const cachedActivity = cache.get<RecentActivity[]>(cacheKeyActivity);
+
+        if (cachedStats && cachedActivity) {
+          setStats(cachedStats);
+          setRecentActivity(cachedActivity);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const [statsResult, activityResult] = await Promise.all([
+        supabase.from('dashboard_stats').select('*').maybeSingle(),
+        supabase.from('recent_activity').select('*').limit(10)
       ]);
 
-      const revenue = invoicesData.data?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0;
+      if (statsResult.error) throw statsResult.error;
+      if (activityResult.error) throw activityResult.error;
 
-      setStats({
-        customers: customersData.count || 0,
-        quotes: quotesData.count || 0,
-        visits: visitsData.count || 0,
-        orders: ordersData.count || 0,
-        revenue,
-      });
+      const statsData = statsResult.data as DashboardStats;
+      const activityData = activityResult.data as RecentActivity[];
+
+      cache.set(cacheKeyStats, statsData, 2 * 60 * 1000);
+      cache.set(cacheKeyActivity, activityData, 2 * 60 * 1000);
+
+      setStats(statsData);
+      setRecentActivity(activityData);
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('Error fetching dashboard data:', error);
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const statCards = useMemo(() => [
-    { label: 'Total Customers', value: stats.customers, icon: Users, color: 'bg-blue-500' },
-    { label: 'Active Quotes', value: stats.quotes, icon: FileText, color: 'bg-yellow-500' },
-    { label: 'Site Visits', value: stats.visits, icon: Calendar, color: 'bg-purple-500' },
-    { label: 'Orders', value: stats.orders, icon: ShoppingCart, color: 'bg-green-500' },
-    { label: 'Total Revenue', value: `AED ${stats.revenue.toLocaleString()}`, icon: TrendingUp, color: 'bg-[#bb2738]' },
-  ], [stats]);
+  const refreshData = async () => {
+    await Promise.all([
+      supabase.rpc('refresh_dashboard_stats'),
+      supabase.rpc('refresh_recent_activity')
+    ]);
+
+    await fetchDashboardData(true);
+  };
+
+  const statCards = useMemo(() => {
+    if (!stats) return [];
+
+    return [
+      {
+        label: 'Total Customers',
+        value: stats.total_customers,
+        icon: Users,
+        color: 'bg-blue-500',
+        trend: {
+          value: `+${stats.new_customers_30d} this month`,
+          positive: true
+        }
+      },
+      {
+        label: 'Pending Quotes',
+        value: stats.pending_quotes,
+        icon: FileText,
+        color: 'bg-yellow-500',
+        trend: {
+          value: `AED ${stats.pending_quotes_value.toLocaleString()}`,
+          positive: true
+        }
+      },
+      {
+        label: 'Active Orders',
+        value: stats.in_progress_orders,
+        icon: ShoppingCart,
+        color: 'bg-green-500',
+        trend: {
+          value: `${stats.pending_orders} pending`,
+          positive: false
+        }
+      },
+      {
+        label: 'Revenue (30d)',
+        value: `AED ${stats.revenue_30d.toLocaleString()}`,
+        icon: TrendingUp,
+        color: 'bg-[#bb2738]',
+        trend: {
+          value: `${((stats.revenue_30d / stats.total_revenue) * 100).toFixed(1)}% of total`,
+          positive: true
+        }
+      },
+      {
+        label: 'Site Visits Today',
+        value: stats.today_visits,
+        icon: Calendar,
+        color: 'bg-purple-500',
+        trend: {
+          value: `${stats.scheduled_visits} scheduled`,
+          positive: true
+        }
+      },
+    ];
+  }, [stats]);
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'quote': return FileText;
+      case 'invoice': return TrendingUp;
+      case 'order': return ShoppingCart;
+      default: return Activity;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'approved': case 'paid': case 'completed': return 'bg-green-100 text-green-800';
+      case 'rejected': case 'overdue': return 'bg-red-100 text-red-800';
+      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   if (loading) {
     return <LoadingSpinner size="lg" fullScreen />;
   }
 
+  if (error) {
+    return (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Dashboard</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => fetchDashboardData(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return null;
+  }
+
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">{t('nav.dashboard')}</h1>
-        <p className="text-slate-600">Welcome to BYLROS Customer Operations Platform</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">{t('nav.dashboard')}</h1>
+          <p className="text-slate-600">Welcome to BYLROS Customer Operations Platform</p>
+        </div>
+        <button
+          onClick={refreshData}
+          disabled={refreshing}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
@@ -92,21 +277,108 @@ export function Dashboard() {
         ))}
       </div>
 
-      <div className="mt-8 bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-        <h2 className="text-xl font-bold text-slate-800 mb-4">Quick Actions</h2>
+      {(stats.overdue_invoices > 0 || stats.high_priority_tickets > 0 || stats.unread_messages > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 border-2 border-slate-200 rounded-lg hover:border-[#bb2738] hover:bg-slate-50 transition-all text-left">
-            <h3 className="font-semibold text-slate-800 mb-1">Create Quote</h3>
-            <p className="text-sm text-slate-600">Generate a new quotation for a customer</p>
-          </button>
-          <button className="p-4 border-2 border-slate-200 rounded-lg hover:border-[#bb2738] hover:bg-slate-50 transition-all text-left">
-            <h3 className="font-semibold text-slate-800 mb-1">Schedule Visit</h3>
-            <p className="text-sm text-slate-600">Book a site visit with a customer</p>
-          </button>
-          <button className="p-4 border-2 border-slate-200 rounded-lg hover:border-[#bb2738] hover:bg-slate-50 transition-all text-left">
-            <h3 className="font-semibold text-slate-800 mb-1">Create Invoice</h3>
-            <p className="text-sm text-slate-600">Generate invoice for an order</p>
-          </button>
+          {stats.overdue_invoices > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <div>
+                  <div className="font-semibold text-red-900">{stats.overdue_invoices} Overdue Invoices</div>
+                  <div className="text-sm text-red-700">AED {stats.overdue_invoices_value.toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {stats.high_priority_tickets > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-orange-600" />
+                <div>
+                  <div className="font-semibold text-orange-900">{stats.high_priority_tickets} High Priority Tickets</div>
+                  <div className="text-sm text-orange-700">Require immediate attention</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {stats.unread_messages > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <Clock className="h-5 w-5 text-blue-600" />
+                <div>
+                  <div className="font-semibold text-blue-900">{stats.unread_messages} Unread Messages</div>
+                  <div className="text-sm text-blue-700">From customers</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Recent Activity
+          </h2>
+          <div className="space-y-3">
+            {recentActivity.length === 0 ? (
+              <p className="text-slate-500 text-center py-8">No recent activity</p>
+            ) : (
+              recentActivity.map((activity, index) => {
+                const Icon = getActivityIcon(activity.activity_type);
+                return (
+                  <div key={index} className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                    <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Icon className="h-5 w-5 text-slate-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-900">{activity.reference_number}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}>
+                          {activity.status}
+                        </span>
+                      </div>
+                      <div className="text-sm text-slate-600">{activity.customer_name}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {activity.amount && (
+                        <div className="font-semibold text-slate-900">
+                          AED {activity.amount.toLocaleString()}
+                        </div>
+                      )}
+                      <div className="text-xs text-slate-500">
+                        {new Date(activity.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <CheckCircle className="h-5 w-5" />
+            Quick Actions
+          </h2>
+          <div className="space-y-3">
+            <button className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#bb2738] hover:bg-slate-50 transition-all text-left">
+              <h3 className="font-semibold text-slate-800 mb-1">Create Quote</h3>
+              <p className="text-sm text-slate-600">Generate a new quotation</p>
+            </button>
+            <button className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#bb2738] hover:bg-slate-50 transition-all text-left">
+              <h3 className="font-semibold text-slate-800 mb-1">Schedule Visit</h3>
+              <p className="text-sm text-slate-600">Book a site visit</p>
+            </button>
+            <button className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#bb2738] hover:bg-slate-50 transition-all text-left">
+              <h3 className="font-semibold text-slate-800 mb-1">Create Invoice</h3>
+              <p className="text-sm text-slate-600">Generate an invoice</p>
+            </button>
+          </div>
         </div>
       </div>
     </div>
