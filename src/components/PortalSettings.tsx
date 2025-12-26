@@ -12,8 +12,9 @@ import { BrandSettings } from './BrandSettings';
 import EmailSettings from './EmailSettings';
 import { KeyboardShortcutSettings } from './KeyboardShortcutSettings';
 import { NavigationMenuSettings } from './NavigationMenuSettings';
+import { BankTransferSettings } from './BankTransferSettings';
 
-type TabType = 'brand' | 'portal' | 'navigation' | 'paypal' | 'stripe' | 'email' | 'shortcuts';
+type TabType = 'brand' | 'portal' | 'navigation' | 'paypal' | 'stripe' | 'bank' | 'email' | 'shortcuts';
 
 interface Toast {
   id: number;
@@ -177,6 +178,7 @@ export function PortalSettings() {
     { id: 'navigation' as TabType, label: 'Navigation Menus', icon: Menu, section: 'Portal', description: 'Header and footer menus' },
     { id: 'paypal' as TabType, label: 'PayPal', icon: CreditCard, section: 'Integrations', description: 'PayPal payment gateway' },
     { id: 'stripe' as TabType, label: 'Stripe', icon: CreditCard, section: 'Integrations', description: 'Stripe payment gateway' },
+    { id: 'bank' as TabType, label: 'Bank Transfer', icon: Building2, section: 'Integrations', description: 'Bank transfer payment' },
     { id: 'email' as TabType, label: 'Email Settings', icon: Mail, section: 'System', description: 'SMTP and email config' },
     { id: 'shortcuts' as TabType, label: 'Keyboard Shortcuts', icon: Keyboard, section: 'System', description: 'Keyboard shortcut config' },
   ];
@@ -411,6 +413,8 @@ export function PortalSettings() {
                 <PayPalSettings />
               ) : activeTab === 'stripe' ? (
                 <StripeSettings />
+              ) : activeTab === 'bank' ? (
+                <BankTransferSettings />
               ) : activeTab === 'email' ? (
                 <EmailSettings />
               ) : activeTab === 'navigation' ? (

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { useBrand } from '../../contexts/BrandContext';
 import { supabase } from '../../lib/supabase';
-import { FileText, Download, DollarSign, Calendar, CreditCard } from 'lucide-react';
+import { FileText, Download, DollarSign, Calendar, CreditCard, Building2, Upload, Copy, Check } from 'lucide-react';
 import { exportInvoiceToPDF } from '../../utils/exportUtils';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
@@ -18,7 +18,10 @@ export function CustomerInvoices() {
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
   const [stripePublishableKey, setStripePublishableKey] = useState<string | null>(null);
   const [stripeInstance, setStripeInstance] = useState<Stripe | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'stripe' | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'stripe' | 'bank' | null>(null);
+  const [bankTransferSettings, setBankTransferSettings] = useState<any>(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (customerData) {
@@ -46,6 +49,15 @@ export function CustomerInvoices() {
     if (stripeData && stripeData.is_active && stripeData.publishable_key) {
       setStripePublishableKey(stripeData.publishable_key);
       loadStripe(stripeData.publishable_key).then(stripe => setStripeInstance(stripe));
+    }
+
+    const { data: bankData } = await supabase
+      .from('bank_transfer_settings')
+      .select('*')
+      .maybeSingle();
+
+    if (bankData && bankData.is_active) {
+      setBankTransferSettings(bankData);
     }
   };
 
@@ -219,6 +231,83 @@ export function CustomerInvoices() {
     } finally {
       setPaymentProcessing(false);
     }
+  };
+
+  const handleBankTransferPayment = async (invoice: any) => {
+    if (!proofFile && bankTransferSettings?.require_proof_upload) {
+      alert('Please upload proof of payment');
+      return;
+    }
+
+    setUploadingProof(true);
+    try {
+      let proofUrl = null;
+
+      if (proofFile) {
+        const fileExt = proofFile.name.split('.').pop();
+        const fileName = `${customerData?.customer_id}/${invoice.id}/${Date.now()}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('payment-proofs')
+          .upload(fileName, proofFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('payment-proofs')
+          .getPublicUrl(fileName);
+
+        proofUrl = publicUrl;
+      }
+
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          invoice_id: invoice.id,
+          amount: invoice.balance,
+          payment_date: new Date().toISOString().split('T')[0],
+          payment_method: 'Bank Transfer',
+          payment_status: 'pending',
+          payment_proof_url: proofUrl,
+          reference: `INV-${invoice.invoice_number}`,
+          notes: 'Payment pending verification'
+        });
+
+      if (paymentError) throw paymentError;
+
+      alert('Payment submitted successfully! Your payment is pending verification. You will be notified once it is confirmed.');
+      setPayingInvoiceId(null);
+      setSelectedPaymentMethod(null);
+      setProofFile(null);
+      await fetchInvoices();
+    } catch (error: any) {
+      console.error('Bank transfer payment error:', error);
+      alert('Failed to submit payment: ' + error.message);
+    } finally {
+      setUploadingProof(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Only JPG, PNG, and PDF files are allowed');
+        return;
+      }
+      setProofFile(file);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('Copied to clipboard!');
   };
 
   if (loading) {
@@ -415,7 +504,16 @@ export function CustomerInvoices() {
                                 Pay with Stripe
                               </button>
                             )}
-                            {!paypalClientId && !stripePublishableKey && (
+                            {bankTransferSettings && (
+                              <button
+                                onClick={() => setSelectedPaymentMethod('bank')}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
+                              >
+                                <Building2 className="w-5 h-5" />
+                                Pay via Bank Transfer
+                              </button>
+                            )}
+                            {!paypalClientId && !stripePublishableKey && !bankTransferSettings && (
                               <div className="text-center py-4 text-slate-600">
                                 <p>Payment system is not configured. Please contact support.</p>
                               </div>
@@ -460,6 +558,173 @@ export function CustomerInvoices() {
                             <p className="text-xs text-slate-500 mt-2 text-center">
                               You will be redirected to complete your payment securely
                             </p>
+                          </div>
+                        ) : selectedPaymentMethod === 'bank' && bankTransferSettings ? (
+                          <div>
+                            <button
+                              onClick={() => setSelectedPaymentMethod(null)}
+                              className="mb-3 text-sm text-slate-600 hover:text-slate-800"
+                            >
+                              ← Back to payment methods
+                            </button>
+                            <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-4 border border-slate-200 mb-4">
+                              <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                                <Building2 className="w-5 h-5 text-blue-600" />
+                                Bank Transfer Details
+                              </h3>
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                  <div className="bg-white p-3 rounded-lg">
+                                    <span className="text-slate-600 text-xs">Bank Name</span>
+                                    <div className="flex items-center justify-between mt-1">
+                                      <p className="font-semibold text-slate-800">{bankTransferSettings.bank_name}</p>
+                                      <button
+                                        onClick={() => copyToClipboard(bankTransferSettings.bank_name)}
+                                        className="p-1 hover:bg-slate-100 rounded transition-colors"
+                                      >
+                                        <Copy className="w-4 h-4 text-slate-400" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="bg-white p-3 rounded-lg">
+                                    <span className="text-slate-600 text-xs">Account Holder</span>
+                                    <div className="flex items-center justify-between mt-1">
+                                      <p className="font-semibold text-slate-800">{bankTransferSettings.account_holder_name}</p>
+                                      <button
+                                        onClick={() => copyToClipboard(bankTransferSettings.account_holder_name)}
+                                        className="p-1 hover:bg-slate-100 rounded transition-colors"
+                                      >
+                                        <Copy className="w-4 h-4 text-slate-400" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="bg-white p-3 rounded-lg">
+                                    <span className="text-slate-600 text-xs">Account Number</span>
+                                    <div className="flex items-center justify-between mt-1">
+                                      <p className="font-semibold text-slate-800">{bankTransferSettings.account_number}</p>
+                                      <button
+                                        onClick={() => copyToClipboard(bankTransferSettings.account_number)}
+                                        className="p-1 hover:bg-slate-100 rounded transition-colors"
+                                      >
+                                        <Copy className="w-4 h-4 text-slate-400" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  {bankTransferSettings.iban && (
+                                    <div className="bg-white p-3 rounded-lg">
+                                      <span className="text-slate-600 text-xs">IBAN</span>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <p className="font-semibold text-slate-800 text-xs">{bankTransferSettings.iban}</p>
+                                        <button
+                                          onClick={() => copyToClipboard(bankTransferSettings.iban)}
+                                          className="p-1 hover:bg-slate-100 rounded transition-colors"
+                                        >
+                                          <Copy className="w-4 h-4 text-slate-400" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {bankTransferSettings.swift_bic && (
+                                    <div className="bg-white p-3 rounded-lg">
+                                      <span className="text-slate-600 text-xs">SWIFT/BIC</span>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <p className="font-semibold text-slate-800">{bankTransferSettings.swift_bic}</p>
+                                        <button
+                                          onClick={() => copyToClipboard(bankTransferSettings.swift_bic)}
+                                          className="p-1 hover:bg-slate-100 rounded transition-colors"
+                                        >
+                                          <Copy className="w-4 h-4 text-slate-400" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="bg-white p-3 rounded-lg">
+                                    <span className="text-slate-600 text-xs">Currency</span>
+                                    <p className="font-semibold text-slate-800 mt-1">{bankTransferSettings.currency}</p>
+                                  </div>
+                                </div>
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                  <p className="text-sm font-medium text-amber-800 mb-1">Payment Reference:</p>
+                                  <div className="flex items-center justify-between">
+                                    <p className="font-bold text-amber-900">INV-{invoice.invoice_number}</p>
+                                    <button
+                                      onClick={() => copyToClipboard(`INV-${invoice.invoice_number}`)}
+                                      className="p-1 hover:bg-amber-100 rounded transition-colors"
+                                    >
+                                      <Copy className="w-4 h-4 text-amber-600" />
+                                    </button>
+                                  </div>
+                                  <p className="text-xs text-amber-700 mt-1">Please include this reference in your transfer</p>
+                                </div>
+                                {bankTransferSettings.payment_instructions && (
+                                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <p className="text-sm text-blue-800">{bankTransferSettings.payment_instructions}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {bankTransferSettings.require_proof_upload && (
+                              <div className="mb-4">
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                  Upload Proof of Payment {bankTransferSettings.require_proof_upload && <span className="text-red-500">*</span>}
+                                </label>
+                                <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+                                  <input
+                                    type="file"
+                                    onChange={handleFileChange}
+                                    accept="image/jpeg,image/png,image/jpg,application/pdf"
+                                    className="hidden"
+                                    id="proof-upload"
+                                  />
+                                  <label htmlFor="proof-upload" className="cursor-pointer">
+                                    <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                                    {proofFile ? (
+                                      <div>
+                                        <p className="text-sm font-medium text-green-600 mb-1">File selected:</p>
+                                        <p className="text-sm text-slate-700">{proofFile.name}</p>
+                                        <p className="text-xs text-slate-500 mt-1">Click to change file</p>
+                                      </div>
+                                    ) : (
+                                      <div>
+                                        <p className="text-sm font-medium text-slate-700">Click to upload</p>
+                                        <p className="text-xs text-slate-500 mt-1">JPG, PNG or PDF (max 5MB)</p>
+                                      </div>
+                                    )}
+                                  </label>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-2">
+                                  Upload a screenshot or photo of your bank transfer receipt
+                                </p>
+                              </div>
+                            )}
+
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                              <p className="text-sm text-blue-800">
+                                <span className="font-medium">Verification Time:</span> {bankTransferSettings.verification_wait_time}
+                              </p>
+                              <p className="text-xs text-blue-700 mt-1">
+                                Your payment will be verified and invoice updated once we receive confirmation.
+                              </p>
+                            </div>
+
+                            <button
+                              onClick={() => handleBankTransferPayment(invoice)}
+                              disabled={uploadingProof || (bankTransferSettings.require_proof_upload && !proofFile)}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {uploadingProof ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                  Submitting...
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="w-5 h-5" />
+                                  Submit Payment Information
+                                </>
+                              )}
+                            </button>
                           </div>
                         ) : null}
                       </div>

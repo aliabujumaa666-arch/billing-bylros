@@ -23,6 +23,7 @@ const SiteVisits = lazy(() => import('./components/SiteVisits').then(module => (
 const Orders = lazy(() => import('./components/Orders').then(module => ({ default: module.Orders })));
 const Invoices = lazy(() => import('./components/Invoices').then(module => ({ default: module.Invoices })));
 const Receipts = lazy(() => import('./components/Receipts').then(module => ({ default: module.Receipts })));
+const PaymentVerification = lazy(() => import('./components/PaymentVerification').then(module => ({ default: module.PaymentVerification })));
 const OrderTracker = lazy(() => import('./components/OrderTracker').then(module => ({ default: module.OrderTracker })));
 const PortalSettings = lazy(() => import('./components/PortalSettings').then(module => ({ default: module.PortalSettings })));
 const KnowledgeBase = lazy(() => import('./components/KnowledgeBase').then(module => ({ default: module.KnowledgeBase })));
@@ -93,6 +94,8 @@ function AdminApp() {
         return <Invoices />;
       case 'receipts':
         return <Receipts />;
+      case 'payment-verification':
+        return <PaymentVerification />;
       case 'tracker':
         return <OrderTracker />;
       case 'portal-settings':

@@ -7,7 +7,7 @@ import {
   Building2, Users, FileText, Calendar, ShoppingCart,
   FileCheck, Package, LogOut, Menu, X, Globe, Settings,
   BookOpen, HelpCircle, Video, Ticket, MessageSquare, PackageCheck, HardDrive,
-  Workflow, Boxes, CalendarDays, Wrench, Shield, Receipt, Layout as LayoutIcon, TrendingUp, Mail
+  Workflow, Boxes, CalendarDays, Wrench, Shield, Receipt, Layout as LayoutIcon, TrendingUp, Mail, CheckCircle
 } from 'lucide-react';
 import { FeedbackWidget } from './FeedbackWidget';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
@@ -42,6 +42,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     { id: 'orders', icon: ShoppingCart, label: t('nav.orders') },
     { id: 'invoices', icon: FileCheck, label: t('nav.invoices') },
     { id: 'receipts', icon: Receipt, label: 'Receipts' },
+    { id: 'payment-verification', icon: CheckCircle, label: 'Payment Verification' },
     { id: 'tracker', icon: Package, label: t('nav.tracker') },
     { id: 'production-workflow', icon: Workflow, label: 'Production Workflow' },
     { id: 'inventory', icon: Boxes, label: 'Inventory Management' },
