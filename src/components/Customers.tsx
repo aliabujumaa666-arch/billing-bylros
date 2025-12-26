@@ -149,22 +149,33 @@ export function Customers() {
         .maybeSingle();
 
       if (!customerUser.data) {
-        const { data: userId, error: createError } = await supabase
-          .rpc('admin_create_customer_portal_account', {
-            customer_id_param: customer.id,
-            email_param: customer.email.toLowerCase()
-          });
+        const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-customer-account`;
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (createError) {
-          console.error('Error creating customer portal account:', createError);
-          showError('Failed to create customer portal account');
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customer_id: customer.id,
+            email: customer.email
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          console.error('Error creating customer portal account:', result.error);
+          showError(result.error || 'Failed to create customer portal account');
           return;
         }
 
         customerUser.data = {
-          id: userId,
+          id: result.user_id,
           customer_id: customer.id,
-          email: customer.email.toLowerCase()
+          email: result.email
         };
         success('Customer portal account created successfully');
       }
