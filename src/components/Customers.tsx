@@ -149,14 +149,11 @@ export function Customers() {
         .maybeSingle();
 
       if (!customerUser.data) {
-        const { data: newUser, error: createError } = await supabase
-          .from('customer_users')
-          .insert({
-            customer_id: customer.id,
-            email: customer.email
-          })
-          .select('id, customer_id, email')
-          .single();
+        const { data: userId, error: createError } = await supabase
+          .rpc('admin_create_customer_portal_account', {
+            customer_id_param: customer.id,
+            email_param: customer.email.toLowerCase()
+          });
 
         if (createError) {
           console.error('Error creating customer portal account:', createError);
@@ -164,7 +161,11 @@ export function Customers() {
           return;
         }
 
-        customerUser.data = newUser;
+        customerUser.data = {
+          id: userId,
+          customer_id: customer.id,
+          email: customer.email.toLowerCase()
+        };
         success('Customer portal account created successfully');
       }
 
