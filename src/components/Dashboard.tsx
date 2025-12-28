@@ -53,23 +53,45 @@ interface DashboardStats {
   new_customers_30d: number;
   total_quotes: number;
   pending_quotes: number;
+  draft_quotes: number;
+  accepted_quotes: number;
+  rejected_quotes: number;
   new_quotes_30d: number;
   pending_quotes_value: number;
+  accepted_quotes_value: number;
+  total_quotes_value: number;
   total_invoices: number;
   pending_invoices: number;
   overdue_invoices: number;
+  paid_invoices: number;
+  partial_invoices: number;
+  cancelled_invoices: number;
   pending_invoices_value: number;
   overdue_invoices_value: number;
   total_revenue: number;
   revenue_30d: number;
+  partial_revenue: number;
+  total_invoices_value: number;
   total_orders: number;
   pending_orders: number;
   in_progress_orders: number;
+  in_production_orders: number;
+  delivered_orders: number;
+  completed_orders: number;
+  cancelled_orders: number;
   new_orders_30d: number;
+  total_site_visits: number;
   scheduled_visits: number;
+  scheduled_visits_cap: number;
+  completed_visits: number;
+  cancelled_visits: number;
   today_visits: number;
+  upcoming_visits: number;
+  total_tickets: number;
   open_tickets: number;
+  closed_tickets: number;
   high_priority_tickets: number;
+  total_messages: number;
   unread_messages: number;
 }
 
@@ -159,6 +181,8 @@ export function Dashboard() {
       ? ((stats.revenue_30d / stats.total_revenue) * 100).toFixed(1)
       : '0.0';
 
+    const totalScheduled = (stats.scheduled_visits || 0) + (stats.scheduled_visits_cap || 0);
+
     return [
       {
         label: 'Total Customers',
@@ -176,7 +200,17 @@ export function Dashboard() {
         icon: FileText,
         color: 'bg-slate-500',
         trend: {
-          value: `${stats.pending_quotes} pending`,
+          value: `AED ${stats.total_quotes_value.toLocaleString()}`,
+          positive: true
+        }
+      },
+      {
+        label: 'Draft Quotes',
+        value: stats.draft_quotes,
+        icon: FileText,
+        color: 'bg-gray-500',
+        trend: {
+          value: 'in draft',
           positive: false
         }
       },
@@ -187,7 +221,27 @@ export function Dashboard() {
         color: 'bg-yellow-500',
         trend: {
           value: `AED ${stats.pending_quotes_value.toLocaleString()}`,
+          positive: false
+        }
+      },
+      {
+        label: 'Accepted Quotes',
+        value: stats.accepted_quotes,
+        icon: CheckCircle,
+        color: 'bg-green-500',
+        trend: {
+          value: `AED ${stats.accepted_quotes_value.toLocaleString()}`,
           positive: true
+        }
+      },
+      {
+        label: 'Rejected Quotes',
+        value: stats.rejected_quotes,
+        icon: AlertCircle,
+        color: 'bg-red-500',
+        trend: {
+          value: 'rejected',
+          positive: false
         }
       },
       {
@@ -206,17 +260,67 @@ export function Dashboard() {
         icon: ShoppingCart,
         color: 'bg-emerald-500',
         trend: {
-          value: `${stats.new_orders_30d} new this month`,
+          value: `${stats.new_orders_30d} new (30d)`,
           positive: true
         }
       },
       {
-        label: 'Active Orders',
-        value: stats.in_progress_orders,
-        icon: ShoppingCart,
-        color: 'bg-green-500',
+        label: 'Pending Orders',
+        value: stats.pending_orders,
+        icon: Clock,
+        color: 'bg-orange-400',
         trend: {
-          value: `${stats.pending_orders} pending`,
+          value: 'pending',
+          positive: false
+        }
+      },
+      {
+        label: 'In Progress Orders',
+        value: stats.in_progress_orders,
+        icon: Activity,
+        color: 'bg-blue-600',
+        trend: {
+          value: 'in progress',
+          positive: true
+        }
+      },
+      {
+        label: 'In Production',
+        value: stats.in_production_orders,
+        icon: Activity,
+        color: 'bg-cyan-600',
+        trend: {
+          value: 'production',
+          positive: true
+        }
+      },
+      {
+        label: 'Delivered Orders',
+        value: stats.delivered_orders,
+        icon: CheckCircle,
+        color: 'bg-green-600',
+        trend: {
+          value: 'delivered',
+          positive: true
+        }
+      },
+      {
+        label: 'Completed Orders',
+        value: stats.completed_orders,
+        icon: CheckCircle,
+        color: 'bg-teal-600',
+        trend: {
+          value: 'completed',
+          positive: true
+        }
+      },
+      {
+        label: 'Cancelled Orders',
+        value: stats.cancelled_orders,
+        icon: AlertTriangle,
+        color: 'bg-red-600',
+        trend: {
+          value: 'cancelled',
           positive: false
         }
       },
@@ -226,15 +330,15 @@ export function Dashboard() {
         icon: TrendingUp,
         color: 'bg-indigo-500',
         trend: {
-          value: `${stats.pending_invoices} pending`,
-          positive: false
+          value: `AED ${stats.total_invoices_value.toLocaleString()}`,
+          positive: true
         }
       },
       {
         label: 'Pending Invoices',
         value: stats.pending_invoices,
-        icon: AlertCircle,
-        color: 'bg-orange-500',
+        icon: Clock,
+        color: 'bg-yellow-600',
         trend: {
           value: `AED ${stats.pending_invoices_value.toLocaleString()}`,
           positive: false
@@ -251,12 +355,42 @@ export function Dashboard() {
         }
       },
       {
+        label: 'Paid Invoices',
+        value: stats.paid_invoices,
+        icon: CheckCircle,
+        color: 'bg-green-700',
+        trend: {
+          value: `AED ${stats.total_revenue.toLocaleString()}`,
+          positive: true
+        }
+      },
+      {
+        label: 'Partial Invoices',
+        value: stats.partial_invoices,
+        icon: AlertCircle,
+        color: 'bg-orange-500',
+        trend: {
+          value: `AED ${stats.partial_revenue.toLocaleString()}`,
+          positive: false
+        }
+      },
+      {
+        label: 'Cancelled Invoices',
+        value: stats.cancelled_invoices,
+        icon: AlertTriangle,
+        color: 'bg-gray-600',
+        trend: {
+          value: 'cancelled',
+          positive: false
+        }
+      },
+      {
         label: 'Total Revenue',
         value: `AED ${stats.total_revenue.toLocaleString()}`,
         icon: TrendingUp,
         color: 'bg-[#bb2738]',
         trend: {
-          value: 'all time',
+          value: 'all time paid',
           positive: true
         }
       },
@@ -272,21 +406,61 @@ export function Dashboard() {
       },
       {
         label: 'Total Site Visits',
-        value: stats.scheduled_visits,
+        value: stats.total_site_visits,
         icon: Calendar,
-        color: 'bg-violet-500',
+        color: 'bg-violet-600',
         trend: {
-          value: 'scheduled',
+          value: 'all time',
           positive: true
         }
       },
       {
-        label: 'Site Visits Today',
+        label: 'Scheduled Visits',
+        value: totalScheduled,
+        icon: Calendar,
+        color: 'bg-violet-500',
+        trend: {
+          value: `${stats.upcoming_visits} upcoming`,
+          positive: true
+        }
+      },
+      {
+        label: 'Visits Today',
         value: stats.today_visits,
         icon: Calendar,
         color: 'bg-purple-500',
         trend: {
           value: 'today',
+          positive: true
+        }
+      },
+      {
+        label: 'Completed Visits',
+        value: stats.completed_visits,
+        icon: CheckCircle,
+        color: 'bg-green-800',
+        trend: {
+          value: 'completed',
+          positive: true
+        }
+      },
+      {
+        label: 'Cancelled Visits',
+        value: stats.cancelled_visits,
+        icon: AlertTriangle,
+        color: 'bg-red-700',
+        trend: {
+          value: 'cancelled',
+          positive: false
+        }
+      },
+      {
+        label: 'Total Tickets',
+        value: stats.total_tickets,
+        icon: AlertCircle,
+        color: 'bg-amber-600',
+        trend: {
+          value: 'all time',
           positive: true
         }
       },
@@ -298,6 +472,26 @@ export function Dashboard() {
         trend: {
           value: `${stats.high_priority_tickets} high priority`,
           positive: false
+        }
+      },
+      {
+        label: 'Closed Tickets',
+        value: stats.closed_tickets,
+        icon: CheckCircle,
+        color: 'bg-teal-500',
+        trend: {
+          value: 'closed',
+          positive: true
+        }
+      },
+      {
+        label: 'Total Messages',
+        value: stats.total_messages,
+        icon: Activity,
+        color: 'bg-sky-600',
+        trend: {
+          value: 'all time',
+          positive: true
         }
       },
       {
