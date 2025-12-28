@@ -20,19 +20,19 @@ export function Login() {
     setSuccess('');
 
     if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
+      setError(t('error.invalidEmail'));
       return;
     }
 
     if (isSignUp) {
       const passwordValidation = validatePassword(password);
       if (!passwordValidation.isValid) {
-        setError(passwordValidation.message || 'Invalid password');
+        setError(passwordValidation.message || t('error.invalidEmail'));
         return;
       }
 
       if (password !== confirmPassword) {
-        setError('Passwords do not match');
+        setError(t('error.passwordsDontMatch'));
         return;
       }
     }
@@ -42,7 +42,7 @@ export function Login() {
     try {
       if (isSignUp) {
         await signUp(email, password);
-        setSuccess('Account created successfully! You can now sign in.');
+        setSuccess(t('success.created'));
         setIsSignUp(false);
         setPassword('');
         setConfirmPassword('');
@@ -50,7 +50,7 @@ export function Login() {
         await signIn(email, password);
       }
     } catch (err: any) {
-      setError(err.message || `Failed to ${isSignUp ? 'sign up' : 'sign in'}`);
+      setError(err.message || t('error.failed'));
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export function Login() {
               alt="BYLROS Logo"
               className="h-20 w-auto mb-3"
             />
-            <p className="text-slate-600 text-sm font-medium">Admin Portal</p>
+            <p className="text-slate-600 text-sm font-medium">{t('auth.adminPortal')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -120,7 +120,7 @@ export function Login() {
             {isSignUp && (
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-2">
-                  Confirm Password
+                  {t('auth.confirmPassword')}
                 </label>
                 <input
                   id="confirmPassword"
@@ -139,7 +139,7 @@ export function Login() {
               disabled={loading}
               className="w-full bg-[#bb2738] hover:bg-[#a01f2f] text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl active:scale-95"
             >
-              {loading ? (isSignUp ? 'Creating account...' : 'Signing in...') : (isSignUp ? 'Create Account' : t('auth.signIn'))}
+              {loading ? (isSignUp ? `${t('auth.createAccount')}...` : `${t('auth.signIn')}...`) : (isSignUp ? t('auth.createAccount') : t('auth.signIn'))}
             </button>
           </form>
 
@@ -154,13 +154,13 @@ export function Login() {
               }}
               className="text-sm text-[#bb2738] hover:underline"
             >
-              {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Create one"}
+              {isSignUp ? t('auth.alreadyHaveAccount') : t('auth.dontHaveAccount')}
             </button>
           </div>
 
           <div className="mt-6 text-center">
             <a href="/customer" className="text-sm text-slate-500 hover:text-slate-700">
-              Customer Portal
+              {t('auth.customerPortal')}
             </a>
           </div>
 

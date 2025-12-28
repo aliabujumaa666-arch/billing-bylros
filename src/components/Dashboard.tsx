@@ -252,48 +252,48 @@ export function Dashboard() {
 
     return [
       {
-        label: 'Total Revenue',
+        label: t('dashboard.totalRevenue'),
         value: `AED ${stats.total_revenue.toLocaleString()}`,
         icon: DollarSign,
         gradient: 'bg-gradient-to-br from-emerald-500 to-teal-600',
         change: {
-          value: `+${revenuePercentage}% this month`,
+          value: `+${revenuePercentage}% ${t('dashboard.thisMonth')}`,
           positive: parseFloat(revenuePercentage) > 0
         },
-        subtitle: 'All time paid invoices'
+        subtitle: t('dashboard.allTimePaidInvoices')
       },
       {
-        label: 'Monthly Revenue',
+        label: t('dashboard.monthlyRevenue'),
         value: `AED ${stats.revenue_30d.toLocaleString()}`,
         icon: TrendingUp,
         gradient: 'bg-gradient-to-br from-blue-500 to-cyan-600',
         change: {
-          value: `${revenuePercentage}% of total`,
+          value: `${revenuePercentage}% ${t('dashboard.ofTotal')}`,
           positive: true
         },
-        subtitle: 'Last 30 days'
+        subtitle: t('dashboard.last30Days')
       },
       {
-        label: 'Outstanding Invoices',
+        label: t('dashboard.outstandingInvoices'),
         value: `AED ${outstandingValue.toLocaleString()}`,
         icon: AlertCircle,
         gradient: 'bg-gradient-to-br from-orange-500 to-red-500',
         change: {
-          value: `${stats.pending_invoices + stats.overdue_invoices} invoices`,
+          value: `${stats.pending_invoices + stats.overdue_invoices} ${t('dashboard.invoices')}`,
           positive: false
         },
-        subtitle: 'Pending & overdue payments'
+        subtitle: t('dashboard.pendingOverdue')
       },
       {
-        label: 'Quote Conversion',
+        label: t('dashboard.quoteConversion'),
         value: `${conversionRate}%`,
         icon: Target,
         gradient: 'bg-gradient-to-br from-slate-600 to-slate-800',
         change: {
-          value: `${stats.accepted_quotes}/${stats.total_quotes} accepted`,
+          value: `${stats.accepted_quotes}/${stats.total_quotes} ${t('dashboard.accepted')}`,
           positive: parseFloat(conversionRate) > 50
         },
-        subtitle: 'Acceptance rate'
+        subtitle: t('dashboard.acceptanceRate')
       }
     ];
   }, [stats]);
@@ -306,62 +306,62 @@ export function Dashboard() {
     return {
       quotes: [
         {
-          label: 'Total Quotes',
+          label: t('dashboard.totalQuotes'),
           value: stats.total_quotes,
           icon: FileText,
           color: 'bg-slate-600',
           trend: { value: `AED ${stats.total_quotes_value.toLocaleString()}`, positive: true }
         },
         {
-          label: 'Pending Quotes',
+          label: t('dashboard.pendingQuotes'),
           value: stats.pending_quotes,
           icon: Clock,
           color: 'bg-amber-500',
           trend: { value: `AED ${stats.pending_quotes_value.toLocaleString()}`, positive: false }
         },
         {
-          label: 'Accepted Quotes',
+          label: t('dashboard.acceptedQuotes'),
           value: stats.accepted_quotes,
           icon: CheckCircle,
           color: 'bg-emerald-600',
           trend: { value: `AED ${stats.accepted_quotes_value.toLocaleString()}`, positive: true }
         },
         {
-          label: 'Draft Quotes',
+          label: t('dashboard.draftQuotes'),
           value: stats.draft_quotes,
           icon: FileText,
           color: 'bg-slate-400',
-          trend: { value: 'In draft', positive: false }
+          trend: { value: t('dashboard.inDraft'), positive: false }
         }
       ],
       orders: [
         {
-          label: 'Total Orders',
+          label: t('dashboard.totalOrders'),
           value: stats.total_orders,
           icon: ShoppingCart,
           color: 'bg-blue-600',
-          trend: { value: `+${stats.new_orders_30d} this month`, positive: true }
+          trend: { value: `+${stats.new_orders_30d} ${t('dashboard.thisMonth')}`, positive: true }
         },
         {
-          label: 'In Progress',
+          label: t('dashboard.inProgress'),
           value: stats.in_progress_orders,
           icon: Activity,
           color: 'bg-cyan-600',
-          trend: { value: 'Active', positive: true }
+          trend: { value: t('dashboard.active'), positive: true }
         },
         {
-          label: 'In Production',
+          label: t('dashboard.inProduction'),
           value: stats.in_production_orders,
           icon: Package,
           color: 'bg-sky-600',
-          trend: { value: 'Manufacturing', positive: true }
+          trend: { value: t('dashboard.manufacturing'), positive: true }
         },
         {
-          label: 'Completed',
+          label: t('dashboard.completed'),
           value: stats.completed_orders,
           icon: CheckCircle,
           color: 'bg-teal-600',
-          trend: { value: 'Done', positive: true }
+          trend: { value: t('dashboard.done'), positive: true }
         }
       ],
       invoices: [
@@ -548,13 +548,13 @@ export function Dashboard() {
       <div className="min-h-[400px] flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Dashboard</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('dashboard.failedToLoad')}</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => fetchDashboardData(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Try Again
+            {t('dashboard.tryAgain')}
           </button>
         </div>
       </div>
@@ -569,8 +569,8 @@ export function Dashboard() {
     <div className="space-y-8 pb-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">{t('nav.dashboard')}</h1>
-          <p className="text-slate-600 text-lg">Business Performance Overview</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">{t('dashboard.title')}</h1>
+          <p className="text-slate-600 text-lg">{t('dashboard.subtitle')}</p>
         </div>
         <button
           onClick={refreshData}
@@ -578,7 +578,7 @@ export function Dashboard() {
           className="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-slate-300 rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all font-medium disabled:opacity-50 shadow-sm"
         >
           <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh Data
+          {t('common.refreshData')}
         </button>
       </div>
 
@@ -596,7 +596,7 @@ export function Dashboard() {
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
                   <Activity className="h-5 w-5 text-white" />
                 </div>
-                Recent Activity
+                {t('dashboard.recentActivity')}
               </h2>
               <div className="flex items-center gap-2">
                 <button
@@ -607,7 +607,7 @@ export function Dashboard() {
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  All
+                  {t('common.all')}
                 </button>
                 <button
                   onClick={() => setActivityFilter('quote')}
@@ -617,7 +617,7 @@ export function Dashboard() {
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  Quotes
+                  {t('nav.quotes')}
                 </button>
                 <button
                   onClick={() => setActivityFilter('order')}
@@ -627,7 +627,7 @@ export function Dashboard() {
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  Orders
+                  {t('nav.orders')}
                 </button>
                 <button
                   onClick={() => setActivityFilter('invoice')}
@@ -637,13 +637,13 @@ export function Dashboard() {
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  Invoices
+                  {t('nav.invoices')}
                 </button>
               </div>
             </div>
             <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {filteredActivity.length === 0 ? (
-                <p className="text-slate-500 text-center py-12">No activity found</p>
+                <p className="text-slate-500 text-center py-12">{t('dashboard.noActivityFound')}</p>
               ) : (
                 filteredActivity.map((activity, index) => {
                   const Icon = getActivityIcon(activity.activity_type);
@@ -685,7 +685,7 @@ export function Dashboard() {
               <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
                 <Zap className="h-5 w-5 text-white" />
               </div>
-              Insights
+              {t('dashboard.insights')}
             </h2>
             <div className="space-y-3">
               {insights.map((insight, index) => {
@@ -710,7 +710,7 @@ export function Dashboard() {
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
                 <Target className="h-5 w-5 text-white" />
               </div>
-              Quick Actions
+              {t('dashboard.quickActions')}
             </h2>
             <div className="space-y-3">
               <button className="w-full group p-4 border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-left">
@@ -719,8 +719,8 @@ export function Dashboard() {
                     <FileText className="h-5 w-5 text-blue-600 group-hover:text-white transition-colors" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-0.5">Create Quote</h3>
-                    <p className="text-xs text-slate-600">New quotation</p>
+                    <h3 className="font-semibold text-slate-900 mb-0.5">{t('dashboard.createQuote')}</h3>
+                    <p className="text-xs text-slate-600">{t('dashboard.newQuotation')}</p>
                   </div>
                 </div>
               </button>
@@ -730,8 +730,8 @@ export function Dashboard() {
                     <Calendar className="h-5 w-5 text-cyan-600 group-hover:text-white transition-colors" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-0.5">Schedule Visit</h3>
-                    <p className="text-xs text-slate-600">Book site visit</p>
+                    <h3 className="font-semibold text-slate-900 mb-0.5">{t('dashboard.scheduleVisit')}</h3>
+                    <p className="text-xs text-slate-600">{t('dashboard.bookSiteVisit')}</p>
                   </div>
                 </div>
               </button>
@@ -741,8 +741,8 @@ export function Dashboard() {
                     <TrendingUp className="h-5 w-5 text-emerald-600 group-hover:text-white transition-colors" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900 mb-0.5">Create Invoice</h3>
-                    <p className="text-xs text-slate-600">Generate invoice</p>
+                    <h3 className="font-semibold text-slate-900 mb-0.5">{t('dashboard.createInvoice')}</h3>
+                    <p className="text-xs text-slate-600">{t('dashboard.generateInvoice')}</p>
                   </div>
                 </div>
               </button>
@@ -761,7 +761,7 @@ export function Dashboard() {
               <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl flex items-center justify-center">
                 <FileText className="h-5 w-5 text-white" />
               </div>
-              Quotes Overview
+              {t('dashboard.quotesOverview')}
             </h2>
             {expandedSections.quotes ? (
               <ChevronUp className="h-6 w-6 text-slate-400 group-hover:text-slate-600 transition-colors" />
@@ -787,7 +787,7 @@ export function Dashboard() {
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center">
                 <ShoppingCart className="h-5 w-5 text-white" />
               </div>
-              Orders Overview
+              {t('dashboard.ordersOverview')}
             </h2>
             {expandedSections.orders ? (
               <ChevronUp className="h-6 w-6 text-slate-400 group-hover:text-slate-600 transition-colors" />
@@ -813,7 +813,7 @@ export function Dashboard() {
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-xl flex items-center justify-center">
                 <TrendingUp className="h-5 w-5 text-white" />
               </div>
-              Invoices Overview
+              {t('dashboard.invoicesOverview')}
             </h2>
             {expandedSections.invoices ? (
               <ChevronUp className="h-6 w-6 text-slate-400 group-hover:text-slate-600 transition-colors" />
@@ -839,7 +839,7 @@ export function Dashboard() {
               <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-cyan-600 rounded-xl flex items-center justify-center">
                 <Calendar className="h-5 w-5 text-white" />
               </div>
-              Site Visits
+              {t('dashboard.siteVisits')}
             </h2>
             {expandedSections.visits ? (
               <ChevronUp className="h-6 w-6 text-slate-400 group-hover:text-slate-600 transition-colors" />
@@ -865,7 +865,7 @@ export function Dashboard() {
               <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
                 <MessageSquare className="h-5 w-5 text-white" />
               </div>
-              Support & Messages
+              {t('dashboard.supportMessages')}
             </h2>
             {expandedSections.support ? (
               <ChevronUp className="h-6 w-6 text-slate-400 group-hover:text-slate-600 transition-colors" />

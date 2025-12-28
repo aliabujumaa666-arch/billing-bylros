@@ -35,42 +35,42 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
 
   const navigation = [
     { id: 'dashboard', icon: Building2, label: t('nav.dashboard') },
-    { id: 'customer-requests', icon: FileText, label: 'Customer Requests' },
+    { id: 'customer-requests', icon: FileText, label: t('nav.customerRequests') },
     { id: 'customers', icon: Users, label: t('nav.customers') },
     { id: 'quotes', icon: FileText, label: t('nav.quotes') },
     { id: 'visits', icon: Calendar, label: t('nav.visits') },
     { id: 'orders', icon: ShoppingCart, label: t('nav.orders') },
     { id: 'invoices', icon: FileCheck, label: t('nav.invoices') },
-    { id: 'receipts', icon: Receipt, label: 'Receipts' },
-    { id: 'payment-verification', icon: CheckCircle, label: 'Payment Verification' },
+    { id: 'receipts', icon: Receipt, label: t('nav.receipts') },
+    { id: 'payment-verification', icon: CheckCircle, label: t('nav.paymentVerification') },
     { id: 'tracker', icon: Package, label: t('nav.tracker') },
-    { id: 'production-workflow', icon: Workflow, label: 'Production Workflow' },
-    { id: 'inventory', icon: Boxes, label: 'Inventory Management' },
-    { id: 'calendar', icon: CalendarDays, label: 'Calendar View' },
-    { id: 'installation-tasks', icon: Wrench, label: 'Installation Tasks' },
-    { id: 'warranty-feedback', icon: Shield, label: 'Warranty & Feedback' },
-    { id: 'portal-settings', icon: Settings, label: 'Portal Settings' },
-    { id: 'cache-management', icon: HardDrive, label: 'Clear Cache' },
+    { id: 'production-workflow', icon: Workflow, label: t('nav.productionWorkflow') },
+    { id: 'inventory', icon: Boxes, label: t('nav.inventory') },
+    { id: 'calendar', icon: CalendarDays, label: t('nav.calendar') },
+    { id: 'installation-tasks', icon: Wrench, label: t('nav.installationTasks') },
+    { id: 'warranty-feedback', icon: Shield, label: t('nav.warrantyFeedback') },
+    { id: 'portal-settings', icon: Settings, label: t('nav.portalSettings') },
+    { id: 'cache-management', icon: HardDrive, label: t('nav.cacheManagement') },
   ];
 
   const whatsappNavigation = [
-    { id: 'whatsapp-inbox', icon: MessageSquare, label: 'WhatsApp Inbox' },
-    { id: 'whatsapp-messaging', icon: MessageSquare, label: 'Bulk Messaging' },
-    { id: 'whatsapp-marketing', icon: TrendingUp, label: 'Marketing' },
-    { id: 'whatsapp-ai-settings', icon: Settings, label: 'AI Settings' },
+    { id: 'whatsapp-inbox', icon: MessageSquare, label: t('nav.whatsappInbox') },
+    { id: 'whatsapp-messaging', icon: MessageSquare, label: t('nav.whatsappMessaging') },
+    { id: 'whatsapp-marketing', icon: TrendingUp, label: t('nav.whatsappMarketing') },
+    { id: 'whatsapp-ai-settings', icon: Settings, label: t('nav.whatsappAISettings') },
   ];
 
   const supportNavigation = [
-    { id: 'knowledge-base', icon: BookOpen, label: 'Knowledge Base' },
-    { id: 'faq-management', icon: HelpCircle, label: 'FAQs' },
-    { id: 'video-tutorials', icon: Video, label: 'Video Tutorials' },
-    { id: 'support-tickets', icon: Ticket, label: 'Support Tickets' },
-    { id: 'messages', icon: MessageSquare, label: 'Messages' },
-    { id: 'feedback-management', icon: MessageSquare, label: 'Feedback' },
-    { id: 'changelog-management', icon: PackageCheck, label: 'Changelog' },
-    { id: 'email-templates', icon: FileText, label: 'Email Templates' },
-    { id: 'email-marketing', icon: Mail, label: 'Email Marketing' },
-    { id: 'page-management', icon: LayoutIcon, label: 'Pages' },
+    { id: 'knowledge-base', icon: BookOpen, label: t('nav.knowledgeBase') },
+    { id: 'faq-management', icon: HelpCircle, label: t('nav.faq') },
+    { id: 'video-tutorials', icon: Video, label: t('nav.videoTutorials') },
+    { id: 'support-tickets', icon: Ticket, label: t('nav.supportTickets') },
+    { id: 'messages', icon: MessageSquare, label: t('nav.messages') },
+    { id: 'feedback-management', icon: MessageSquare, label: t('nav.feedbackManagement') },
+    { id: 'changelog-management', icon: PackageCheck, label: t('nav.changelogManagement') },
+    { id: 'email-templates', icon: FileText, label: t('nav.emailTemplates') },
+    { id: 'email-marketing', icon: Mail, label: t('nav.emailMarketing') },
+    { id: 'page-management', icon: LayoutIcon, label: t('nav.pageManagement') },
   ];
 
   useEffect(() => {
@@ -203,7 +203,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
               alt={`${brand?.company.name || 'BYLROS'} Logo`}
               className="h-14 w-auto mb-2"
             />
-            <p className="text-xs text-slate-600 font-medium">Admin Portal</p>
+            <p className="text-xs text-slate-600 font-medium">{t('auth.adminPortal')}</p>
           </div>
         </div>
 
@@ -235,7 +235,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
           </nav>
 
           <div className="px-4 py-2 mt-6 mb-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">WhatsApp Marketing</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">{t('nav.whatsappMarketing.header')}</p>
             <div className="space-y-1">
               {whatsappNavigation.map((item) => {
                 const Icon = item.icon;
@@ -270,7 +270,7 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
           </div>
 
           <div className="px-4 py-2 mt-6 mb-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">Documentation & Support</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">{t('nav.documentationSupport')}</p>
             <div className="space-y-1">
               {supportNavigation.map((item) => {
                 const Icon = item.icon;
