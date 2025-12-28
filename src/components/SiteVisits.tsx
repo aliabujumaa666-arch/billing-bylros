@@ -2,10 +2,22 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Calendar, Plus, X, Edit2, Trash2, DollarSign, Link as LinkIcon,
-  Copy, CheckCircle, Loader2, AlertCircle, Share2, Download
+  Copy, CheckCircle, Loader2, AlertCircle, Share2, Download, Upload, Image, Camera
 } from 'lucide-react';
 import { exportSiteVisitToPDF } from '../utils/exportUtils';
 import { useBrand } from '../contexts/BrandContext';
+
+interface SiteVisitPhoto {
+  id: string;
+  photo_type: string;
+  storage_path: string;
+  file_name: string;
+  uploaded_by: string | null;
+  uploaded_by_name: string | null;
+  caption: string | null;
+  created_at: string;
+  photoUrl?: string;
+}
 
 export function SiteVisits() {
   const { brand } = useBrand();
@@ -17,10 +29,20 @@ export function SiteVisits() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showShareLinkModal, setShowShareLinkModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showPhotosModal, setShowPhotosModal] = useState(false);
+  const [showWorkerLinkModal, setShowWorkerLinkModal] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<any>(null);
   const [paymentLink, setPaymentLink] = useState('');
+  const [workerLink, setWorkerLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [visitPhotos, setVisitPhotos] = useState<SiteVisitPhoto[]>([]);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoType, setPhotoType] = useState('before');
+  const [photoCaption, setPhotoCaption] = useState('');
   const [formData, setFormData] = useState({
     customer_id: '',
     quote_id: '',
@@ -192,10 +214,164 @@ export function SiteVisits() {
     await exportSiteVisitToPDF(visit, visit.customers, brand);
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(paymentLink);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const getPhotoUrl = async (path: string) => {
+    const { data, error } = await supabase.storage
+      .from('uploads')
+      .createSignedUrl(path, 3600);
+
+    if (error) {
+      console.error('Error creating signed URL:', error);
+      return '';
+    }
+
+    return data.signedUrl;
+  };
+
+  const handleUploadPhotos = (visit: any) => {
+    setSelectedVisit(visit);
+    setPhotoFiles([]);
+    setPhotoType('before');
+    setPhotoCaption('');
+    setShowUploadModal(true);
+  };
+
+  const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setPhotoFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVisit || photoFiles.length === 0) return;
+
+    setUploadingPhotos(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      for (const file of photoFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${selectedVisit.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `site-visit-photos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('uploads')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { error: dbError } = await supabase
+          .from('site_visit_photos')
+          .insert({
+            site_visit_id: selectedVisit.id,
+            photo_type: photoType,
+            storage_path: filePath,
+            file_name: file.name,
+            uploaded_by: user?.id,
+            caption: photoCaption || null,
+          });
+
+        if (dbError) throw dbError;
+      }
+
+      setShowUploadModal(false);
+      setPhotoFiles([]);
+      setPhotoType('before');
+      setPhotoCaption('');
+      alert('Photos uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      alert('Failed to upload photos');
+    } finally {
+      setUploadingPhotos(false);
+    }
+  };
+
+  const handleViewPhotos = async (visit: any) => {
+    setSelectedVisit(visit);
+    setShowPhotosModal(true);
+    setLoadingPhotos(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('site_visit_photos')
+        .select('*')
+        .eq('site_visit_id', visit.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const photosWithUrls = await Promise.all(
+        (data || []).map(async (photo) => ({
+          ...photo,
+          photoUrl: await getPhotoUrl(photo.storage_path)
+        }))
+      );
+
+      setVisitPhotos(photosWithUrls);
+    } catch (error) {
+      console.error('Error loading photos:', error);
+      alert('Failed to load photos');
+    } finally {
+      setLoadingPhotos(false);
+    }
+  };
+
+  const handleDownloadPhoto = async (photo: SiteVisitPhoto) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('uploads')
+        .download(photo.storage_path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = photo.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading photo:', error);
+      alert('Failed to download photo');
+    }
+  };
+
+  const handleGenerateWorkerLink = async (visit: any) => {
+    setLoading(true);
+    setSelectedVisit(visit);
+
+    try {
+      const linkToken = crypto.randomUUID();
+
+      const { error } = await supabase
+        .from('site_visit_worker_links')
+        .insert({
+          site_visit_id: visit.id,
+          link_token: linkToken,
+          is_active: true,
+        });
+
+      if (error) throw error;
+
+      const link = `${window.location.origin}/worker-upload?token=${linkToken}&type=site_visit`;
+      setWorkerLink(link);
+      setShowWorkerLinkModal(true);
+    } catch (error) {
+      console.error('Error generating worker link:', error);
+      alert('Failed to generate worker link');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredQuotes = quotes.filter(q => q.customer_id === formData.customer_id);
@@ -270,6 +446,32 @@ export function SiteVisits() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleUploadPhotos(visit)}
+                      className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                      title="Upload Photos"
+                    >
+                      <Upload className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleViewPhotos(visit)}
+                      className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                      title="View Photos"
+                    >
+                      <Image className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleGenerateWorkerLink(visit)}
+                      disabled={loading && selectedVisit?.id === visit.id}
+                      className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Generate Worker Link"
+                    >
+                      {loading && selectedVisit?.id === visit.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Camera className="w-4 h-4" />
+                      )}
+                    </button>
                     <button
                       onClick={() => handleDownloadPDF(visit)}
                       className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
@@ -717,7 +919,7 @@ export function SiteVisits() {
                   className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm"
                 />
                 <button
-                  onClick={copyToClipboard}
+                  onClick={() => copyToClipboard(paymentLink)}
                   className="px-4 py-2 bg-[#bb2738] hover:bg-[#a01f2f] text-white rounded-lg flex items-center gap-2"
                 >
                   {copied ? (
@@ -739,6 +941,233 @@ export function SiteVisits() {
                 onClick={() => {
                   setShowShareLinkModal(false);
                   setPaymentLink('');
+                  setCopied(false);
+                }}
+                className="px-6 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUploadModal && selectedVisit && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-xl font-bold">Upload Photos</h2>
+              <button onClick={() => setShowUploadModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handlePhotoUpload} className="p-6 space-y-4">
+              <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                <p className="text-sm text-slate-600 mb-1">Site Visit</p>
+                <p className="font-semibold text-slate-900">{selectedVisit.customers?.name}</p>
+                <p className="text-sm text-slate-600">{selectedVisit.location}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Photo Type</label>
+                <select
+                  value={photoType}
+                  onChange={(e) => setPhotoType(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="before">Before</option>
+                  <option value="during">During</option>
+                  <option value="after">After</option>
+                  <option value="issue">Issue</option>
+                  <option value="general">General</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Photos</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoFileChange}
+                  required
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                {photoFiles.length > 0 && (
+                  <p className="text-sm text-slate-600 mt-2">{photoFiles.length} file(s) selected</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Caption (Optional)</label>
+                <textarea
+                  value={photoCaption}
+                  onChange={(e) => setPhotoCaption(e.target.value)}
+                  rows={3}
+                  placeholder="Add a description or note"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowUploadModal(false)}
+                  className="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={uploadingPhotos}
+                  className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
+                >
+                  {uploadingPhotos ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Upload Photos
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showPhotosModal && selectedVisit && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-6 border-b">
+              <div>
+                <h2 className="text-xl font-bold">Site Visit Photos</h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  {selectedVisit.customers?.name} - {selectedVisit.location}
+                </p>
+              </div>
+              <button onClick={() => setShowPhotosModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingPhotos ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                </div>
+              ) : visitPhotos.length === 0 ? (
+                <div className="text-center py-12">
+                  <Image className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500">No photos uploaded yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {visitPhotos.map((photo) => (
+                    <div key={photo.id} className="bg-slate-50 rounded-lg overflow-hidden border border-slate-200">
+                      <div className="aspect-square relative bg-slate-200">
+                        {photo.photoUrl ? (
+                          <img
+                            src={photo.photoUrl}
+                            alt={photo.photo_type}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Image failed to load:', photo.storage_path);
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Image className="w-12 h-12 text-slate-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-block px-2 py-1 bg-teal-100 text-teal-700 text-xs font-medium rounded capitalize">
+                            {photo.photo_type}
+                          </span>
+                          <button
+                            onClick={() => handleDownloadPhoto(photo)}
+                            className="p-1 text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                            title="Download"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <p className="text-sm text-slate-700 font-medium">{photo.file_name}</p>
+                        {photo.caption && (
+                          <p className="text-xs text-slate-600">{photo.caption}</p>
+                        )}
+                        {photo.uploaded_by_name && (
+                          <p className="text-xs text-slate-500">Uploaded by: {photo.uploaded_by_name}</p>
+                        )}
+                        <p className="text-xs text-slate-400">
+                          {new Date(photo.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="border-t p-4 flex justify-end">
+              <button
+                onClick={() => setShowPhotosModal(false)}
+                className="px-6 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showWorkerLinkModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <Camera className="w-6 h-6 text-orange-600" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-slate-900 mb-2">Worker Upload Link</h2>
+                <p className="text-slate-600">
+                  Share this link with workers to upload photos from site. No login required.
+                </p>
+              </div>
+            </div>
+            <div className="bg-slate-50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-slate-600 mb-2">Upload Link</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={workerLink}
+                  readOnly
+                  className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm"
+                />
+                <button
+                  onClick={() => copyToClipboard(workerLink)}
+                  className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center gap-2"
+                >
+                  {copied ? (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  setShowWorkerLinkModal(false);
+                  setWorkerLink('');
                   setCopied(false);
                 }}
                 className="px-6 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg"

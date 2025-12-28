@@ -18,6 +18,7 @@ export function WorkerPhotoUpload({ onBack }: WorkerPhotoUploadProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [task, setTask] = useState<any>(null);
+  const [uploadType, setUploadType] = useState<'installation' | 'site_visit'>('installation');
   const [workerName, setWorkerName] = useState('');
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [currentPhotoType, setCurrentPhotoType] = useState('before');
@@ -27,55 +28,98 @@ export function WorkerPhotoUpload({ onBack }: WorkerPhotoUploadProps) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
+    const type = params.get('type');
 
     if (token) {
-      fetchTask(token);
+      setUploadType(type === 'site_visit' ? 'site_visit' : 'installation');
+      fetchTask(token, type === 'site_visit' ? 'site_visit' : 'installation');
     } else {
       setError('Invalid upload link');
       setStep('error');
     }
   }, []);
 
-  const fetchTask = async (token: string) => {
+  const fetchTask = async (token: string, type: 'installation' | 'site_visit') => {
     try {
-      const { data, error } = await supabase
-        .from('installation_tasks')
-        .select(`
-          *,
-          orders(
-            order_number,
-            customers(name)
-          )
-        `)
-        .eq('upload_link_token', token)
-        .maybeSingle();
+      if (type === 'site_visit') {
+        const { data: linkData, error: linkError } = await supabase
+          .from('site_visit_worker_links')
+          .select('site_visit_id, is_active, expires_at')
+          .eq('link_token', token)
+          .maybeSingle();
 
-      if (error || !data) {
-        setError('Upload link not found or has expired');
-        setStep('error');
-        return;
+        if (linkError || !linkData) {
+          setError('Upload link not found or has expired');
+          setStep('error');
+          return;
+        }
+
+        if (!linkData.is_active) {
+          setError('This upload link has been deactivated');
+          setStep('error');
+          return;
+        }
+
+        if (linkData.expires_at && new Date(linkData.expires_at) < new Date()) {
+          setError('This upload link has expired');
+          setStep('error');
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('site_visits')
+          .select('*, customers(*)')
+          .eq('id', linkData.site_visit_id)
+          .maybeSingle();
+
+        if (error || !data) {
+          setError('Site visit not found');
+          setStep('error');
+          return;
+        }
+
+        setTask({ ...data, linkToken: token });
+        setStep('form');
+      } else {
+        const { data, error } = await supabase
+          .from('installation_tasks')
+          .select(`
+            *,
+            orders(
+              order_number,
+              customers(name)
+            )
+          `)
+          .eq('upload_link_token', token)
+          .maybeSingle();
+
+        if (error || !data) {
+          setError('Upload link not found or has expired');
+          setStep('error');
+          return;
+        }
+
+        if (!data.upload_link_active) {
+          setError('This upload link has been deactivated');
+          setStep('error');
+          return;
+        }
+
+        if (new Date(data.upload_link_expires_at) < new Date()) {
+          setError('This upload link has expired');
+          setStep('error');
+          return;
+        }
+
+        if (data.status === 'completed') {
+          setError('This installation task has been completed and no longer accepts uploads');
+          setStep('error');
+          return;
+        }
+
+        setTask(data);
+        setStep('form');
       }
-
-      if (!data.upload_link_active) {
-        setError('This upload link has been deactivated');
-        setStep('error');
-        return;
-      }
-
-      if (new Date(data.upload_link_expires_at) < new Date()) {
-        setError('This upload link has expired');
-        setStep('error');
-        return;
-      }
-
-      if (data.status === 'completed') {
-        setError('This installation task has been completed and no longer accepts uploads');
-        setStep('error');
-        return;
-      }
-
-      setTask(data);
-      setStep('form');
     } catch (err) {
       console.error('Error fetching task:', err);
       setError('Failed to load upload information');
@@ -137,29 +181,53 @@ export function WorkerPhotoUpload({ onBack }: WorkerPhotoUploadProps) {
       for (const photo of photos) {
         const fileExt = photo.file.name.split('.').pop();
         const fileName = `${task.id}-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `installation-photos/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('uploads')
-          .upload(filePath, photo.file);
+        if (uploadType === 'site_visit') {
+          const filePath = `site-visit-photos/${fileName}`;
 
-        if (uploadError) throw uploadError;
+          const { error: uploadError } = await supabase.storage
+            .from('uploads')
+            .upload(filePath, photo.file);
 
-        const { error: insertError } = await supabase
-          .from('installation_photos')
-          .insert([{
-            order_id: task.order_id,
-            installation_task_id: task.id,
-            photo_type: photo.photoType,
-            storage_path: filePath,
-            file_name: fileName,
-            file_size: photo.file.size,
-            mime_type: photo.file.type,
-            caption: photo.caption || null,
-            uploaded_by_name: workerName.trim(),
-          }]);
+          if (uploadError) throw uploadError;
 
-        if (insertError) throw insertError;
+          const { error: insertError } = await supabase
+            .from('site_visit_photos')
+            .insert([{
+              site_visit_id: task.id,
+              photo_type: photo.photoType,
+              storage_path: filePath,
+              file_name: photo.file.name,
+              caption: photo.caption || null,
+              uploaded_by_name: workerName.trim(),
+            }]);
+
+          if (insertError) throw insertError;
+        } else {
+          const filePath = `installation-photos/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('uploads')
+            .upload(filePath, photo.file);
+
+          if (uploadError) throw uploadError;
+
+          const { error: insertError } = await supabase
+            .from('installation_photos')
+            .insert([{
+              order_id: task.order_id,
+              installation_task_id: task.id,
+              photo_type: photo.photoType,
+              storage_path: filePath,
+              file_name: fileName,
+              file_size: photo.file.size,
+              mime_type: photo.file.type,
+              caption: photo.caption || null,
+              uploaded_by_name: workerName.trim(),
+            }]);
+
+          if (insertError) throw insertError;
+        }
 
         uploadedCount++;
         setUploadProgress(Math.round((uploadedCount / photos.length) * 100));
@@ -232,12 +300,21 @@ export function WorkerPhotoUpload({ onBack }: WorkerPhotoUploadProps) {
             </div>
             <h2 className="text-2xl font-bold text-slate-900">Upload Successful!</h2>
             <p className="text-slate-600">
-              {photos.length} photo{photos.length !== 1 ? 's' : ''} uploaded successfully for this installation task.
+              {photos.length} photo{photos.length !== 1 ? 's' : ''} uploaded successfully for this {uploadType === 'site_visit' ? 'site visit' : 'installation task'}.
             </p>
             <div className="bg-slate-50 rounded-lg p-4 w-full text-left">
-              <p className="text-sm text-slate-600">Task: <span className="font-medium text-slate-900">{task.task_title}</span></p>
-              {task.orders && (
-                <p className="text-sm text-slate-600 mt-1">Order: <span className="font-medium text-slate-900">{task.orders.order_number}</span></p>
+              {uploadType === 'site_visit' ? (
+                <>
+                  <p className="text-sm text-slate-600">Customer: <span className="font-medium text-slate-900">{task.customers?.name}</span></p>
+                  <p className="text-sm text-slate-600 mt-1">Location: <span className="font-medium text-slate-900">{task.location}</span></p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-600">Task: <span className="font-medium text-slate-900">{task.task_title}</span></p>
+                  {task.orders && (
+                    <p className="text-sm text-slate-600 mt-1">Order: <span className="font-medium text-slate-900">{task.orders.order_number}</span></p>
+                  )}
+                </>
               )}
             </div>
             <button
@@ -282,54 +359,90 @@ export function WorkerPhotoUpload({ onBack }: WorkerPhotoUploadProps) {
             <div className="flex items-center gap-3 mb-4">
               <Upload className="w-8 h-8" />
               <div>
-                <h1 className="text-2xl font-bold">Upload Installation Photos</h1>
-                <p className="text-white/90 text-sm">Share progress photos for this installation</p>
+                <h1 className="text-2xl font-bold">
+                  {uploadType === 'site_visit' ? 'Upload Site Visit Photos' : 'Upload Installation Photos'}
+                </h1>
+                <p className="text-white/90 text-sm">
+                  {uploadType === 'site_visit' ? 'Share photos from the site visit' : 'Share progress photos for this installation'}
+                </p>
               </div>
             </div>
           </div>
 
           <div className="p-6">
             <div className="bg-slate-50 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-slate-900 mb-3">Installation Details</h3>
+              <h3 className="font-semibold text-slate-900 mb-3">
+                {uploadType === 'site_visit' ? 'Site Visit Details' : 'Installation Details'}
+              </h3>
               <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <Building2 className="w-5 h-5 text-slate-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-slate-600">Task</p>
-                    <p className="font-medium text-slate-900">{task.task_title}</p>
-                  </div>
-                </div>
-                {task.orders && (
-                  <div className="flex items-start gap-2">
-                    <Building2 className="w-5 h-5 text-slate-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-slate-600">Order</p>
-                      <p className="font-medium text-slate-900">
-                        {task.orders.order_number} - {task.orders.customers?.name}
-                      </p>
+                {uploadType === 'site_visit' ? (
+                  <>
+                    <div className="flex items-start gap-2">
+                      <Building2 className="w-5 h-5 text-slate-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-slate-600">Customer</p>
+                        <p className="font-medium text-slate-900">{task.customers?.name}</p>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {task.scheduled_date && (
-                  <div className="flex items-start gap-2">
-                    <Calendar className="w-5 h-5 text-slate-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-slate-600">Scheduled</p>
-                      <p className="font-medium text-slate-900">
-                        {new Date(task.scheduled_date).toLocaleDateString()}
-                        {task.scheduled_time_start && ` at ${task.scheduled_time_start}`}
-                      </p>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-slate-600">Location</p>
+                        <p className="font-medium text-slate-900">{task.location}</p>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {task.installation_address && (
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-slate-600">Location</p>
-                      <p className="font-medium text-slate-900">{task.installation_address}</p>
+                    <div className="flex items-start gap-2">
+                      <Calendar className="w-5 h-5 text-slate-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-slate-600">Visit Date</p>
+                        <p className="font-medium text-slate-900">
+                          {new Date(task.visit_date).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-2">
+                      <Building2 className="w-5 h-5 text-slate-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-slate-600">Task</p>
+                        <p className="font-medium text-slate-900">{task.task_title}</p>
+                      </div>
+                    </div>
+                    {task.orders && (
+                      <div className="flex items-start gap-2">
+                        <Building2 className="w-5 h-5 text-slate-400 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-slate-600">Order</p>
+                          <p className="font-medium text-slate-900">
+                            {task.orders.order_number} - {task.orders.customers?.name}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {task.scheduled_date && (
+                      <div className="flex items-start gap-2">
+                        <Calendar className="w-5 h-5 text-slate-400 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-slate-600">Scheduled</p>
+                          <p className="font-medium text-slate-900">
+                            {new Date(task.scheduled_date).toLocaleDateString()}
+                            {task.scheduled_time_start && ` at ${task.scheduled_time_start}`}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {task.installation_address && (
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-slate-600">Location</p>
+                          <p className="font-medium text-slate-900">{task.installation_address}</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
