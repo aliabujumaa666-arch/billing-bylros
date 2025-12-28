@@ -485,12 +485,38 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
     if (pdfSettings.terms.showCompanyInfo || pdfSettings.terms.showCompanyStamp) {
       const companyInfoSpacing = pdfSettings.terms.companyInfoSpacing || 20;
       const companySectionY = adjustedTermsY + companyInfoSpacing;
-      const sectionHeight = pdfSettings.terms.showCompanyStamp && pdfSettings.terms.showCompanyInfo ? 45 : 35;
+      const sectionHeight = 35;
 
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(10, companySectionY, 190, sectionHeight, 2, 2, 'F');
       doc.setDrawColor(203, 213, 225);
       doc.roundedRect(10, companySectionY, 190, sectionHeight, 2, 2, 'S');
+
+      if (pdfSettings.terms.showCompanyInfo) {
+        let companyInfoText = pdfSettings.terms.companyInfoText || '';
+
+        if (!companyInfoText) {
+          const infoParts = [];
+          if (companyFullName) infoParts.push(companyFullName);
+          if (companyAddress) infoParts.push(companyAddress);
+          if (companyPhone) infoParts.push(`Tel: ${companyPhone}`);
+          if (companyEmail) infoParts.push(`Email: ${companyEmail}`);
+          companyInfoText = infoParts.join(' | ');
+        }
+
+        if (companyInfoText) {
+          doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+          doc.setFontSize(7);
+          doc.setTextColor(51, 65, 85);
+          doc.text('Company Information', 14, companySectionY + 6);
+
+          doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+          doc.setFontSize(7);
+          doc.setTextColor(71, 85, 105);
+          const splitCompanyInfo = doc.splitTextToSize(companyInfoText, 176);
+          doc.text(splitCompanyInfo, 14, companySectionY + 12);
+        }
+      }
 
       if (pdfSettings.terms.showCompanyStamp && pdfSettings.terms.companyStampUrl) {
         try {
@@ -509,34 +535,6 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
           );
         } catch (error) {
           console.error('Error adding company stamp to PDF:', error);
-        }
-      }
-
-      if (pdfSettings.terms.showCompanyInfo) {
-        let companyInfoText = pdfSettings.terms.companyInfoText || '';
-
-        if (!companyInfoText) {
-          const infoParts = [];
-          if (companyFullName) infoParts.push(companyFullName);
-          if (companyAddress) infoParts.push(companyAddress);
-          if (companyPhone) infoParts.push(`Tel: ${companyPhone}`);
-          if (companyEmail) infoParts.push(`Email: ${companyEmail}`);
-          companyInfoText = infoParts.join(' | ');
-        }
-
-        if (companyInfoText) {
-          const infoStartY = pdfSettings.terms.showCompanyStamp ? companySectionY + 36 : companySectionY + 6;
-
-          doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-          doc.setFontSize(7);
-          doc.setTextColor(51, 65, 85);
-          doc.text('Company Information', 14, infoStartY);
-
-          doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-          doc.setFontSize(7);
-          doc.setTextColor(71, 85, 105);
-          const splitCompanyInfo = doc.splitTextToSize(companyInfoText, 176);
-          doc.text(splitCompanyInfo, 14, infoStartY + 6);
         }
       }
     }
@@ -1595,12 +1593,38 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
   if (pdfSettings.terms?.showCompanyInfo || pdfSettings.terms?.showCompanyStamp) {
     const companyInfoSpacing = pdfSettings.terms?.companyInfoSpacing || 20;
     const companySectionY = termsY + companyInfoSpacing;
-    const sectionHeight = pdfSettings.terms.showCompanyStamp && pdfSettings.terms.showCompanyInfo ? 45 : 35;
+    const sectionHeight = 35;
 
     doc.setFillColor(248, 250, 252);
     doc.roundedRect(10, companySectionY, 190, sectionHeight, 2, 2, 'F');
     doc.setDrawColor(203, 213, 225);
     doc.roundedRect(10, companySectionY, 190, sectionHeight, 2, 2, 'S');
+
+    if (pdfSettings.terms?.showCompanyInfo) {
+      let companyInfoText = pdfSettings.terms.companyInfoText || '';
+
+      if (!companyInfoText) {
+        const infoParts = [];
+        if (companyFullName) infoParts.push(companyFullName);
+        if (companyAddress) infoParts.push(companyAddress);
+        if (companyPhone) infoParts.push(`Tel: ${companyPhone}`);
+        if (companyEmail) infoParts.push(`Email: ${companyEmail}`);
+        companyInfoText = infoParts.join(' | ');
+      }
+
+      if (companyInfoText) {
+        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(51, 65, 85);
+        doc.text('Company Information', 14, companySectionY + 6);
+
+        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(71, 85, 105);
+        const splitCompanyInfo = doc.splitTextToSize(companyInfoText, 176);
+        doc.text(splitCompanyInfo, 14, companySectionY + 12);
+      }
+    }
 
     if (pdfSettings.terms?.showCompanyStamp && pdfSettings.terms?.companyStampUrl) {
       try {
@@ -1619,34 +1643,6 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
         );
       } catch (error) {
         console.error('Error adding company stamp to warranty PDF:', error);
-      }
-    }
-
-    if (pdfSettings.terms?.showCompanyInfo) {
-      let companyInfoText = pdfSettings.terms.companyInfoText || '';
-
-      if (!companyInfoText) {
-        const infoParts = [];
-        if (companyFullName) infoParts.push(companyFullName);
-        if (companyAddress) infoParts.push(companyAddress);
-        if (companyPhone) infoParts.push(`Tel: ${companyPhone}`);
-        if (companyEmail) infoParts.push(`Email: ${companyEmail}`);
-        companyInfoText = infoParts.join(' | ');
-      }
-
-      if (companyInfoText) {
-        const infoStartY = pdfSettings.terms.showCompanyStamp ? companySectionY + 36 : companySectionY + 6;
-
-        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(51, 65, 85);
-        doc.text('Company Information', 14, infoStartY);
-
-        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(71, 85, 105);
-        const splitCompanyInfo = doc.splitTextToSize(companyInfoText, 176);
-        doc.text(splitCompanyInfo, 14, infoStartY + 6);
       }
     }
   }
