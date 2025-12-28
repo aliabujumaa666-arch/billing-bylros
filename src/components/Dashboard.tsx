@@ -155,6 +155,10 @@ export function Dashboard() {
   const statCards = useMemo(() => {
     if (!stats) return [];
 
+    const revenuePercentage = stats.total_revenue > 0
+      ? ((stats.revenue_30d / stats.total_revenue) * 100).toFixed(1)
+      : '0.0';
+
     return [
       {
         label: 'Total Customers',
@@ -163,7 +167,17 @@ export function Dashboard() {
         color: 'bg-blue-500',
         trend: {
           value: `+${stats.new_customers_30d} this month`,
-          positive: true
+          positive: stats.new_customers_30d > 0
+        }
+      },
+      {
+        label: 'Total Quotes',
+        value: stats.total_quotes,
+        icon: FileText,
+        color: 'bg-slate-500',
+        trend: {
+          value: `${stats.pending_quotes} pending`,
+          positive: false
         }
       },
       {
@@ -173,6 +187,26 @@ export function Dashboard() {
         color: 'bg-yellow-500',
         trend: {
           value: `AED ${stats.pending_quotes_value.toLocaleString()}`,
+          positive: true
+        }
+      },
+      {
+        label: 'New Quotes (30d)',
+        value: stats.new_quotes_30d,
+        icon: FileText,
+        color: 'bg-cyan-500',
+        trend: {
+          value: 'this month',
+          positive: true
+        }
+      },
+      {
+        label: 'Total Orders',
+        value: stats.total_orders,
+        icon: ShoppingCart,
+        color: 'bg-emerald-500',
+        trend: {
+          value: `${stats.new_orders_30d} new this month`,
           positive: true
         }
       },
@@ -187,12 +221,62 @@ export function Dashboard() {
         }
       },
       {
-        label: 'Revenue (30d)',
-        value: `AED ${stats.revenue_30d.toLocaleString()}`,
+        label: 'Total Invoices',
+        value: stats.total_invoices,
+        icon: TrendingUp,
+        color: 'bg-indigo-500',
+        trend: {
+          value: `${stats.pending_invoices} pending`,
+          positive: false
+        }
+      },
+      {
+        label: 'Pending Invoices',
+        value: stats.pending_invoices,
+        icon: AlertCircle,
+        color: 'bg-orange-500',
+        trend: {
+          value: `AED ${stats.pending_invoices_value.toLocaleString()}`,
+          positive: false
+        }
+      },
+      {
+        label: 'Overdue Invoices',
+        value: stats.overdue_invoices,
+        icon: AlertTriangle,
+        color: 'bg-red-500',
+        trend: {
+          value: `AED ${stats.overdue_invoices_value.toLocaleString()}`,
+          positive: false
+        }
+      },
+      {
+        label: 'Total Revenue',
+        value: `AED ${stats.total_revenue.toLocaleString()}`,
         icon: TrendingUp,
         color: 'bg-[#bb2738]',
         trend: {
-          value: `${((stats.revenue_30d / stats.total_revenue) * 100).toFixed(1)}% of total`,
+          value: 'all time',
+          positive: true
+        }
+      },
+      {
+        label: 'Revenue (30d)',
+        value: `AED ${stats.revenue_30d.toLocaleString()}`,
+        icon: TrendingUp,
+        color: 'bg-rose-600',
+        trend: {
+          value: `${revenuePercentage}% of total`,
+          positive: true
+        }
+      },
+      {
+        label: 'Total Site Visits',
+        value: stats.scheduled_visits,
+        icon: Calendar,
+        color: 'bg-violet-500',
+        trend: {
+          value: 'scheduled',
           positive: true
         }
       },
@@ -202,8 +286,28 @@ export function Dashboard() {
         icon: Calendar,
         color: 'bg-purple-500',
         trend: {
-          value: `${stats.scheduled_visits} scheduled`,
+          value: 'today',
           positive: true
+        }
+      },
+      {
+        label: 'Open Tickets',
+        value: stats.open_tickets,
+        icon: AlertCircle,
+        color: 'bg-amber-500',
+        trend: {
+          value: `${stats.high_priority_tickets} high priority`,
+          positive: false
+        }
+      },
+      {
+        label: 'Unread Messages',
+        value: stats.unread_messages,
+        icon: Clock,
+        color: 'bg-sky-500',
+        trend: {
+          value: 'from customers',
+          positive: false
         }
       },
     ];
@@ -276,46 +380,6 @@ export function Dashboard() {
           <StatCard key={index} {...stat} />
         ))}
       </div>
-
-      {(stats.overdue_invoices > 0 || stats.high_priority_tickets > 0 || stats.unread_messages > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {stats.overdue_invoices > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                <div>
-                  <div className="font-semibold text-red-900">{stats.overdue_invoices} Overdue Invoices</div>
-                  <div className="text-sm text-red-700">AED {stats.overdue_invoices_value.toLocaleString()}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {stats.high_priority_tickets > 0 && (
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
-                <div>
-                  <div className="font-semibold text-orange-900">{stats.high_priority_tickets} High Priority Tickets</div>
-                  <div className="text-sm text-orange-700">Require immediate attention</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {stats.unread_messages > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <Clock className="h-5 w-5 text-blue-600" />
-                <div>
-                  <div className="font-semibold text-blue-900">{stats.unread_messages} Unread Messages</div>
-                  <div className="text-sm text-blue-700">From customers</div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
