@@ -432,28 +432,38 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
 
   let remarksY = currentY + 12;
 
-  if (quote.remarks) {
-    if (remarksY > pageHeight - footerHeightWithMargin - 30) {
-      doc.addPage();
-      remarksY = 20;
+  if (pdfSettings.sections.showRemarks && pdfSettings.remarks?.showRemarks) {
+    let remarksContent = '';
+
+    if (pdfSettings.remarks.remarksContent && pdfSettings.remarks.remarksContent.length > 0) {
+      remarksContent = pdfSettings.remarks.remarksContent.join('\n');
+    } else if (quote.remarks) {
+      remarksContent = quote.remarks;
     }
 
-    doc.setFillColor(254, 252, 232);
-    doc.roundedRect(10, remarksY, 120, 22, 2, 2, 'F');
-    doc.setDrawColor(250, 204, 21);
-    doc.roundedRect(10, remarksY, 120, 22, 2, 2, 'S');
+    if (remarksContent) {
+      if (remarksY > pageHeight - footerHeightWithMargin - 30) {
+        doc.addPage();
+        remarksY = 20;
+      }
 
-    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(161, 98, 7);
-    doc.text('REMARKS & NOTES', 14, remarksY + 5);
+      doc.setFillColor(254, 252, 232);
+      doc.roundedRect(10, remarksY, 120, 22, 2, 2, 'F');
+      doc.setDrawColor(250, 204, 21);
+      doc.roundedRect(10, remarksY, 120, 22, 2, 2, 'S');
 
-    doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(113, 63, 18);
-    const splitRemarks = doc.splitTextToSize(quote.remarks, 110);
-    doc.text(splitRemarks, 14, remarksY + 10);
-    remarksY += 27;
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(161, 98, 7);
+      doc.text(pdfSettings.remarks.remarksTitle || 'REMARKS & NOTES', 14, remarksY + 5);
+
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(113, 63, 18);
+      const splitRemarks = doc.splitTextToSize(remarksContent, 110);
+      doc.text(splitRemarks, 14, remarksY + 10);
+      remarksY += 27;
+    }
   }
 
   const termsY = remarksY > currentY + 12 ? remarksY : currentY + 12;
