@@ -96,6 +96,7 @@ export const getDefaultPDFSettings = (): PDFSettings => ({
     ],
     termsStyle: 'bordered',
     showTerms: true,
+    companyInfoSpacing: 20,
   },
   sections: {
     showQuoteDetails: true,

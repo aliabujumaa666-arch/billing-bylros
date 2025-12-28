@@ -66,6 +66,11 @@ export interface PDFSettings {
     termsContent: string[];
     termsStyle: 'simple' | 'bordered' | 'box';
     showTerms: boolean;
+    showCompanyInfo?: boolean;
+    companyInfoText?: string;
+    showCompanyStamp?: boolean;
+    companyStampUrl?: string;
+    companyInfoSpacing?: number;
   };
   sections: {
     showQuoteDetails: boolean;

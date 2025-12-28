@@ -1908,6 +1908,25 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
                         </div>
                       )}
                     </div>
+
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-slate-600 mb-2">
+                          Spacing After Terms (mm)
+                        </label>
+                        <input
+                          type="number"
+                          value={settings.terms.companyInfoSpacing || 20}
+                          onChange={(e) => updateSettings('terms', 'companyInfoSpacing', Number(e.target.value))}
+                          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                          min="5"
+                          max="50"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                          Control space between Terms & Conditions and Company Information section (5-50mm)
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

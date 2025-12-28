@@ -483,7 +483,8 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
     doc.text(pdfSettings.terms.termsContent, 14, adjustedTermsY + 11);
 
     if (pdfSettings.terms.showCompanyInfo || pdfSettings.terms.showCompanyStamp) {
-      const companySectionY = adjustedTermsY + 20;
+      const companyInfoSpacing = pdfSettings.terms.companyInfoSpacing || 20;
+      const companySectionY = adjustedTermsY + companyInfoSpacing;
       const sectionHeight = 35;
 
       doc.setFillColor(248, 250, 252);
@@ -1591,7 +1592,8 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
   doc.text(splitTerms, 14, termsY + 8);
 
   if (pdfSettings.terms?.showCompanyInfo || pdfSettings.terms?.showCompanyStamp) {
-    const companySectionY = termsY + 20;
+    const companyInfoSpacing = pdfSettings.terms?.companyInfoSpacing || 20;
+    const companySectionY = termsY + companyInfoSpacing;
     const sectionHeight = 35;
 
     doc.setFillColor(248, 250, 252);
