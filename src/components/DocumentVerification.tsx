@@ -92,9 +92,16 @@ export function DocumentVerification({ documentType, documentId }: DocumentVerif
           )
         `)
         .eq('id', documentId)
-        .single();
+        .maybeSingle();
 
-      if (fetchError || !document) {
+      if (fetchError) {
+        console.error('Fetch error:', fetchError);
+        setError('Error verifying document');
+        setLoading(false);
+        return;
+      }
+
+      if (!document) {
         setError('Document not found');
         setLoading(false);
         return;
