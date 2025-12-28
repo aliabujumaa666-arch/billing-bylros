@@ -167,9 +167,19 @@ export function WorkerPhotoUpload({ onBack }: WorkerPhotoUploadProps) {
 
       photos.forEach(photo => URL.revokeObjectURL(photo.preview));
       setStep('success');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading photos:', error);
-      setError('Failed to upload photos. Please try again.');
+      let errorMessage = 'Failed to upload photos. Please try again.';
+
+      if (error.message) {
+        errorMessage = `Upload failed: ${error.message}`;
+      }
+
+      if (error.statusCode === 403) {
+        errorMessage = 'Upload permission denied. The link may have expired or been deactivated.';
+      }
+
+      setError(errorMessage);
       setStep('error');
     } finally {
       setLoading(false);
