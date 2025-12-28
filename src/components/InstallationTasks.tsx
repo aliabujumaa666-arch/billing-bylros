@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Calendar, MapPin, Upload, Shield, CheckCircle, CreditCard as Edit, Trash2 } from 'lucide-react';
+import { Plus, Calendar, MapPin, Upload, Shield, CheckCircle, CreditCard as Edit, Trash2, Link2, Copy, ExternalLink } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -41,6 +41,9 @@ export function InstallationTasks() {
     coverage_type: 'Standard',
     coverage_details: '',
   });
+  const [showUploadLinkModal, setShowUploadLinkModal] = useState(false);
+  const [uploadLinkTask, setUploadLinkTask] = useState<InstallationTask | null>(null);
+  const [generatedUploadLink, setGeneratedUploadLink] = useState<string>('');
   const [formData, setFormData] = useState({
     order_id: '',
     task_title: '',
@@ -360,6 +363,43 @@ export function InstallationTasks() {
     }
   };
 
+  const handleGenerateUploadLink = async (task: InstallationTask) => {
+    try {
+      const token = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      const { error } = await supabase
+        .from('installation_tasks')
+        .update({
+          upload_link_token: token,
+          upload_link_generated_at: new Date().toISOString(),
+          upload_link_expires_at: expiresAt.toISOString(),
+          upload_link_active: true,
+        })
+        .eq('id', task.id);
+
+      if (error) throw error;
+
+      const baseUrl = window.location.origin;
+      const uploadLink = `${baseUrl}/worker-upload?token=${token}`;
+
+      setGeneratedUploadLink(uploadLink);
+      setUploadLinkTask(task);
+      setShowUploadLinkModal(true);
+
+      await loadTasks();
+    } catch (error) {
+      console.error('Error generating upload link:', error);
+      alert('Failed to generate upload link');
+    }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(generatedUploadLink);
+    alert('Link copied to clipboard!');
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-700';
@@ -453,6 +493,13 @@ export function InstallationTasks() {
               >
                 <Upload className="w-4 h-4" />
                 Upload Photos
+              </button>
+              <button
+                onClick={() => handleGenerateUploadLink(task)}
+                className="flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 font-medium"
+              >
+                <Link2 className="w-4 h-4" />
+                Generate Worker Link
               </button>
               {task.status !== 'completed' && (
                 <button
@@ -673,6 +720,87 @@ export function InstallationTasks() {
               >
                 <Shield className="w-4 h-4" />
                 Create Warranty
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUploadLinkModal && uploadLinkTask && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <Link2 className="w-6 h-6 text-purple-600" />
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Worker Upload Link Generated</h3>
+                  <p className="text-sm text-slate-600">{uploadLinkTask.task_title}</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <p className="text-sm text-purple-800 mb-3">Share this link with workers to allow them to upload installation photos. The link expires in 7 days.</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={generatedUploadLink}
+                    readOnly
+                    className="flex-1 bg-white border border-purple-300 rounded-lg px-3 py-2 text-sm font-mono"
+                  />
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                <h4 className="font-medium text-slate-900 text-sm">Link Details:</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-slate-600">Task:</span>
+                    <p className="font-medium text-slate-900">{uploadLinkTask.task_title}</p>
+                  </div>
+                  {uploadLinkTask.orders && (
+                    <div>
+                      <span className="text-slate-600">Order:</span>
+                      <p className="font-medium text-slate-900">{uploadLinkTask.orders.order_number}</p>
+                    </div>
+                  )}
+                  {uploadLinkTask.installation_address && (
+                    <div className="col-span-2">
+                      <span className="text-slate-600">Location:</span>
+                      <p className="font-medium text-slate-900">{uploadLinkTask.installation_address}</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-slate-600">Expires:</span>
+                    <p className="font-medium text-slate-900">
+                      {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 text-sm text-slate-600">
+                <ExternalLink className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <p>Workers can use this link to upload photos without logging in. They can upload before, during, after, issue, and completion photos.</p>
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-200 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowUploadLinkModal(false);
+                  setUploadLinkTask(null);
+                  setGeneratedUploadLink('');
+                }}
+                className="flex-1 px-4 py-2 bg-[#bb2738] text-white rounded-lg hover:bg-[#9a1f2d] transition-colors"
+              >
+                Done
               </button>
             </div>
           </div>

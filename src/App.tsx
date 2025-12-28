@@ -11,6 +11,7 @@ import { PublicBooking } from './components/PublicBooking';
 import { PublicPage } from './components/PublicPage';
 import { SiteVisitPayment } from './components/SiteVisitPayment';
 import { SubmitRequest } from './components/SubmitRequest';
+import { WorkerPhotoUpload } from './components/WorkerPhotoUpload';
 import { GlobalSearch } from './components/GlobalSearch';
 import { DocumentVerification } from './components/DocumentVerification';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -180,7 +181,7 @@ function CustomerApp() {
 }
 
 function AppRouter() {
-  const [viewMode, setViewMode] = useState<'public' | 'admin' | 'customer' | 'booking' | 'site-visit-payment' | 'submit-request' | 'page' | 'verification'>('public');
+  const [viewMode, setViewMode] = useState<'public' | 'admin' | 'customer' | 'booking' | 'site-visit-payment' | 'submit-request' | 'page' | 'verification' | 'worker-upload'>('public');
   const [pageSlug, setPageSlug] = useState<string>('');
   const [verificationData, setVerificationData] = useState<{ documentType: string; documentId: string }>({ documentType: '', documentId: '' });
 
@@ -192,6 +193,8 @@ function AppRouter() {
       const documentType = pathParts[2] || '';
       const documentId = pathParts[3] || '';
       setVerificationData({ documentType, documentId });
+    } else if (path.startsWith('/worker-upload')) {
+      setViewMode('worker-upload');
     } else if (path.startsWith('/submit-request')) {
       setViewMode('submit-request');
     } else if (path.startsWith('/site-visit-payment')) {
@@ -251,6 +254,14 @@ function AppRouter() {
           documentType={verificationData.documentType}
           documentId={verificationData.documentId}
         />
+      </BrandProvider>
+    );
+  }
+
+  if (viewMode === 'worker-upload') {
+    return (
+      <BrandProvider>
+        <WorkerPhotoUpload onBack={navigateToPublic} />
       </BrandProvider>
     );
   }
