@@ -493,18 +493,29 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
       doc.roundedRect(10, companySectionY, 190, sectionHeight, 2, 2, 'S');
 
       if (pdfSettings.terms.showCompanyInfo) {
-        let companyInfoText = pdfSettings.terms.companyInfoText || '';
+        let companyInfoLines: string[] = [];
 
-        if (!companyInfoText) {
-          const infoParts = [];
-          if (companyFullName) infoParts.push(companyFullName);
-          if (companyAddress) infoParts.push(companyAddress);
-          if (companyPhone) infoParts.push(`Tel: ${companyPhone}`);
-          if (companyEmail) infoParts.push(`Email: ${companyEmail}`);
-          companyInfoText = infoParts.join(' | ');
+        if (pdfSettings.terms.companyInfoText) {
+          companyInfoLines = pdfSettings.terms.companyInfoText.split(' | ').slice(0, 3);
+        } else {
+          if (companyFullName && companyAddress) {
+            companyInfoLines.push(`${companyFullName}, ${companyAddress}`);
+          } else if (companyFullName) {
+            companyInfoLines.push(companyFullName);
+          } else if (companyAddress) {
+            companyInfoLines.push(companyAddress);
+          }
+
+          if (companyPhone) {
+            companyInfoLines.push(`Tel: ${companyPhone}`);
+          }
+
+          if (companyEmail && companyInfoLines.length < 3) {
+            companyInfoLines.push(`Email: ${companyEmail}`);
+          }
         }
 
-        if (companyInfoText) {
+        if (companyInfoLines.length > 0) {
           doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
           doc.setFontSize(7);
           doc.setTextColor(51, 65, 85);
@@ -513,8 +524,11 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
           doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
           doc.setFontSize(7);
           doc.setTextColor(71, 85, 105);
-          const splitCompanyInfo = doc.splitTextToSize(companyInfoText, 176);
-          doc.text(splitCompanyInfo, 14, companySectionY + 12);
+
+          let lineY = companySectionY + 12;
+          companyInfoLines.forEach((line, index) => {
+            doc.text(line, 14, lineY + (index * 4));
+          });
         }
       }
 
@@ -1601,18 +1615,29 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
     doc.roundedRect(10, companySectionY, 190, sectionHeight, 2, 2, 'S');
 
     if (pdfSettings.terms?.showCompanyInfo) {
-      let companyInfoText = pdfSettings.terms.companyInfoText || '';
+      let companyInfoLines: string[] = [];
 
-      if (!companyInfoText) {
-        const infoParts = [];
-        if (companyFullName) infoParts.push(companyFullName);
-        if (companyAddress) infoParts.push(companyAddress);
-        if (companyPhone) infoParts.push(`Tel: ${companyPhone}`);
-        if (companyEmail) infoParts.push(`Email: ${companyEmail}`);
-        companyInfoText = infoParts.join(' | ');
+      if (pdfSettings.terms.companyInfoText) {
+        companyInfoLines = pdfSettings.terms.companyInfoText.split(' | ').slice(0, 3);
+      } else {
+        if (companyFullName && companyAddress) {
+          companyInfoLines.push(`${companyFullName}, ${companyAddress}`);
+        } else if (companyFullName) {
+          companyInfoLines.push(companyFullName);
+        } else if (companyAddress) {
+          companyInfoLines.push(companyAddress);
+        }
+
+        if (companyPhone) {
+          companyInfoLines.push(`Tel: ${companyPhone}`);
+        }
+
+        if (companyEmail && companyInfoLines.length < 3) {
+          companyInfoLines.push(`Email: ${companyEmail}`);
+        }
       }
 
-      if (companyInfoText) {
+      if (companyInfoLines.length > 0) {
         doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
         doc.setFontSize(7);
         doc.setTextColor(51, 65, 85);
@@ -1621,8 +1646,11 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
         doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
         doc.setFontSize(7);
         doc.setTextColor(71, 85, 105);
-        const splitCompanyInfo = doc.splitTextToSize(companyInfoText, 176);
-        doc.text(splitCompanyInfo, 14, companySectionY + 12);
+
+        let lineY = companySectionY + 12;
+        companyInfoLines.forEach((line, index) => {
+          doc.text(line, 14, lineY + (index * 4));
+        });
       }
     }
 
