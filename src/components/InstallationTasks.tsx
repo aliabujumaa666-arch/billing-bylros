@@ -31,6 +31,7 @@ interface InstallationPhoto {
   uploaded_by_name: string | null;
   caption: string | null;
   created_at: string;
+  photoUrl?: string;
 }
 
 export function InstallationTasks() {
@@ -429,7 +430,14 @@ export function InstallationTasks() {
 
       if (error) throw error;
 
-      setTaskPhotos(data || []);
+      const photosWithUrls = await Promise.all(
+        (data || []).map(async (photo) => ({
+          ...photo,
+          photoUrl: await getPhotoUrl(photo.storage_path)
+        }))
+      );
+
+      setTaskPhotos(photosWithUrls);
     } catch (error) {
       console.error('Error loading photos:', error);
       alert('Failed to load photos');
@@ -460,9 +468,17 @@ export function InstallationTasks() {
     }
   };
 
-  const getPhotoUrl = (path: string) => {
-    const { data } = supabase.storage.from('uploads').getPublicUrl(path);
-    return data.publicUrl;
+  const getPhotoUrl = async (path: string) => {
+    const { data, error } = await supabase.storage
+      .from('uploads')
+      .createSignedUrl(path, 3600);
+
+    if (error) {
+      console.error('Error creating signed URL:', error);
+      return '';
+    }
+
+    return data.signedUrl;
   };
 
   const getStatusColor = (status: string) => {
@@ -915,12 +931,22 @@ export function InstallationTasks() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {taskPhotos.map((photo) => (
                     <div key={photo.id} className="bg-slate-50 rounded-lg overflow-hidden border border-slate-200">
-                      <div className="aspect-square relative">
-                        <img
-                          src={getPhotoUrl(photo.storage_path)}
-                          alt={photo.photo_type}
-                          className="w-full h-full object-cover"
-                        />
+                      <div className="aspect-square relative bg-slate-200">
+                        {photo.photoUrl ? (
+                          <img
+                            src={photo.photoUrl}
+                            alt={photo.photo_type}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Image failed to load:', photo.storage_path);
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Image className="w-12 h-12 text-slate-400" />
+                          </div>
+                        )}
                       </div>
                       <div className="p-4 space-y-2">
                         <div className="flex items-center justify-between">
