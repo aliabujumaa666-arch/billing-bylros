@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Save, Building2, Phone, Palette, FileText, Globe, Upload, FileDown } from 'lucide-react';
+import { Save, Building2, Phone, Palette, FileText, Globe, Upload, FileDown, Smartphone } from 'lucide-react';
 import { PDFSettings, DocumentType, useBrand } from '../contexts/BrandContext';
 import { DocumentPDFSettings } from './DocumentPDFSettings';
 
@@ -45,6 +45,15 @@ interface BrandSettings {
     registrationNumber: string;
     vatNumber: string;
   };
+  pwa?: {
+    appName: string;
+    shortName: string;
+    description: string;
+    themeColor: string;
+    backgroundColor: string;
+    icon192: string;
+    icon512: string;
+  };
   pdf?: PDFSettings;
 }
 
@@ -54,7 +63,7 @@ export function BrandSettings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [activeSection, setActiveSection] = useState<'brand' | 'pdf'>('brand');
+  const [activeSection, setActiveSection] = useState<'brand' | 'pwa' | 'pdf'>('brand');
   const [selectedDocumentType, setSelectedDocumentType] = useState<DocumentType>('quotes');
   const { getPDFSettings, updatePDFSettings } = useBrand();
   const [currentPDFSettings, setCurrentPDFSettings] = useState<PDFSettings | null>(null);
@@ -83,7 +92,19 @@ export function BrandSettings() {
       if (error) throw error;
 
       if (data) {
-        setSettings(data.setting_value);
+        const brandSettings = data.setting_value;
+        if (!brandSettings.pwa) {
+          brandSettings.pwa = {
+            appName: 'BYLROS Customer Operations Platform',
+            shortName: 'BYLROS',
+            description: 'Complete customer operations and business management platform',
+            themeColor: '#0ea5e9',
+            backgroundColor: '#ffffff',
+            icon192: '/icon-192.png',
+            icon512: '/icon-512.png'
+          };
+        }
+        setSettings(brandSettings);
       }
     } catch (err: any) {
       setError('Failed to load brand settings: ' + err.message);
@@ -98,7 +119,7 @@ export function BrandSettings() {
     setSaving(true);
 
     try {
-      if (activeSection === 'brand') {
+      if (activeSection === 'brand' || activeSection === 'pwa') {
         const { error } = await supabase
           .from('brand_settings')
           .update({
@@ -109,7 +130,7 @@ export function BrandSettings() {
 
         if (error) throw error;
 
-        setSuccess('Brand settings saved successfully!');
+        setSuccess(activeSection === 'brand' ? 'Brand settings saved successfully!' : 'PWA settings saved successfully!');
         setTimeout(() => setSuccess(''), 3000);
       } else if (activeSection === 'pdf' && pendingPDFSettings) {
         await updatePDFSettings(selectedDocumentType, pendingPDFSettings);
@@ -196,6 +217,17 @@ export function BrandSettings() {
           >
             <Building2 className="w-5 h-5" />
             Brand Identity
+          </button>
+          <button
+            onClick={() => setActiveSection('pwa')}
+            className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors font-medium ${
+              activeSection === 'pwa'
+                ? 'border-[#bb2738] text-[#bb2738]'
+                : 'border-transparent text-slate-600 hover:text-slate-800 hover:border-slate-300'
+            }`}
+          >
+            <Smartphone className="w-5 h-5" />
+            Mobile App (PWA)
           </button>
           <button
             onClick={() => setActiveSection('pdf')}
@@ -610,6 +642,180 @@ export function BrandSettings() {
           </div>
         </div>
       </div>
+        </>
+      )}
+
+      {activeSection === 'pwa' && settings.pwa && (
+        <>
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Smartphone className="w-6 h-6 text-[#bb2738]" />
+              <h3 className="text-xl font-semibold text-slate-800">Progressive Web App Settings</h3>
+            </div>
+            <p className="text-slate-600 mb-6">
+              Configure how your platform appears when installed on mobile devices and desktops as a Progressive Web App.
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  App Name
+                </label>
+                <input
+                  type="text"
+                  value={settings.pwa.appName}
+                  onChange={(e) => updateSettings(['pwa', 'appName'], e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none"
+                  placeholder="Full app name"
+                />
+                <p className="text-xs text-slate-500 mt-1">Full name shown during installation</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Short Name
+                </label>
+                <input
+                  type="text"
+                  value={settings.pwa.shortName}
+                  onChange={(e) => updateSettings(['pwa', 'shortName'], e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none"
+                  placeholder="Short name"
+                  maxLength={12}
+                />
+                <p className="text-xs text-slate-500 mt-1">Shown on home screen (max 12 chars)</p>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  App Description
+                </label>
+                <textarea
+                  value={settings.pwa.description}
+                  onChange={(e) => updateSettings(['pwa', 'description'], e.target.value)}
+                  rows={2}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none resize-none"
+                  placeholder="Brief description of your app"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Theme Color
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="color"
+                    value={settings.pwa.themeColor}
+                    onChange={(e) => updateSettings(['pwa', 'themeColor'], e.target.value)}
+                    className="w-20 h-10 rounded-lg cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={settings.pwa.themeColor}
+                    onChange={(e) => updateSettings(['pwa', 'themeColor'], e.target.value)}
+                    className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none"
+                    placeholder="#0ea5e9"
+                  />
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Browser UI and status bar color</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Background Color
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="color"
+                    value={settings.pwa.backgroundColor}
+                    onChange={(e) => updateSettings(['pwa', 'backgroundColor'], e.target.value)}
+                    className="w-20 h-10 rounded-lg cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={settings.pwa.backgroundColor}
+                    onChange={(e) => updateSettings(['pwa', 'backgroundColor'], e.target.value)}
+                    className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none"
+                    placeholder="#ffffff"
+                  />
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Splash screen background color</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  App Icon 192x192
+                </label>
+                <input
+                  type="text"
+                  value={settings.pwa.icon192}
+                  onChange={(e) => updateSettings(['pwa', 'icon192'], e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none"
+                  placeholder="/icon-192.png"
+                />
+                <p className="text-xs text-slate-500 mt-1">Path to 192x192 icon image</p>
+                {settings.pwa.icon192 && (
+                  <div className="mt-3 p-4 bg-slate-50 rounded-lg">
+                    <p className="text-xs text-slate-600 mb-2">Preview:</p>
+                    <img
+                      src={settings.pwa.icon192}
+                      alt="App Icon 192"
+                      className="h-24 w-24 rounded-lg"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  App Icon 512x512
+                </label>
+                <input
+                  type="text"
+                  value={settings.pwa.icon512}
+                  onChange={(e) => updateSettings(['pwa', 'icon512'], e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none"
+                  placeholder="/icon-512.png"
+                />
+                <p className="text-xs text-slate-500 mt-1">Path to 512x512 icon image</p>
+                {settings.pwa.icon512 && (
+                  <div className="mt-3 p-4 bg-slate-50 rounded-lg">
+                    <p className="text-xs text-slate-600 mb-2">Preview:</p>
+                    <img
+                      src={settings.pwa.icon512}
+                      alt="App Icon 512"
+                      className="h-24 w-24 rounded-lg"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <h4 className="font-semibold text-blue-900 mb-2">How to Install</h4>
+            <ul className="space-y-2 text-sm text-blue-800">
+              <li className="flex items-start gap-2">
+                <span className="font-medium">Android Chrome:</span>
+                <span>Menu → Install app or Add to Home Screen</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-medium">iPhone Safari:</span>
+                <span>Share button → Add to Home Screen</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-medium">Desktop:</span>
+                <span>Install icon in address bar or browser menu</span>
+              </li>
+            </ul>
+          </div>
         </>
       )}
 

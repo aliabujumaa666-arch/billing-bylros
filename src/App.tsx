@@ -15,6 +15,7 @@ import { WorkerPhotoUpload } from './components/WorkerPhotoUpload';
 import { GlobalSearch } from './components/GlobalSearch';
 import { DocumentVerification } from './components/DocumentVerification';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { PWAManager } from './components/PWAManager';
 
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
 const Customers = lazy(() => import('./components/Customers').then(module => ({ default: module.Customers })));
@@ -341,6 +342,7 @@ function AppRouter() {
 function App() {
   return (
     <ErrorBoundary>
+      <PWAManager />
       <AppRouter />
     </ErrorBoundary>
   );
