@@ -22,6 +22,7 @@ export function CustomerInvoices() {
   const [bankTransferSettings, setBankTransferSettings] = useState<any>(null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>('');
 
   useEffect(() => {
     if (customerData) {
@@ -136,6 +137,7 @@ export function CustomerInvoices() {
         alert('Payment successful! Your invoice has been updated.');
         setPayingInvoiceId(null);
         setSelectedPaymentMethod(null);
+        setCustomAmount('');
         await fetchInvoices();
       } else {
         throw new Error(result.error || 'Payment failed');
@@ -150,6 +152,16 @@ export function CustomerInvoices() {
 
   const createPayPalOrder = async (invoice: any) => {
     try {
+      const amount = customAmount ? parseFloat(customAmount) : invoice.balance;
+
+      if (amount <= 0) {
+        throw new Error('Payment amount must be greater than zero');
+      }
+
+      if (amount > invoice.balance) {
+        throw new Error('Payment amount cannot exceed the balance');
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-create-order`,
         {
@@ -160,7 +172,7 @@ export function CustomerInvoices() {
           },
           body: JSON.stringify({
             invoice_id: invoice.id,
-            amount: invoice.balance,
+            amount: amount,
             currency: 'AED',
           }),
         }
@@ -224,6 +236,7 @@ export function CustomerInvoices() {
       alert('Payment successful! Your invoice has been updated.');
       setPayingInvoiceId(null);
       setSelectedPaymentMethod(null);
+      setCustomAmount('');
       await fetchInvoices();
     } catch (error: any) {
       console.error('Stripe payment error:', error);
@@ -236,6 +249,18 @@ export function CustomerInvoices() {
   const handleBankTransferPayment = async (invoice: any) => {
     if (!proofFile && bankTransferSettings?.require_proof_upload) {
       alert('Please upload proof of payment');
+      return;
+    }
+
+    const amount = customAmount ? parseFloat(customAmount) : invoice.balance;
+
+    if (amount <= 0) {
+      alert('Payment amount must be greater than zero');
+      return;
+    }
+
+    if (amount > invoice.balance) {
+      alert('Payment amount cannot exceed the balance');
       return;
     }
 
@@ -264,7 +289,7 @@ export function CustomerInvoices() {
         .from('payments')
         .insert({
           invoice_id: invoice.id,
-          amount: invoice.balance,
+          amount: amount,
           payment_date: new Date().toISOString().split('T')[0],
           payment_method: 'Bank Transfer',
           payment_status: 'pending',
@@ -279,6 +304,7 @@ export function CustomerInvoices() {
       setPayingInvoiceId(null);
       setSelectedPaymentMethod(null);
       setProofFile(null);
+      setCustomAmount('');
       await fetchInvoices();
     } catch (error: any) {
       console.error('Bank transfer payment error:', error);
@@ -472,6 +498,8 @@ export function CustomerInvoices() {
                             onClick={() => {
                               setPayingInvoiceId(null);
                               setSelectedPaymentMethod(null);
+                              setCustomAmount('');
+                              setProofFile(null);
                             }}
                             className="text-sm text-slate-600 hover:text-slate-800"
                             disabled={paymentProcessing}
@@ -527,6 +555,32 @@ export function CustomerInvoices() {
                             >
                               ← Back to payment methods
                             </button>
+                            <div className="mb-4">
+                              <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Payment Amount (AED)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                max={invoice.balance}
+                                value={customAmount}
+                                onChange={(e) => setCustomAmount(e.target.value)}
+                                placeholder={`Balance: ${invoice.balance.toLocaleString()}`}
+                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                              />
+                              <div className="flex items-center justify-between mt-2">
+                                <p className="text-sm text-slate-600">
+                                  Outstanding balance: AED {invoice.balance.toLocaleString()}
+                                </p>
+                                <button
+                                  onClick={() => setCustomAmount(invoice.balance.toString())}
+                                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  Pay Full Balance
+                                </button>
+                              </div>
+                            </div>
                             <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'USD' }}>
                               <PayPalButtons
                                 style={{ layout: 'vertical' }}
@@ -567,6 +621,32 @@ export function CustomerInvoices() {
                             >
                               ← Back to payment methods
                             </button>
+                            <div className="mb-4">
+                              <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Payment Amount (AED)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                max={invoice.balance}
+                                value={customAmount}
+                                onChange={(e) => setCustomAmount(e.target.value)}
+                                placeholder={`Balance: ${invoice.balance.toLocaleString()}`}
+                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                              />
+                              <div className="flex items-center justify-between mt-2">
+                                <p className="text-sm text-slate-600">
+                                  Outstanding balance: AED {invoice.balance.toLocaleString()}
+                                </p>
+                                <button
+                                  onClick={() => setCustomAmount(invoice.balance.toString())}
+                                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  Pay Full Balance
+                                </button>
+                              </div>
+                            </div>
                             <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-4 border border-slate-200 mb-4">
                               <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
                                 <Building2 className="w-5 h-5 text-blue-600" />
