@@ -149,8 +149,9 @@ export function WarrantyManagement() {
   const generateWarrantyNumber = () => {
     const date = new Date();
     const year = date.getFullYear();
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `WAR-${year}-${random}`;
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const random = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+    return `WAR-${year}${month}-${random}`;
   };
 
   const calculateEndDate = (startDate: string, durationMonths: number) => {
@@ -201,10 +202,34 @@ export function WarrantyManagement() {
 
   const handleSaveWarranty = async () => {
     try {
+      if (!warrantyForm.warranty_number.trim()) {
+        alert('Warranty number is required');
+        return;
+      }
+
+      if (!warrantyForm.product_name.trim()) {
+        alert('Product name is required');
+        return;
+      }
+
+      if (!warrantyForm.start_date) {
+        alert('Start date is required');
+        return;
+      }
+
+      if (!warrantyForm.end_date) {
+        alert('End date is required');
+        return;
+      }
+
       const warrantyData = {
         ...warrantyForm,
         customer_id: warrantyForm.customer_id || null,
         order_id: warrantyForm.order_id || null,
+        product_description: warrantyForm.product_description || null,
+        serial_number: warrantyForm.serial_number || null,
+        coverage_details: warrantyForm.coverage_details || null,
+        notes: warrantyForm.notes || null,
       };
 
       if (editingWarranty) {
@@ -224,9 +249,10 @@ export function WarrantyManagement() {
 
       setShowWarrantyModal(false);
       loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving warranty:', error);
-      alert('Failed to save warranty. Please try again.');
+      const errorMessage = error?.message || 'Failed to save warranty. Please try again.';
+      alert(errorMessage);
     }
   };
 
@@ -283,6 +309,7 @@ export function WarrantyManagement() {
         ...feedbackForm,
         customer_id: feedbackForm.customer_id || null,
         order_id: feedbackForm.order_id || null,
+        comments: feedbackForm.comments || null,
       };
 
       if (editingFeedback) {
@@ -302,9 +329,10 @@ export function WarrantyManagement() {
 
       setShowFeedbackModal(false);
       loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving feedback:', error);
-      alert('Failed to save feedback. Please try again.');
+      const errorMessage = error?.message || 'Failed to save feedback. Please try again.';
+      alert(errorMessage);
     }
   };
 
