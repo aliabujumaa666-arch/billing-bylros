@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
-import { MessageSquare, Send, X, User, Clock } from 'lucide-react';
+import { MessageSquare, Send, X, User, Clock, Pencil, Trash2 } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -31,6 +31,10 @@ export function Messages() {
     message: '',
   });
   const [customers, setCustomers] = useState<any[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editData, setEditData] = useState({ subject: '', message: '' });
+  const [deleting, setDeleting] = useState(false);
   const { success, error: showError } = useToast();
 
   useEffect(() => {
@@ -157,6 +161,65 @@ export function Messages() {
     }
   };
 
+  const openEditModal = () => {
+    if (selectedMessage) {
+      setEditData({
+        subject: selectedMessage.subject,
+        message: selectedMessage.message,
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  const updateMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMessage) return;
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({
+          subject: editData.subject,
+          message: editData.message,
+        })
+        .eq('id', selectedMessage.id);
+
+      if (error) throw error;
+
+      success('Message updated successfully');
+      setShowEditModal(false);
+      setSelectedMessage({ ...selectedMessage, ...editData });
+      fetchMessages();
+    } catch (err: any) {
+      console.error('Error updating message:', err);
+      showError(err.message || 'Failed to update message');
+    }
+  };
+
+  const deleteMessage = async () => {
+    if (!selectedMessage) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', selectedMessage.id);
+
+      if (error) throw error;
+
+      success('Message deleted successfully');
+      setShowDeleteModal(false);
+      setSelectedMessage(null);
+      fetchMessages();
+    } catch (err: any) {
+      console.error('Error deleting message:', err);
+      showError(err.message || 'Failed to delete message');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const unreadCount = messages.filter(m => !m.is_read).length;
 
   if (loading) {
@@ -246,12 +309,28 @@ export function Messages() {
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setSelectedMessage(null)}
-                    className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={openEditModal}
+                      className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+                      title="Edit message"
+                    >
+                      <Pencil className="w-4 h-4 text-slate-600" />
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteModal(true)}
+                      className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                      title="Delete message"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </button>
+                    <button
+                      onClick={() => setSelectedMessage(null)}
+                      className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -398,6 +477,106 @@ export function Messages() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-800">Edit Message</h2>
+              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={updateMessage} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Subject</label>
+                <input
+                  type="text"
+                  value={editData.subject}
+                  onChange={(e) => setEditData({ ...editData, subject: e.target.value })}
+                  required
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Message</label>
+                <textarea
+                  value={editData.message}
+                  onChange={(e) => setEditData({ ...editData, message: e.target.value })}
+                  required
+                  rows={6}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2.5 bg-[#bb2738] hover:bg-[#a01f2f] text-white rounded-lg transition-colors"
+                >
+                  Update Message
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="border-b border-slate-200 px-6 py-4">
+              <h2 className="text-xl font-bold text-slate-800">Delete Message</h2>
+            </div>
+
+            <div className="p-6">
+              <p className="text-slate-600 mb-4">
+                Are you sure you want to delete this message? This action cannot be undone.
+              </p>
+              {selectedMessage && (
+                <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                  <p className="font-medium text-slate-800 mb-1">{selectedMessage.subject}</p>
+                  <p className="text-sm text-slate-600 line-clamp-2">{selectedMessage.message}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteMessage}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Message'
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

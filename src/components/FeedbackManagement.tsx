@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { MessageCircle, Star, Filter, X } from 'lucide-react';
+import { MessageCircle, Star, Filter, X, Pencil, Trash2 } from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
 
 export function FeedbackManagement() {
   const [feedback, setFeedback] = useState<any[]>([]);
@@ -8,6 +9,16 @@ export function FeedbackManagement() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
   const [adminNotes, setAdminNotes] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editData, setEditData] = useState({
+    feedback_type: '',
+    message: '',
+    rating: 0,
+    status: '',
+  });
+  const [deleting, setDeleting] = useState(false);
+  const { success, error: showError } = useToast();
 
   useEffect(() => {
     fetchFeedback();
@@ -33,9 +44,82 @@ export function FeedbackManagement() {
 
   const saveNotes = async () => {
     if (!selectedFeedback) return;
-    await supabase.from('user_feedback').update({ admin_notes: adminNotes }).eq('id', selectedFeedback.id);
-    alert('Notes saved successfully');
-    fetchFeedback();
+    try {
+      const { error } = await supabase
+        .from('user_feedback')
+        .update({ admin_notes: adminNotes })
+        .eq('id', selectedFeedback.id);
+
+      if (error) throw error;
+      success('Notes saved successfully');
+      fetchFeedback();
+    } catch (err: any) {
+      showError(err.message || 'Failed to save notes');
+    }
+  };
+
+  const openEditModal = () => {
+    if (selectedFeedback) {
+      setEditData({
+        feedback_type: selectedFeedback.feedback_type,
+        message: selectedFeedback.message,
+        rating: selectedFeedback.rating,
+        status: selectedFeedback.status,
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  const updateFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFeedback) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_feedback')
+        .update({
+          feedback_type: editData.feedback_type,
+          message: editData.message,
+          rating: editData.rating,
+          status: editData.status,
+          admin_notes: adminNotes,
+        })
+        .eq('id', selectedFeedback.id);
+
+      if (error) throw error;
+
+      success('Feedback updated successfully');
+      setShowEditModal(false);
+      setSelectedFeedback({ ...selectedFeedback, ...editData });
+      fetchFeedback();
+    } catch (err: any) {
+      console.error('Error updating feedback:', err);
+      showError(err.message || 'Failed to update feedback');
+    }
+  };
+
+  const deleteFeedback = async () => {
+    if (!selectedFeedback) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('user_feedback')
+        .delete()
+        .eq('id', selectedFeedback.id);
+
+      if (error) throw error;
+
+      success('Feedback deleted successfully');
+      setShowDeleteModal(false);
+      setSelectedFeedback(null);
+      fetchFeedback();
+    } catch (err: any) {
+      console.error('Error deleting feedback:', err);
+      showError(err.message || 'Failed to delete feedback');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const filteredFeedback = feedback.filter(f => filterStatus === 'all' || f.status === filterStatus);
@@ -147,9 +231,25 @@ export function FeedbackManagement() {
                   <p className="text-sm text-slate-600">From: {selectedFeedback.user_type} • Page: {selectedFeedback.page_url}</p>
                   <p className="text-sm text-slate-500">{new Date(selectedFeedback.created_at).toLocaleString()}</p>
                 </div>
-                <button onClick={() => setSelectedFeedback(null)} className="p-2 hover:bg-slate-100 rounded-lg">
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={openEditModal}
+                    className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+                    title="Edit feedback"
+                  >
+                    <Pencil className="w-4 h-4 text-slate-600" />
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                    title="Delete feedback"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </button>
+                  <button onClick={() => setSelectedFeedback(null)} className="p-2 hover:bg-slate-100 rounded-lg">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {selectedFeedback.rating > 0 && (
@@ -217,6 +317,141 @@ export function FeedbackManagement() {
           )}
         </div>
       </div>
+
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-800">Edit Feedback</h2>
+              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={updateFeedback} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Feedback Type</label>
+                <select
+                  value={editData.feedback_type}
+                  onChange={(e) => setEditData({ ...editData, feedback_type: e.target.value })}
+                  required
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                >
+                  <option value="bug">Bug</option>
+                  <option value="feature_request">Feature Request</option>
+                  <option value="improvement">Improvement</option>
+                  <option value="praise">Praise</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Message</label>
+                <textarea
+                  value={editData.message}
+                  onChange={(e) => setEditData({ ...editData, message: e.target.value })}
+                  required
+                  rows={6}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Rating (0-5)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="5"
+                  value={editData.rating}
+                  onChange={(e) => setEditData({ ...editData, rating: parseInt(e.target.value) || 0 })}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                <select
+                  value={editData.status}
+                  onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                  required
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                >
+                  <option value="new">New</option>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="implemented">Implemented</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2.5 bg-[#bb2738] hover:bg-[#a01f2f] text-white rounded-lg transition-colors"
+                >
+                  Update Feedback
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="border-b border-slate-200 px-6 py-4">
+              <h2 className="text-xl font-bold text-slate-800">Delete Feedback</h2>
+            </div>
+
+            <div className="p-6">
+              <p className="text-slate-600 mb-4">
+                Are you sure you want to delete this feedback? This action cannot be undone.
+              </p>
+              {selectedFeedback && (
+                <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(selectedFeedback.feedback_type)}`}>
+                      {selectedFeedback.feedback_type.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600 line-clamp-3">{selectedFeedback.message}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteFeedback}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Feedback'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
