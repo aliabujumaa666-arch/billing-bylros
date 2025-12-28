@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { validateEmail, validatePassword } from '../utils/validation';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -17,20 +18,29 @@ export function Login() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (isSignUp) {
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        setError(passwordValidation.message || 'Invalid password');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
       if (isSignUp) {
-        if (password !== confirmPassword) {
-          setError('Passwords do not match');
-          setLoading(false);
-          return;
-        }
-        if (password.length < 6) {
-          setError('Password must be at least 6 characters');
-          setLoading(false);
-          return;
-        }
         await signUp(email, password);
         setSuccess('Account created successfully! You can now sign in.');
         setIsSignUp(false);
@@ -100,6 +110,11 @@ export function Login() {
                 className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none transition-all"
                 placeholder="••••••••"
               />
+              {isSignUp && (
+                <p className="mt-2 text-xs text-slate-500">
+                  Password must be at least 8 characters with uppercase, lowercase, and a number
+                </p>
+              )}
             </div>
 
             {isSignUp && (

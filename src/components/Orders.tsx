@@ -3,16 +3,23 @@ import { supabase } from '../lib/supabase';
 import { Plus, Package, CreditCard as Edit, Trash2, X, ArrowRight, Download, Workflow } from 'lucide-react';
 import { exportOrderToPDF } from '../utils/exportUtils';
 import { useBrand } from '../contexts/BrandContext';
+import { useToast } from '../contexts/ToastContext';
+import { ConfirmDialog } from './ConfirmDialog';
+import type { Order, Customer, Quote, SiteVisit } from '../types/database';
 
 export function Orders() {
   const { brand } = useBrand();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [quotes, setQuotes] = useState<any[]>([]);
-  const [siteVisits, setSiteVisits] = useState<any[]>([]);
+  const { showSuccess, showError } = useToast();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [siteVisits, setSiteVisits] = useState<SiteVisit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [formData, setFormData] = useState({
     customer_id: '',
     quote_id: '',
@@ -43,6 +50,7 @@ export function Orders() {
       setSiteVisits(visitsData.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      showError('Failed to load orders data');
     } finally {
       setLoading(false);
     }
@@ -73,27 +81,43 @@ export function Orders() {
         await supabase.from('orders').insert([orderData]);
       }
 
+      showSuccess(editingOrder ? 'Order updated successfully' : 'Order created successfully');
       setShowModal(false);
       setEditingOrder(null);
       resetForm();
       fetchData();
     } catch (error) {
       console.error('Error saving order:', error);
-      alert('Failed to save order');
+      showError('Failed to save order');
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this order?')) return;
+  const handleDeleteClick = (id: string) => {
+    setDeleteId(id);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteId) return;
+
+    setDeleting(true);
     try {
-      await supabase.from('orders').delete().eq('id', id);
+      const { error } = await supabase.from('orders').delete().eq('id', deleteId);
+      if (error) throw error;
+
+      showSuccess('Order deleted successfully');
+      setShowDeleteDialog(false);
+      setDeleteId(null);
       fetchData();
     } catch (error) {
       console.error('Error deleting order:', error);
+      showError('Failed to delete order');
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const handleConvertToInvoice = async (order: any) => {
+  const handleConvertToInvoice = async (order: Order) => {
     if (!confirm(`Create invoice for order ${order.order_number}?`)) return;
 
     try {
@@ -101,7 +125,7 @@ export function Orders() {
 
       const totalAmount = order.quotes?.total || 0;
 
-      await supabase.from('invoices').insert([{
+      const { error } = await supabase.from('invoices').insert([{
         customer_id: order.customer_id,
         order_id: order.id,
         invoice_number: invoiceNumber,
@@ -113,15 +137,17 @@ export function Orders() {
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       }]);
 
-      alert(`Invoice ${invoiceNumber} created successfully!`);
+      if (error) throw error;
+
+      showSuccess(`Invoice ${invoiceNumber} created successfully!`);
       fetchData();
     } catch (error) {
       console.error('Error creating invoice:', error);
-      alert('Failed to create invoice');
+      showError('Failed to create invoice');
     }
   };
 
-  const handleCreateWorkflow = async (order: any) => {
+  const handleCreateWorkflow = async (order: Order) => {
     try {
       const { data, error } = await supabase.rpc('create_workflow_for_order', {
         p_order_id: order.id
@@ -130,14 +156,14 @@ export function Orders() {
       if (error) throw error;
 
       if (data?.success) {
-        alert(`Production workflow created for order ${order.order_number}!`);
+        showSuccess(`Production workflow created for order ${order.order_number}!`);
         fetchData();
       } else {
-        alert(data?.message || 'Workflow already exists for this order');
+        showError(data?.message || 'Workflow already exists for this order');
       }
     } catch (error) {
       console.error('Error creating workflow:', error);
-      alert('Failed to create workflow');
+      showError('Failed to create workflow');
     }
   };
 
@@ -273,8 +299,9 @@ export function Orders() {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(order.id)}
+                        onClick={() => handleDeleteClick(order.id)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                        disabled={deleting}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -414,6 +441,21 @@ export function Orders() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        title="Delete Order"
+        message="Are you sure you want to delete this order? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => {
+          setShowDeleteDialog(false);
+          setDeleteId(null);
+        }}
+        loading={deleting}
+      />
     </div>
   );
 }
