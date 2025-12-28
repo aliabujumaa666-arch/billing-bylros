@@ -220,15 +220,15 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
                     setSidebarOpen(false);
                   }}
                   className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
+                    w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm
                     ${isActive
                       ? 'bg-[#bb2738] text-white shadow-md'
                       : 'text-slate-700 hover:bg-slate-100'
                     }
                   `}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="font-medium truncate">{item.label}</span>
                 </button>
               );
             })}
@@ -256,10 +256,10 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
                       }
                     `}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span className="font-medium">{item.label}</span>
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="font-medium truncate">{item.label}</span>
                     {showBadge && (
-                      <span className="ml-auto bg-[#25D366] text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                      <span className="ml-auto bg-[#25D366] text-white text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0">
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
@@ -290,8 +290,8 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
                       }
                     `}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span className="font-medium">{item.label}</span>
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="font-medium truncate">{item.label}</span>
                   </button>
                 );
               })}
