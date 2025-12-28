@@ -1,8 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCustomerAuth } from '../../contexts/CustomerAuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useBrand } from '../../contexts/BrandContext';
 import { supabase } from '../../lib/supabase';
+
+interface RegistrationSettings {
+  enabled: boolean;
+  requireApproval: boolean;
+  defaultStatus: string;
+  notifyAdmin: boolean;
+  customMessage?: string;
+}
 
 export function CustomerLogin() {
   const [email, setEmail] = useState('');
@@ -14,9 +22,37 @@ export function CustomerLogin() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const [registrationSettings, setRegistrationSettings] = useState<RegistrationSettings>({
+    enabled: true,
+    requireApproval: false,
+    defaultStatus: 'Lead',
+    notifyAdmin: false
+  });
   const { signIn, signUp } = useCustomerAuth();
   const { brand } = useBrand();
   const { } = useLanguage();
+
+  useEffect(() => {
+    fetchRegistrationSettings();
+  }, []);
+
+  const fetchRegistrationSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('portal_settings')
+        .select('setting_value')
+        .eq('setting_key', 'customer_registration')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data?.setting_value) {
+        setRegistrationSettings(data.setting_value as RegistrationSettings);
+      }
+    } catch (err) {
+      console.error('Error fetching registration settings:', err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +62,12 @@ export function CustomerLogin() {
 
     try {
       if (isSignUp) {
+        if (!registrationSettings.enabled) {
+          setError('Customer registration is currently disabled. Please contact support.');
+          setLoading(false);
+          return;
+        }
+
         if (password !== confirmPassword) {
           setError('Passwords do not match');
           setLoading(false);
@@ -49,6 +91,10 @@ export function CustomerLogin() {
           .maybeSingle();
 
         let customerId: string;
+        const customerStatus = registrationSettings.requireApproval ? 'Pending' : registrationSettings.defaultStatus;
+        const registrationNote = registrationSettings.requireApproval
+          ? 'Self-registered via customer portal - Pending admin approval'
+          : 'Self-registered via customer portal';
 
         if (existingCustomer) {
           customerId = existingCustomer.id;
@@ -60,8 +106,8 @@ export function CustomerLogin() {
               email: email.toLowerCase(),
               phone: phone || '',
               location: null,
-              status: 'Lead',
-              notes: 'Self-registered via customer portal'
+              status: customerStatus,
+              notes: registrationNote
             })
             .select('id')
             .single();
@@ -73,7 +119,12 @@ export function CustomerLogin() {
         }
 
         await signUp(email, password, customerId);
-        setSuccess('Account created successfully! You can now sign in.');
+
+        const successMessage = registrationSettings.requireApproval
+          ? 'Account created successfully! Your registration is pending admin approval. You will be notified once approved.'
+          : 'Account created successfully! You can now sign in.';
+
+        setSuccess(successMessage);
         setIsSignUp(false);
         setPassword('');
         setConfirmPassword('');
@@ -204,22 +255,35 @@ export function CustomerLogin() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError('');
-                setSuccess('');
-                setPassword('');
-                setConfirmPassword('');
-                setPhone('');
-                setName('');
-              }}
-              className="text-sm text-[#bb2738] hover:underline"
-            >
-              {isSignUp ? 'Already have an account? Sign in' : 'New customer? Create an account'}
-            </button>
-          </div>
+          {registrationSettings.enabled && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError('');
+                  setSuccess('');
+                  setPassword('');
+                  setConfirmPassword('');
+                  setPhone('');
+                  setName('');
+                }}
+                className="text-sm text-[#bb2738] hover:underline"
+              >
+                {isSignUp ? 'Already have an account? Sign in' : 'New customer? Create an account'}
+              </button>
+              {registrationSettings.customMessage && !isSignUp && (
+                <p className="text-xs text-slate-500 mt-2">{registrationSettings.customMessage}</p>
+              )}
+            </div>
+          )}
+
+          {!registrationSettings.enabled && !isSignUp && (
+            <div className="mt-6 text-center">
+              <p className="text-xs text-slate-500">
+                New customer? Please contact support to create an account.
+              </p>
+            </div>
+          )}
 
           <div className="mt-6 text-center text-xs text-slate-500">
             {brand?.company.fullName || 'BYLROS Middle East Aluminium & Glass LLC'}

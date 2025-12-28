@@ -4,7 +4,7 @@ import {
   Save, Eye, Plus, Trash2, Settings, CreditCard, Building2, Mail,
   Keyboard, Menu, Search, ChevronLeft, ChevronRight, X, AlertCircle,
   CheckCircle, FileText, Phone, GripVertical,
-  Monitor, Smartphone, Home, Info
+  Monitor, Smartphone, Home, Info, UserPlus
 } from 'lucide-react';
 import { PayPalSettings } from './PayPalSettings';
 import { StripeSettings } from './StripeSettings';
@@ -13,8 +13,9 @@ import EmailSettings from './EmailSettings';
 import { KeyboardShortcutSettings } from './KeyboardShortcutSettings';
 import { NavigationMenuSettings } from './NavigationMenuSettings';
 import { BankTransferSettings } from './BankTransferSettings';
+import { CustomerRegistrationSettings } from './CustomerRegistrationSettings';
 
-type TabType = 'brand' | 'portal' | 'navigation' | 'paypal' | 'stripe' | 'bank' | 'email' | 'shortcuts';
+type TabType = 'brand' | 'portal' | 'navigation' | 'registration' | 'paypal' | 'stripe' | 'bank' | 'email' | 'shortcuts';
 
 interface Toast {
   id: number;
@@ -176,6 +177,7 @@ export function PortalSettings() {
     { id: 'brand' as TabType, label: 'Brand Identity', icon: Building2, section: 'Brand', description: 'Company info and branding' },
     { id: 'portal' as TabType, label: 'Portal Content', icon: Home, section: 'Portal', description: 'Customer portal homepage' },
     { id: 'navigation' as TabType, label: 'Navigation Menus', icon: Menu, section: 'Portal', description: 'Header and footer menus' },
+    { id: 'registration' as TabType, label: 'Customer Registration', icon: UserPlus, section: 'Portal', description: 'Self-registration settings' },
     { id: 'paypal' as TabType, label: 'PayPal', icon: CreditCard, section: 'Integrations', description: 'PayPal payment gateway' },
     { id: 'stripe' as TabType, label: 'Stripe', icon: CreditCard, section: 'Integrations', description: 'Stripe payment gateway' },
     { id: 'bank' as TabType, label: 'Bank Transfer', icon: Building2, section: 'Integrations', description: 'Bank transfer payment' },
@@ -419,6 +421,8 @@ export function PortalSettings() {
                 <EmailSettings />
               ) : activeTab === 'navigation' ? (
                 <NavigationMenuSettings />
+              ) : activeTab === 'registration' ? (
+                <CustomerRegistrationSettings />
               ) : activeTab === 'shortcuts' ? (
                 <KeyboardShortcutSettings />
               ) : (

@@ -26,6 +26,7 @@ export function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showModal, setShowModal] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
@@ -275,11 +276,21 @@ export function Customers() {
     setShowModal(true);
   };
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.phone.includes(searchTerm) ||
-    (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredCustomers = customers.filter(customer => {
+    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.phone.includes(searchTerm) ||
+      (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    if (statusFilter === 'all') {
+      return matchesSearch;
+    } else if (statusFilter === 'self-registered') {
+      return matchesSearch && customer.notes?.includes('Self-registered via customer portal');
+    } else if (statusFilter === 'pending-approval') {
+      return matchesSearch && customer.notes?.includes('Pending admin approval');
+    } else {
+      return matchesSearch && customer.status === statusFilter;
+    }
+  });
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -386,15 +397,32 @@ export function Customers() {
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 border-b border-slate-200">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder={t('common.search')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
-            />
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder={t('common.search')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] bg-white"
+            >
+              <option value="all">All Customers</option>
+              <option value="self-registered">Self-Registered</option>
+              <option value="pending-approval">Pending Approval</option>
+              <option value="Lead">Lead</option>
+              <option value="Pending">Pending</option>
+              <option value="Quoted">Quoted</option>
+              <option value="Ordered">Ordered</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Installed">Installed</option>
+            </select>
           </div>
         </div>
 
