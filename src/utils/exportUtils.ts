@@ -485,7 +485,7 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
     if (pdfSettings.terms.showCompanyInfo || pdfSettings.terms.showCompanyStamp) {
       const companyInfoSpacing = pdfSettings.terms.companyInfoSpacing || 20;
       const companySectionY = adjustedTermsY + companyInfoSpacing;
-      const sectionHeight = 35;
+      const sectionHeight = pdfSettings.terms.showCompanyStamp && pdfSettings.terms.showCompanyInfo ? 45 : 35;
 
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(10, companySectionY, 190, sectionHeight, 2, 2, 'F');
@@ -525,19 +525,18 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
         }
 
         if (companyInfoText) {
-          const infoStartX = pdfSettings.terms.showCompanyStamp ? 48 : 14;
-          const textWidth = pdfSettings.terms.showCompanyStamp ? 142 : 176;
+          const infoStartY = pdfSettings.terms.showCompanyStamp ? companySectionY + 36 : companySectionY + 6;
 
           doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
           doc.setFontSize(7);
           doc.setTextColor(51, 65, 85);
-          doc.text('Company Information', infoStartX, companySectionY + 6);
+          doc.text('Company Information', 14, infoStartY);
 
           doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
           doc.setFontSize(7);
           doc.setTextColor(71, 85, 105);
-          const splitCompanyInfo = doc.splitTextToSize(companyInfoText, textWidth);
-          doc.text(splitCompanyInfo, infoStartX, companySectionY + 12);
+          const splitCompanyInfo = doc.splitTextToSize(companyInfoText, 176);
+          doc.text(splitCompanyInfo, 14, infoStartY + 6);
         }
       }
     }
@@ -1596,7 +1595,7 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
   if (pdfSettings.terms?.showCompanyInfo || pdfSettings.terms?.showCompanyStamp) {
     const companyInfoSpacing = pdfSettings.terms?.companyInfoSpacing || 20;
     const companySectionY = termsY + companyInfoSpacing;
-    const sectionHeight = 35;
+    const sectionHeight = pdfSettings.terms.showCompanyStamp && pdfSettings.terms.showCompanyInfo ? 45 : 35;
 
     doc.setFillColor(248, 250, 252);
     doc.roundedRect(10, companySectionY, 190, sectionHeight, 2, 2, 'F');
@@ -1636,19 +1635,18 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
       }
 
       if (companyInfoText) {
-        const infoStartX = pdfSettings.terms.showCompanyStamp ? 48 : 14;
-        const textWidth = pdfSettings.terms.showCompanyStamp ? 142 : 176;
+        const infoStartY = pdfSettings.terms.showCompanyStamp ? companySectionY + 36 : companySectionY + 6;
 
         doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
         doc.setFontSize(7);
         doc.setTextColor(51, 65, 85);
-        doc.text('Company Information', infoStartX, companySectionY + 6);
+        doc.text('Company Information', 14, infoStartY);
 
         doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
         doc.setFontSize(7);
         doc.setTextColor(71, 85, 105);
-        const splitCompanyInfo = doc.splitTextToSize(companyInfoText, textWidth);
-        doc.text(splitCompanyInfo, infoStartX, companySectionY + 12);
+        const splitCompanyInfo = doc.splitTextToSize(companyInfoText, 176);
+        doc.text(splitCompanyInfo, 14, infoStartY + 6);
       }
     }
   }
