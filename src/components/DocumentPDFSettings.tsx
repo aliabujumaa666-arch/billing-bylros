@@ -1848,7 +1848,7 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
                       <div className="flex items-center justify-between mb-3">
                         <div>
                           <h4 className="text-sm font-semibold text-slate-700">Company Information</h4>
-                          <p className="text-xs text-slate-500">Add company details below terms</p>
+                          <p className="text-xs text-slate-500">Auto-populated from Brand Identity</p>
                         </div>
                         <input
                           type="checkbox"
@@ -1860,14 +1860,19 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
 
                       {settings.terms.showCompanyInfo && (
                         <div className="mb-3">
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Company Info Text</label>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">
+                            Custom Company Info Text (Optional)
+                          </label>
                           <textarea
                             value={settings.terms.companyInfoText || ''}
                             onChange={(e) => updateSettings('terms', 'companyInfoText', e.target.value)}
                             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] bg-sky-50"
                             rows={3}
-                            placeholder="Enter additional company information (e.g., registration details, contact info)"
+                            placeholder="Leave empty to auto-populate from Brand Identity (name, address, phone, email)"
                           />
+                          <p className="text-xs text-slate-500 mt-1">
+                            If left empty, company information will be automatically generated from your Brand Identity settings.
+                          </p>
                         </div>
                       )}
                     </div>

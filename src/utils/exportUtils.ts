@@ -484,13 +484,26 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
 
     let companyInfoY = adjustedTermsY + 20;
 
-    if (pdfSettings.terms.showCompanyInfo && pdfSettings.terms.companyInfoText) {
-      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
-      doc.setFontSize(7);
-      doc.setTextColor(71, 85, 105);
-      const splitCompanyInfo = doc.splitTextToSize(pdfSettings.terms.companyInfoText, pdfSettings.terms.showCompanyStamp ? 130 : 180);
-      doc.text(splitCompanyInfo, 14, companyInfoY);
-      companyInfoY += splitCompanyInfo.length * 3;
+    if (pdfSettings.terms.showCompanyInfo) {
+      let companyInfoText = pdfSettings.terms.companyInfoText || '';
+
+      if (!companyInfoText) {
+        const infoParts = [];
+        if (companyFullName) infoParts.push(companyFullName);
+        if (companyAddress) infoParts.push(companyAddress);
+        if (companyPhone) infoParts.push(`Tel: ${companyPhone}`);
+        if (companyEmail) infoParts.push(`Email: ${companyEmail}`);
+        companyInfoText = infoParts.join(' | ');
+      }
+
+      if (companyInfoText) {
+        doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(71, 85, 105);
+        const splitCompanyInfo = doc.splitTextToSize(companyInfoText, pdfSettings.terms.showCompanyStamp ? 130 : 180);
+        doc.text(splitCompanyInfo, 14, companyInfoY);
+        companyInfoY += splitCompanyInfo.length * 3;
+      }
     }
 
     if (pdfSettings.terms.showCompanyStamp && pdfSettings.terms.companyStampUrl) {
@@ -1563,6 +1576,50 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
   const terms = warranty.terms || 'This warranty covers manufacturing defects and material failures under normal use conditions. It does not cover damage from improper installation, misuse, or normal wear and tear.';
   const splitTerms = doc.splitTextToSize(terms, 182);
   doc.text(splitTerms, 14, termsY + 8);
+
+  let companyInfoY = termsY + 20;
+
+  if (pdfSettings.terms?.showCompanyInfo) {
+    let companyInfoText = pdfSettings.terms.companyInfoText || '';
+
+    if (!companyInfoText) {
+      const infoParts = [];
+      if (companyFullName) infoParts.push(companyFullName);
+      if (companyAddress) infoParts.push(companyAddress);
+      if (companyPhone) infoParts.push(`Tel: ${companyPhone}`);
+      if (companyEmail) infoParts.push(`Email: ${companyEmail}`);
+      companyInfoText = infoParts.join(' | ');
+    }
+
+    if (companyInfoText) {
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(71, 85, 105);
+      const splitCompanyInfo = doc.splitTextToSize(companyInfoText, pdfSettings.terms.showCompanyStamp ? 130 : 180);
+      doc.text(splitCompanyInfo, 14, companyInfoY);
+      companyInfoY += splitCompanyInfo.length * 3;
+    }
+  }
+
+  if (pdfSettings.terms?.showCompanyStamp && pdfSettings.terms?.companyStampUrl) {
+    try {
+      const stampWidth = 30;
+      const stampHeight = 30;
+      const stampX = 170;
+      const stampY = termsY + 18;
+
+      doc.addImage(
+        pdfSettings.terms.companyStampUrl,
+        'PNG',
+        stampX,
+        stampY,
+        stampWidth,
+        stampHeight
+      );
+    } catch (error) {
+      console.error('Error adding company stamp to warranty PDF:', error);
+    }
+  }
 
   if (pdfSettings.footer.showFooter) {
     const footerY = 270;
