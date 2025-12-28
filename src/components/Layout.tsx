@@ -33,22 +33,34 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
     altKey?: boolean;
   }>>([]);
 
-  const navigation = [
+  const coreBusinessNav = [
     { id: 'dashboard', icon: Building2, label: t('nav.dashboard') },
     { id: 'customer-requests', icon: FileText, label: t('nav.customerRequests') },
     { id: 'customers', icon: Users, label: t('nav.customers') },
     { id: 'quotes', icon: FileText, label: t('nav.quotes') },
-    { id: 'visits', icon: Calendar, label: t('nav.visits') },
     { id: 'orders', icon: ShoppingCart, label: t('nav.orders') },
     { id: 'invoices', icon: FileCheck, label: t('nav.invoices') },
+  ];
+
+  const schedulingNav = [
+    { id: 'visits', icon: Calendar, label: t('nav.visits') },
+    { id: 'calendar', icon: CalendarDays, label: t('nav.calendar') },
+    { id: 'installation-tasks', icon: Wrench, label: t('nav.installationTasks') },
+  ];
+
+  const financialNav = [
     { id: 'receipts', icon: Receipt, label: t('nav.receipts') },
     { id: 'payment-verification', icon: CheckCircle, label: t('nav.paymentVerification') },
     { id: 'tracker', icon: Package, label: t('nav.tracker') },
+  ];
+
+  const operationsNav = [
     { id: 'production-workflow', icon: Workflow, label: t('nav.productionWorkflow') },
     { id: 'inventory', icon: Boxes, label: t('nav.inventory') },
-    { id: 'calendar', icon: CalendarDays, label: t('nav.calendar') },
-    { id: 'installation-tasks', icon: Wrench, label: t('nav.installationTasks') },
     { id: 'warranty-feedback', icon: Shield, label: t('nav.warrantyFeedback') },
+  ];
+
+  const systemNav = [
     { id: 'portal-settings', icon: Settings, label: t('nav.portalSettings') },
     { id: 'cache-management', icon: HardDrive, label: t('nav.cacheManagement') },
   ];
@@ -208,34 +220,187 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <nav className="p-4 space-y-1">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPage === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    onNavigate(item.id);
-                    setSidebarOpen(false);
-                  }}
-                  className={`
-                    w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm
-                    ${isActive
-                      ? 'bg-[#bb2738] text-white shadow-md'
-                      : 'text-slate-700 hover:bg-slate-100'
-                    }
-                  `}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="font-medium truncate">{item.label}</span>
-                </button>
-              );
-            })}
+          <nav className="py-4">
+            {/* Core Business Operations */}
+            <div className="px-4 space-y-1">
+              {coreBusinessNav.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      onNavigate(item.id);
+                      setSidebarOpen(false);
+                    }}
+                    className={`
+                      w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm
+                      ${isActive
+                        ? 'bg-[#bb2738] text-white shadow-sm'
+                        : 'text-slate-700 hover:bg-slate-100'
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="font-medium truncate">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Scheduling & Logistics */}
+            <div className="mt-6 px-4">
+              <div className="flex items-center gap-2 px-3 mb-2">
+                <div className="h-px flex-1 bg-slate-200"></div>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Scheduling
+                </span>
+                <div className="h-px flex-1 bg-slate-200"></div>
+              </div>
+              <div className="space-y-1">
+                {schedulingNav.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentPage === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        onNavigate(item.id);
+                        setSidebarOpen(false);
+                      }}
+                      className={`
+                        w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm
+                        ${isActive
+                          ? 'bg-[#bb2738] text-white shadow-sm'
+                          : 'text-slate-700 hover:bg-slate-100'
+                        }
+                      `}
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium truncate">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Financial Management */}
+            <div className="mt-6 px-4">
+              <div className="flex items-center gap-2 px-3 mb-2">
+                <div className="h-px flex-1 bg-slate-200"></div>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Financial
+                </span>
+                <div className="h-px flex-1 bg-slate-200"></div>
+              </div>
+              <div className="space-y-1">
+                {financialNav.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentPage === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        onNavigate(item.id);
+                        setSidebarOpen(false);
+                      }}
+                      className={`
+                        w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm
+                        ${isActive
+                          ? 'bg-[#bb2738] text-white shadow-sm'
+                          : 'text-slate-700 hover:bg-slate-100'
+                        }
+                      `}
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium truncate">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Operations & Production */}
+            <div className="mt-6 px-4">
+              <div className="flex items-center gap-2 px-3 mb-2">
+                <div className="h-px flex-1 bg-slate-200"></div>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Operations
+                </span>
+                <div className="h-px flex-1 bg-slate-200"></div>
+              </div>
+              <div className="space-y-1">
+                {operationsNav.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentPage === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        onNavigate(item.id);
+                        setSidebarOpen(false);
+                      }}
+                      className={`
+                        w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm
+                        ${isActive
+                          ? 'bg-[#bb2738] text-white shadow-sm'
+                          : 'text-slate-700 hover:bg-slate-100'
+                        }
+                      `}
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium truncate">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* System & Administration */}
+            <div className="mt-6 px-4 pb-4">
+              <div className="flex items-center gap-2 px-3 mb-2">
+                <div className="h-px flex-1 bg-slate-200"></div>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  System
+                </span>
+                <div className="h-px flex-1 bg-slate-200"></div>
+              </div>
+              <div className="space-y-1">
+                {systemNav.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentPage === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        onNavigate(item.id);
+                        setSidebarOpen(false);
+                      }}
+                      className={`
+                        w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm
+                        ${isActive
+                          ? 'bg-[#bb2738] text-white shadow-sm'
+                          : 'text-slate-700 hover:bg-slate-100'
+                        }
+                      `}
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium truncate">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </nav>
 
-          <div className="px-4 py-2 mt-6 mb-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">{t('nav.whatsappMarketing.header')}</p>
+          <div className="px-4 py-2 mt-2">
+            <div className="flex items-center gap-2 px-3 mb-2">
+              <div className="h-px flex-1 bg-slate-200"></div>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                {t('nav.whatsappMarketing.header')}
+              </span>
+              <div className="h-px flex-1 bg-slate-200"></div>
+            </div>
             <div className="space-y-1">
               {whatsappNavigation.map((item) => {
                 const Icon = item.icon;
@@ -249,9 +414,9 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
                       setSidebarOpen(false);
                     }}
                     className={`
-                      w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm relative
+                      w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm relative
                       ${isActive
-                        ? 'bg-[#bb2738] text-white shadow-md'
+                        ? 'bg-[#bb2738] text-white shadow-sm'
                         : 'text-slate-700 hover:bg-slate-100'
                       }
                     `}
@@ -270,7 +435,13 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
           </div>
 
           <div className="px-4 py-2 mt-6 mb-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-4">{t('nav.documentationSupport')}</p>
+            <div className="flex items-center gap-2 px-3 mb-2">
+              <div className="h-px flex-1 bg-slate-200"></div>
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                {t('nav.documentationSupport')}
+              </span>
+              <div className="h-px flex-1 bg-slate-200"></div>
+            </div>
             <div className="space-y-1">
               {supportNavigation.map((item) => {
                 const Icon = item.icon;
@@ -283,9 +454,9 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
                       setSidebarOpen(false);
                     }}
                     className={`
-                      w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm relative
+                      w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm relative
                       ${isActive
-                        ? 'bg-[#bb2738] text-white shadow-md'
+                        ? 'bg-[#bb2738] text-white shadow-sm'
                         : 'text-slate-700 hover:bg-slate-100'
                       }
                     `}
