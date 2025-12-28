@@ -59,6 +59,7 @@ export interface PDFSettings {
   remarks: {
     remarksTitle: string;
     remarksContent: string[];
+    remarksStyle: 'simple' | 'bordered' | 'box';
     showRemarks: boolean;
   };
   terms: {

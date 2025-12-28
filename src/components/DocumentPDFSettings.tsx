@@ -1750,6 +1750,19 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
                       />
                     </div>
 
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Display Style</label>
+                      <select
+                        value={settings.remarks?.remarksStyle || 'bordered'}
+                        onChange={(e) => updateSettings('remarks', 'remarksStyle', e.target.value as any)}
+                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] bg-yellow-50"
+                      >
+                        <option value="simple">Simple</option>
+                        <option value="bordered">Bordered</option>
+                        <option value="box">Box</option>
+                      </select>
+                    </div>
+
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <label className="block text-xs font-medium text-slate-600">Content Lines</label>

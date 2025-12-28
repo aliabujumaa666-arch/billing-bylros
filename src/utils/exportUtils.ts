@@ -552,10 +552,14 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
         remarksY = 20;
       }
 
-      doc.setFillColor(254, 252, 232);
-      doc.roundedRect(10, remarksY, 190, 25, 2, 2, 'F');
-      doc.setDrawColor(250, 204, 21);
-      doc.roundedRect(10, remarksY, 190, 25, 2, 2, 'S');
+      const remarksStyle = pdfSettings.remarks.remarksStyle || 'bordered';
+
+      if (remarksStyle === 'bordered' || remarksStyle === 'box') {
+        doc.setFillColor(254, 252, 232);
+        doc.roundedRect(10, remarksY, 190, 25, 2, 2, 'F');
+        doc.setDrawColor(250, 204, 21);
+        doc.roundedRect(10, remarksY, 190, 25, 2, 2, 'S');
+      }
 
       doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
       doc.setFontSize(8);

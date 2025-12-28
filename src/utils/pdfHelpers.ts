@@ -83,6 +83,7 @@ export const getDefaultPDFSettings = (): PDFSettings => ({
       'Payment Terms: 50% advance, 30% before delivery, 20% after installation.',
       'Warranty: 1 year on aluminium & hardware (glass breakage not covered).',
     ],
+    remarksStyle: 'bordered',
     showRemarks: true,
   },
   terms: {
