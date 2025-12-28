@@ -28,7 +28,9 @@ interface InstallationPhoto {
   storage_path: string;
   file_name: string;
   uploaded_by: string | null;
-  uploaded_at: string;
+  uploaded_by_name: string | null;
+  caption: string | null;
+  created_at: string;
 }
 
 export function InstallationTasks() {
@@ -423,7 +425,7 @@ export function InstallationTasks() {
         .from('installation_photos')
         .select('*')
         .eq('installation_task_id', task.id)
-        .order('uploaded_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -934,8 +936,14 @@ export function InstallationTasks() {
                           </button>
                         </div>
                         <p className="text-xs text-slate-600">
-                          {new Date(photo.uploaded_at).toLocaleDateString()} at {new Date(photo.uploaded_at).toLocaleTimeString()}
+                          {new Date(photo.created_at).toLocaleDateString()} at {new Date(photo.created_at).toLocaleTimeString()}
                         </p>
+                        {photo.caption && (
+                          <p className="text-xs text-slate-500 italic mt-1">{photo.caption}</p>
+                        )}
+                        {photo.uploaded_by_name && (
+                          <p className="text-xs text-slate-500">By: {photo.uploaded_by_name}</p>
+                        )}
                       </div>
                     </div>
                   ))}
