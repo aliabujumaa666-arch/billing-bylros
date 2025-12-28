@@ -263,15 +263,15 @@ export function Dashboard() {
         subtitle: t('dashboard.allTimePaidInvoices')
       },
       {
-        label: t('dashboard.monthlyRevenue'),
-        value: `AED ${stats.revenue_30d.toLocaleString()}`,
+        label: t('dashboard.totalRevenue'),
+        value: `AED ${stats.total_revenue.toLocaleString()}`,
         icon: TrendingUp,
         gradient: 'bg-gradient-to-br from-blue-500 to-cyan-600',
         change: {
           value: `${revenuePercentage}% ${t('dashboard.ofTotal')}`,
           positive: true
         },
-        subtitle: t('dashboard.last30Days')
+        subtitle: t('dashboard.allTime')
       },
       {
         label: t('dashboard.outstandingInvoices'),
