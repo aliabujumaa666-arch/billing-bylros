@@ -56,7 +56,7 @@ export function WarrantyManagement() {
     start_date: new Date().toISOString().split('T')[0],
     end_date: '',
     duration_months: 12,
-    coverage_type: 'full',
+    coverage_type: 'Full',
     coverage_details: '',
     status: 'active',
     notes: '',
@@ -734,10 +734,13 @@ export function WarrantyManagement() {
                   onChange={(e) => setWarrantyForm({ ...warrantyForm, coverage_type: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg"
                 >
-                  <option value="full">Full Coverage</option>
-                  <option value="limited">Limited Coverage</option>
-                  <option value="parts_only">Parts Only</option>
-                  <option value="labor_only">Labor Only</option>
+                  <option value="Full">Full</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Extended">Extended</option>
+                  <option value="Premium">Premium</option>
+                  <option value="Limited">Limited</option>
+                  <option value="Parts Only">Parts Only</option>
+                  <option value="Labor Only">Labor Only</option>
                 </select>
               </div>
 
