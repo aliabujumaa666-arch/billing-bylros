@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { PDFSettings, DocumentType, PDFTemplate, useBrand } from '../contexts/BrandContext';
 import { Type, Palette, Layout, Image, FileText, Eye, Settings, PlusCircle, Trash2, HelpCircle, RotateCcw, Save, Sparkles, ChevronDown, ChevronUp, GripVertical, Info, Download, Upload, Copy, Layers, Star, Clock, Tag, Edit } from 'lucide-react';
 import { getDefaultPDFSettings } from '../utils/pdfHelpers';
+import { supabase } from '../lib/supabase';
+import { useToast } from '../contexts/ToastContext';
 
 interface DocumentPDFSettingsProps {
   documentType: DocumentType;
@@ -21,6 +23,7 @@ interface ColorPreset {
 
 export function DocumentPDFSettings({ documentType, documentLabel, settings, onUpdate }: DocumentPDFSettingsProps) {
   const brandContext = useBrand();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'fonts' | 'colors' | 'layout' | 'sections' | 'advanced' | 'templates'>('fonts');
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [showPreview, setShowPreview] = useState(true);
@@ -37,6 +40,7 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
   const [templateTags, setTemplateTags] = useState('');
   const [isGlobalTemplate, setIsGlobalTemplate] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [uploadingStamp, setUploadingStamp] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -48,6 +52,50 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
       setTemplates(data);
     } catch (error) {
       console.error('Failed to load templates:', error);
+    }
+  };
+
+  const handleStampUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file', 'error');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Image size must be less than 2MB', 'error');
+      return;
+    }
+
+    try {
+      setUploadingStamp(true);
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `stamp-${Date.now()}.${fileExt}`;
+      const filePath = `stamps/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('company-assets')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('company-assets')
+        .getPublicUrl(filePath);
+
+      updateSettings('terms', 'companyStampUrl', publicUrl);
+      showToast('Company stamp uploaded successfully', 'success');
+    } catch (error) {
+      console.error('Error uploading stamp:', error);
+      showToast('Failed to upload company stamp', 'error');
+    } finally {
+      setUploadingStamp(false);
     }
   };
 
@@ -1892,19 +1940,46 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
                       </div>
 
                       {settings.terms.showCompanyStamp && (
-                        <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">Stamp Image URL</label>
-                          <input
-                            type="text"
-                            value={settings.terms.companyStampUrl || ''}
-                            onChange={(e) => updateSettings('terms', 'companyStampUrl', e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] bg-sky-50"
-                            placeholder="Enter image URL or upload to Supabase storage"
-                          />
-                          <p className="text-xs text-slate-500 mt-1">
-                            Upload your stamp image to Supabase storage and paste the public URL here.
-                            Recommended size: 150x150px (transparent PNG)
-                          </p>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-2">Upload Stamp Image</label>
+                            <div className="flex gap-2">
+                              <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#bb2738] text-white rounded-lg cursor-pointer hover:bg-[#9a1f2e] transition-colors">
+                                <Upload className="w-4 h-4" />
+                                <span className="text-sm font-medium">
+                                  {uploadingStamp ? 'Uploading...' : 'Choose Image'}
+                                </span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleStampUpload}
+                                  disabled={uploadingStamp}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-2">
+                              Recommended: 150x150px transparent PNG. Max size: 2MB
+                            </p>
+                          </div>
+
+                          {settings.terms.companyStampUrl && (
+                            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 w-16 h-16 bg-white rounded border border-slate-200 flex items-center justify-center overflow-hidden">
+                                  <img
+                                    src={settings.terms.companyStampUrl}
+                                    alt="Company stamp preview"
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-slate-700 mb-1">Current Stamp</p>
+                                  <p className="text-xs text-slate-500 break-all">{settings.terms.companyStampUrl}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
