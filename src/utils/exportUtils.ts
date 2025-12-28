@@ -492,6 +492,26 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
       doc.setDrawColor(203, 213, 225);
       doc.roundedRect(10, companySectionY, 190, sectionHeight, 2, 2, 'S');
 
+      if (pdfSettings.terms.showCompanyStamp && pdfSettings.terms.companyStampUrl) {
+        try {
+          const stampWidth = 28;
+          const stampHeight = 28;
+          const stampX = 14;
+          const stampY = companySectionY + 4;
+
+          doc.addImage(
+            pdfSettings.terms.companyStampUrl,
+            'PNG',
+            stampX,
+            stampY,
+            stampWidth,
+            stampHeight
+          );
+        } catch (error) {
+          console.error('Error adding company stamp to PDF:', error);
+        }
+      }
+
       if (pdfSettings.terms.showCompanyInfo) {
         let companyInfoText = pdfSettings.terms.companyInfoText || '';
 
@@ -505,37 +525,19 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
         }
 
         if (companyInfoText) {
+          const infoStartX = pdfSettings.terms.showCompanyStamp ? 48 : 14;
+          const textWidth = pdfSettings.terms.showCompanyStamp ? 142 : 176;
+
           doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
           doc.setFontSize(7);
           doc.setTextColor(51, 65, 85);
-          doc.text('Company Information', 14, companySectionY + 6);
+          doc.text('Company Information', infoStartX, companySectionY + 6);
 
           doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
           doc.setFontSize(7);
           doc.setTextColor(71, 85, 105);
-          const textWidth = pdfSettings.terms.showCompanyStamp ? 140 : 176;
           const splitCompanyInfo = doc.splitTextToSize(companyInfoText, textWidth);
-          doc.text(splitCompanyInfo, 14, companySectionY + 12);
-        }
-      }
-
-      if (pdfSettings.terms.showCompanyStamp && pdfSettings.terms.companyStampUrl) {
-        try {
-          const stampWidth = 28;
-          const stampHeight = 28;
-          const stampX = 168;
-          const stampY = companySectionY + 4;
-
-          doc.addImage(
-            pdfSettings.terms.companyStampUrl,
-            'PNG',
-            stampX,
-            stampY,
-            stampWidth,
-            stampHeight
-          );
-        } catch (error) {
-          console.error('Error adding company stamp to PDF:', error);
+          doc.text(splitCompanyInfo, infoStartX, companySectionY + 12);
         }
       }
     }
@@ -1601,6 +1603,26 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
     doc.setDrawColor(203, 213, 225);
     doc.roundedRect(10, companySectionY, 190, sectionHeight, 2, 2, 'S');
 
+    if (pdfSettings.terms?.showCompanyStamp && pdfSettings.terms?.companyStampUrl) {
+      try {
+        const stampWidth = 28;
+        const stampHeight = 28;
+        const stampX = 14;
+        const stampY = companySectionY + 4;
+
+        doc.addImage(
+          pdfSettings.terms.companyStampUrl,
+          'PNG',
+          stampX,
+          stampY,
+          stampWidth,
+          stampHeight
+        );
+      } catch (error) {
+        console.error('Error adding company stamp to warranty PDF:', error);
+      }
+    }
+
     if (pdfSettings.terms?.showCompanyInfo) {
       let companyInfoText = pdfSettings.terms.companyInfoText || '';
 
@@ -1614,37 +1636,19 @@ export const exportWarrantyToPDF = async (warranty: any, order: any, brand?: any
       }
 
       if (companyInfoText) {
+        const infoStartX = pdfSettings.terms.showCompanyStamp ? 48 : 14;
+        const textWidth = pdfSettings.terms.showCompanyStamp ? 142 : 176;
+
         doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'bold');
         doc.setFontSize(7);
         doc.setTextColor(51, 65, 85);
-        doc.text('Company Information', 14, companySectionY + 6);
+        doc.text('Company Information', infoStartX, companySectionY + 6);
 
         doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
         doc.setFontSize(7);
         doc.setTextColor(71, 85, 105);
-        const textWidth = pdfSettings.terms.showCompanyStamp ? 140 : 176;
         const splitCompanyInfo = doc.splitTextToSize(companyInfoText, textWidth);
-        doc.text(splitCompanyInfo, 14, companySectionY + 12);
-      }
-    }
-
-    if (pdfSettings.terms?.showCompanyStamp && pdfSettings.terms?.companyStampUrl) {
-      try {
-        const stampWidth = 28;
-        const stampHeight = 28;
-        const stampX = 168;
-        const stampY = companySectionY + 4;
-
-        doc.addImage(
-          pdfSettings.terms.companyStampUrl,
-          'PNG',
-          stampX,
-          stampY,
-          stampWidth,
-          stampHeight
-        );
-      } catch (error) {
-        console.error('Error adding company stamp to warranty PDF:', error);
+        doc.text(splitCompanyInfo, infoStartX, companySectionY + 12);
       }
     }
   }
