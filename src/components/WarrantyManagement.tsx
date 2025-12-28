@@ -201,17 +201,23 @@ export function WarrantyManagement() {
 
   const handleSaveWarranty = async () => {
     try {
+      const warrantyData = {
+        ...warrantyForm,
+        customer_id: warrantyForm.customer_id || null,
+        order_id: warrantyForm.order_id || null,
+      };
+
       if (editingWarranty) {
         const { error } = await supabase
           .from('warranties')
-          .update(warrantyForm)
+          .update(warrantyData)
           .eq('id', editingWarranty.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('warranties')
-          .insert([warrantyForm]);
+          .insert([warrantyData]);
 
         if (error) throw error;
       }
@@ -273,17 +279,23 @@ export function WarrantyManagement() {
 
   const handleSaveFeedback = async () => {
     try {
+      const feedbackData = {
+        ...feedbackForm,
+        customer_id: feedbackForm.customer_id || null,
+        order_id: feedbackForm.order_id || null,
+      };
+
       if (editingFeedback) {
         const { error } = await supabase
           .from('installation_feedback')
-          .update(feedbackForm)
+          .update(feedbackData)
           .eq('id', editingFeedback.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('installation_feedback')
-          .insert([feedbackForm]);
+          .insert([feedbackData]);
 
         if (error) throw error;
       }
