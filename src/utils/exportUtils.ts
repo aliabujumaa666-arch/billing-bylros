@@ -481,6 +481,37 @@ export const exportQuoteToPDF = async (quote: any, customer: any, brand?: any, r
     doc.setFontSize(7);
     doc.setTextColor(30, 58, 138);
     doc.text(pdfSettings.terms.termsContent, 14, adjustedTermsY + 11);
+
+    let companyInfoY = adjustedTermsY + 20;
+
+    if (pdfSettings.terms.showCompanyInfo && pdfSettings.terms.companyInfoText) {
+      doc.setFont(getFontFamily(pdfSettings.fonts.bodyFont), 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(71, 85, 105);
+      const splitCompanyInfo = doc.splitTextToSize(pdfSettings.terms.companyInfoText, pdfSettings.terms.showCompanyStamp ? 130 : 180);
+      doc.text(splitCompanyInfo, 14, companyInfoY);
+      companyInfoY += splitCompanyInfo.length * 3;
+    }
+
+    if (pdfSettings.terms.showCompanyStamp && pdfSettings.terms.companyStampUrl) {
+      try {
+        const stampWidth = 30;
+        const stampHeight = 30;
+        const stampX = pdfSettings.terms.showCompanyInfo ? 170 : 170;
+        const stampY = adjustedTermsY + 18;
+
+        doc.addImage(
+          pdfSettings.terms.companyStampUrl,
+          'PNG',
+          stampX,
+          stampY,
+          stampWidth,
+          stampHeight
+        );
+      } catch (error) {
+        console.error('Error adding company stamp to PDF:', error);
+      }
+    }
   }
 
   if (pdfSettings.footer.showFooter) {

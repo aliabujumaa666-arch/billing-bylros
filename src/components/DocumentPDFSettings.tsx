@@ -1843,6 +1843,66 @@ export function DocumentPDFSettings({ documentType, documentLabel, settings, onU
                         ))}
                       </div>
                     </div>
+
+                    <div className="mt-6 pt-6 border-t border-slate-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="text-sm font-semibold text-slate-700">Company Information</h4>
+                          <p className="text-xs text-slate-500">Add company details below terms</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={settings.terms.showCompanyInfo}
+                          onChange={(e) => updateSettings('terms', 'showCompanyInfo', e.target.checked)}
+                          className="w-4 h-4 text-[#bb2738] border-slate-300 rounded focus:ring-[#bb2738]"
+                        />
+                      </div>
+
+                      {settings.terms.showCompanyInfo && (
+                        <div className="mb-3">
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Company Info Text</label>
+                          <textarea
+                            value={settings.terms.companyInfoText || ''}
+                            onChange={(e) => updateSettings('terms', 'companyInfoText', e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] bg-sky-50"
+                            rows={3}
+                            placeholder="Enter additional company information (e.g., registration details, contact info)"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="text-sm font-semibold text-slate-700">Company Stamp/Seal</h4>
+                          <p className="text-xs text-slate-500">Official stamp or seal image</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={settings.terms.showCompanyStamp}
+                          onChange={(e) => updateSettings('terms', 'showCompanyStamp', e.target.checked)}
+                          className="w-4 h-4 text-[#bb2738] border-slate-300 rounded focus:ring-[#bb2738]"
+                        />
+                      </div>
+
+                      {settings.terms.showCompanyStamp && (
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">Stamp Image URL</label>
+                          <input
+                            type="text"
+                            value={settings.terms.companyStampUrl || ''}
+                            onChange={(e) => updateSettings('terms', 'companyStampUrl', e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] bg-sky-50"
+                            placeholder="Enter image URL or upload to Supabase storage"
+                          />
+                          <p className="text-xs text-slate-500 mt-1">
+                            Upload your stamp image to Supabase storage and paste the public URL here.
+                            Recommended size: 150x150px (transparent PNG)
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
