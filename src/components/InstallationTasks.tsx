@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Calendar, MapPin, Upload, Shield, CheckCircle, CreditCard as Edit, Trash2, Link2, Copy, ExternalLink } from 'lucide-react';
+import { Plus, Calendar, MapPin, Upload, Shield, CheckCircle, CreditCard as Edit, Trash2, Link2, Copy, ExternalLink, Image, Download, X } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -20,6 +20,15 @@ interface InstallationTask {
   priority: string;
   installation_address: string | null;
   orders?: { order_number: string; customer_name: string };
+}
+
+interface InstallationPhoto {
+  id: string;
+  photo_type: string;
+  storage_path: string;
+  file_name: string;
+  uploaded_by: string | null;
+  uploaded_at: string;
 }
 
 export function InstallationTasks() {
@@ -44,6 +53,10 @@ export function InstallationTasks() {
   const [showUploadLinkModal, setShowUploadLinkModal] = useState(false);
   const [uploadLinkTask, setUploadLinkTask] = useState<InstallationTask | null>(null);
   const [generatedUploadLink, setGeneratedUploadLink] = useState<string>('');
+  const [showPhotosModal, setShowPhotosModal] = useState(false);
+  const [viewPhotosTask, setViewPhotosTask] = useState<InstallationTask | null>(null);
+  const [taskPhotos, setTaskPhotos] = useState<InstallationPhoto[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [formData, setFormData] = useState({
     order_id: '',
     task_title: '',
@@ -400,6 +413,56 @@ export function InstallationTasks() {
     alert('Link copied to clipboard!');
   };
 
+  const handleViewPhotos = async (task: InstallationTask) => {
+    setViewPhotosTask(task);
+    setShowPhotosModal(true);
+    setLoadingPhotos(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('installation_photos')
+        .select('*')
+        .eq('installation_task_id', task.id)
+        .order('uploaded_at', { ascending: false });
+
+      if (error) throw error;
+
+      setTaskPhotos(data || []);
+    } catch (error) {
+      console.error('Error loading photos:', error);
+      alert('Failed to load photos');
+    } finally {
+      setLoadingPhotos(false);
+    }
+  };
+
+  const handleDownloadPhoto = async (photo: InstallationPhoto) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('uploads')
+        .download(photo.storage_path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = photo.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading photo:', error);
+      alert('Failed to download photo');
+    }
+  };
+
+  const getPhotoUrl = (path: string) => {
+    const { data } = supabase.storage.from('uploads').getPublicUrl(path);
+    return data.publicUrl;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-700';
@@ -493,6 +556,13 @@ export function InstallationTasks() {
               >
                 <Upload className="w-4 h-4" />
                 Upload Photos
+              </button>
+              <button
+                onClick={() => handleViewPhotos(task)}
+                className="flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 font-medium"
+              >
+                <Image className="w-4 h-4" />
+                View Photos
               </button>
               <button
                 onClick={() => handleGenerateUploadLink(task)}
@@ -801,6 +871,87 @@ export function InstallationTasks() {
                 className="flex-1 px-4 py-2 bg-[#bb2738] text-white rounded-lg hover:bg-[#9a1f2d] transition-colors"
               >
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPhotosModal && viewPhotosTask && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Image className="w-6 h-6 text-teal-600" />
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Installation Photos</h3>
+                  <p className="text-sm text-slate-600">{viewPhotosTask.task_title}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPhotosModal(false);
+                  setViewPhotosTask(null);
+                  setTaskPhotos([]);
+                }}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              {loadingPhotos ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+                </div>
+              ) : taskPhotos.length === 0 ? (
+                <div className="text-center py-12">
+                  <Image className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-600">No photos uploaded yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {taskPhotos.map((photo) => (
+                    <div key={photo.id} className="bg-slate-50 rounded-lg overflow-hidden border border-slate-200">
+                      <div className="aspect-square relative">
+                        <img
+                          src={getPhotoUrl(photo.storage_path)}
+                          alt={photo.photo_type}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-block px-2 py-1 bg-teal-100 text-teal-700 text-xs font-medium rounded capitalize">
+                            {photo.photo_type}
+                          </span>
+                          <button
+                            onClick={() => handleDownloadPhoto(photo)}
+                            className="text-slate-600 hover:text-teal-600 transition-colors"
+                            title="Download photo"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <p className="text-xs text-slate-600">
+                          {new Date(photo.uploaded_at).toLocaleDateString()} at {new Date(photo.uploaded_at).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-slate-200">
+              <button
+                onClick={() => {
+                  setShowPhotosModal(false);
+                  setViewPhotosTask(null);
+                  setTaskPhotos([]);
+                }}
+                className="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>
