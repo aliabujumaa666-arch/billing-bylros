@@ -16,6 +16,20 @@ import {
   RotateCcw,
   ChevronDown,
   ChevronUp,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  Link as LinkIcon,
+  Quote,
+  Heading1,
+  Heading2,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Undo,
+  Redo,
 } from 'lucide-react';
 
 interface PageEditorProps {
@@ -69,6 +83,7 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
 
   const autoSaveTimeout = useRef<NodeJS.Timeout>();
   const slugCheckTimeout = useRef<NodeJS.Timeout>();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (pageId) {
@@ -291,6 +306,53 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
     onBack();
   };
 
+  const insertFormatting = (before: string, after: string = '', placeholder: string = '') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = formData.content.substring(start, end);
+    const textToInsert = selectedText || placeholder;
+    const newText = formData.content.substring(0, start) + before + textToInsert + after + formData.content.substring(end);
+
+    handleFieldChange('content', newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + before.length + textToInsert.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  const formatBold = () => insertFormatting('<strong>', '</strong>', 'bold text');
+  const formatItalic = () => insertFormatting('<em>', '</em>', 'italic text');
+  const formatUnderline = () => insertFormatting('<u>', '</u>', 'underlined text');
+  const formatH1 = () => insertFormatting('<h1>', '</h1>', 'Heading 1');
+  const formatH2 = () => insertFormatting('<h2>', '</h2>', 'Heading 2');
+  const formatUL = () => insertFormatting('<ul>\n  <li>', '</li>\n</ul>', 'List item');
+  const formatOL = () => insertFormatting('<ol>\n  <li>', '</li>\n</ol>', 'List item');
+  const formatQuote = () => insertFormatting('<blockquote>', '</blockquote>', 'Quote text');
+
+  const formatLink = () => {
+    const url = prompt('Enter URL:');
+    if (url) {
+      insertFormatting(`<a href="${url}">`, '</a>', 'link text');
+    }
+  };
+
+  const formatImage = () => {
+    const url = prompt('Enter image URL:');
+    if (url) {
+      const alt = prompt('Enter image description (alt text):') || '';
+      insertFormatting(`<img src="${url}" alt="${alt}" />`, '');
+    }
+  };
+
+  const formatAlignLeft = () => insertFormatting('<div style="text-align: left;">', '</div>', 'Left aligned text');
+  const formatAlignCenter = () => insertFormatting('<div style="text-align: center;">', '</div>', 'Centered text');
+  const formatAlignRight = () => insertFormatting('<div style="text-align: right;">', '</div>', 'Right aligned text');
+
   const togglePanel = (panel: keyof typeof expandedPanels) => {
     setExpandedPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
   };
@@ -451,8 +513,130 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
               </button>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-lg">
+            <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+              {isVisualMode && (
+                <div className="flex items-center gap-1 p-2 border-b border-slate-200 bg-slate-50 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={formatBold}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Bold (Ctrl+B)"
+                  >
+                    <Bold className="w-4 h-4 text-slate-700" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={formatItalic}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Italic (Ctrl+I)"
+                  >
+                    <Italic className="w-4 h-4 text-slate-700" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={formatUnderline}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Underline (Ctrl+U)"
+                  >
+                    <Underline className="w-4 h-4 text-slate-700" />
+                  </button>
+
+                  <div className="w-px h-6 bg-slate-300 mx-1"></div>
+
+                  <button
+                    type="button"
+                    onClick={formatH1}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Heading 1"
+                  >
+                    <Heading1 className="w-4 h-4 text-slate-700" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={formatH2}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Heading 2"
+                  >
+                    <Heading2 className="w-4 h-4 text-slate-700" />
+                  </button>
+
+                  <div className="w-px h-6 bg-slate-300 mx-1"></div>
+
+                  <button
+                    type="button"
+                    onClick={formatUL}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Bullet List"
+                  >
+                    <List className="w-4 h-4 text-slate-700" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={formatOL}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Numbered List"
+                  >
+                    <ListOrdered className="w-4 h-4 text-slate-700" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={formatQuote}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Blockquote"
+                  >
+                    <Quote className="w-4 h-4 text-slate-700" />
+                  </button>
+
+                  <div className="w-px h-6 bg-slate-300 mx-1"></div>
+
+                  <button
+                    type="button"
+                    onClick={formatAlignLeft}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Align Left"
+                  >
+                    <AlignLeft className="w-4 h-4 text-slate-700" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={formatAlignCenter}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Align Center"
+                  >
+                    <AlignCenter className="w-4 h-4 text-slate-700" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={formatAlignRight}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Align Right"
+                  >
+                    <AlignRight className="w-4 h-4 text-slate-700" />
+                  </button>
+
+                  <div className="w-px h-6 bg-slate-300 mx-1"></div>
+
+                  <button
+                    type="button"
+                    onClick={formatLink}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Insert Link"
+                  >
+                    <LinkIcon className="w-4 h-4 text-slate-700" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={formatImage}
+                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
+                    title="Insert Image"
+                  >
+                    <ImageIcon className="w-4 h-4 text-slate-700" />
+                  </button>
+                </div>
+              )}
+
               <textarea
+                ref={textareaRef}
                 value={formData.content}
                 onChange={(e) => handleFieldChange('content', e.target.value)}
                 placeholder="Start writing your content..."
