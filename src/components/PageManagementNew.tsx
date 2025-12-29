@@ -32,23 +32,29 @@ export function PageManagementNew() {
 
   useEffect(() => {
     fetchPages();
-  }, []);
+  }, [sortColumn, sortDirection]);
 
   const fetchPages = async () => {
     setLoading(true);
     try {
       let query = supabase
         .from('pages')
-        .select('*, author:author_id(email), last_modifier:last_modified_by(email)')
+        .select('*')
         .neq('status', 'trash')
         .order(sortColumn, { ascending: sortDirection === 'asc' });
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching pages:', error);
+        throw error;
+      }
+
+      console.log('Fetched pages:', data?.length || 0);
       setPages(data || []);
     } catch (error) {
-      console.error('Error fetching pages:', error);
+      console.error('Failed to fetch pages:', error);
+      alert('Failed to load pages. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -61,7 +67,6 @@ export function PageManagementNew() {
       setSortColumn(column);
       setSortDirection('asc');
     }
-    fetchPages();
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -581,7 +586,7 @@ export function PageManagementNew() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="text-sm text-slate-600">
-                      {page.author?.email?.split('@')[0] || 'admin'}
+                      Admin
                     </div>
                   </td>
                   <td className="px-4 py-3">
