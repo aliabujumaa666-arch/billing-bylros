@@ -149,13 +149,42 @@ export function PageManagementNew() {
     }
   };
 
+  const ensureUniqueSlug = async (baseSlug: string): Promise<string> => {
+    let slug = baseSlug;
+    let counter = 1;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('id')
+        .eq('slug', slug);
+
+      if (error) {
+        console.error('Error checking slug:', error);
+        break;
+      }
+
+      if (!data || data.length === 0) {
+        break;
+      }
+
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    return slug;
+  };
+
   const handleDuplicate = async (page: any) => {
     try {
       const { title, slug, content, excerpt, meta_description, meta_keywords, page_type, template, custom_css, custom_js } = page;
 
+      const baseSlug = `${slug}-copy`;
+      const uniqueSlug = await ensureUniqueSlug(baseSlug);
+
       const newPage = {
         title: `${title} (Copy)`,
-        slug: `${slug}-copy-${Date.now()}`,
+        slug: uniqueSlug,
         content,
         excerpt,
         meta_description,

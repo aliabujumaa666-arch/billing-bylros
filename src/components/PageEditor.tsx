@@ -30,6 +30,7 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isVisualMode, setIsVisualMode] = useState(true);
+  const [slugStatus, setSlugStatus] = useState<'checking' | 'available' | 'taken' | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -67,6 +68,7 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
   });
 
   const autoSaveTimeout = useRef<NodeJS.Timeout>();
+  const slugCheckTimeout = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     if (pageId) {
@@ -140,6 +142,39 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
       .trim();
   };
 
+  const checkSlugExists = async (slug: string): Promise<boolean> => {
+    try {
+      const query = supabase
+        .from('pages')
+        .select('id')
+        .eq('slug', slug);
+
+      if (pageId) {
+        query.neq('id', pageId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return (data?.length || 0) > 0;
+    } catch (error) {
+      console.error('Error checking slug:', error);
+      return false;
+    }
+  };
+
+  const ensureUniqueSlug = async (baseSlug: string): Promise<string> => {
+    let slug = baseSlug;
+    let counter = 1;
+
+    while (await checkSlugExists(slug)) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    return slug;
+  };
+
   const handleTitleChange = (title: string) => {
     setFormData(prev => ({
       ...prev,
@@ -153,6 +188,18 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
   const handleFieldChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setHasUnsavedChanges(true);
+
+    if (field === 'slug') {
+      if (slugCheckTimeout.current) {
+        clearTimeout(slugCheckTimeout.current);
+      }
+      setSlugStatus('checking');
+      slugCheckTimeout.current = setTimeout(async () => {
+        const exists = await checkSlugExists(value);
+        setSlugStatus(exists ? 'taken' : 'available');
+      }, 500);
+    }
+
     scheduleAutoSave();
   };
 
@@ -171,12 +218,25 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
       return;
     }
 
+    if (slugStatus === 'taken' && !isAutoSave) {
+      alert('The slug is already in use. Please choose a different one.');
+      return;
+    }
+
     setSaving(true);
 
     try {
+      const baseSlug = formData.slug || generateSlug(formData.title);
+      const uniqueSlug = await ensureUniqueSlug(baseSlug);
+
+      if (uniqueSlug !== baseSlug) {
+        setFormData(prev => ({ ...prev, slug: uniqueSlug }));
+        setSlugStatus('available');
+      }
+
       const pageData = {
         ...formData,
-        slug: formData.slug || generateSlug(formData.title),
+        slug: uniqueSlug,
         author_id: pageId ? undefined : user?.id,
         last_modified_by: user?.id,
         scheduled_at: formData.scheduled_at || null,
@@ -345,8 +405,25 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
               className="w-full text-4xl font-bold border-none outline-none mb-2 placeholder-slate-300 px-0"
             />
 
-            <div className="text-sm text-slate-500 mb-4">
-              Permalink: <span className="text-slate-700">/page/{formData.slug || 'your-page-slug'}</span>
+            <div className="flex items-center gap-2 text-sm text-slate-500 mb-4">
+              <span>Permalink:</span>
+              <span className="text-slate-700">/page/</span>
+              <input
+                type="text"
+                value={formData.slug}
+                onChange={(e) => handleFieldChange('slug', e.target.value)}
+                placeholder="your-page-slug"
+                className="border border-slate-200 rounded px-2 py-1 text-slate-700 outline-none focus:ring-2 focus:ring-[#bb2738] focus:border-transparent"
+              />
+              {slugStatus === 'checking' && (
+                <span className="text-blue-600 text-xs">Checking...</span>
+              )}
+              {slugStatus === 'available' && (
+                <span className="text-green-600 text-xs">✓ Available</span>
+              )}
+              {slugStatus === 'taken' && (
+                <span className="text-red-600 text-xs">✗ Already exists</span>
+              )}
             </div>
 
             <div className="mb-4 flex gap-2 border-b border-slate-200">
