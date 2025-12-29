@@ -151,9 +151,11 @@ function AdminApp() {
     <>
       <GlobalSearch onNavigate={handleSearchNavigate} />
       <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
-        <Suspense fallback={<LoadingFallback />}>
-          {renderPage()}
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<LoadingFallback />}>
+            {renderPage()}
+          </Suspense>
+        </ErrorBoundary>
       </Layout>
     </>
   );
@@ -168,16 +170,20 @@ function CustomerApp() {
 
   if (!user) {
     return (
-      <Suspense fallback={<LoadingFallback />}>
-        <CustomerLogin />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<LoadingFallback />}>
+          <CustomerLogin />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <CustomerDashboard />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingFallback />}>
+        <CustomerDashboard />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 

@@ -26,11 +26,32 @@ Deno.serve(async (req: Request) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { conversation_id, customer_id, context }: RequestBody = await req.json();
+    const body = await req.json();
+    const { conversation_id, customer_id, context } = body as RequestBody;
 
-    if (!conversation_id || !customer_id) {
+    if (!conversation_id || typeof conversation_id !== 'string') {
       return new Response(
-        JSON.stringify({ success: false, error: "Missing required fields" }),
+        JSON.stringify({ success: false, error: "Invalid or missing conversation_id" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!customer_id || typeof customer_id !== 'string') {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid or missing customer_id" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!context || typeof context !== 'string' || context.length > 10000) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid context (max 10000 characters)" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

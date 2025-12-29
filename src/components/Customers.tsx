@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '../contexts/ToastContext';
+import { useDebounce } from '../hooks/useDebounce';
 import { Plus, Search, CreditCard as Edit, Trash2, X, Upload, Download, Paperclip, MessageCircle, Mail, LogIn } from 'lucide-react';
 import { CustomerBulkImport } from './CustomerBulkImport';
 import { CustomerAttachments } from './CustomerAttachments';
@@ -26,6 +27,7 @@ export function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showModal, setShowModal] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
@@ -56,27 +58,46 @@ export function Customers() {
     try {
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select(`
+          id,
+          name,
+          email,
+          phone,
+          location,
+          status,
+          notes,
+          created_at
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       const customersData = data || [];
 
-      const customersWithCounts = await Promise.all(
-        customersData.map(async (customer) => {
-          const { count } = await supabase
-            .from('attachments')
-            .select('*', { count: 'exact', head: true })
-            .eq('entity_type', 'customer')
-            .eq('entity_id', customer.id);
+      const customerIds = customersData.map(c => c.id);
 
-          return {
-            ...customer,
-            attachment_count: count || 0
-          };
-        })
-      );
+      if (customerIds.length === 0) {
+        setCustomers([]);
+        return;
+      }
+
+      const { data: attachmentCounts, error: countError } = await supabase
+        .from('attachments')
+        .select('entity_id')
+        .eq('entity_type', 'customer')
+        .in('entity_id', customerIds);
+
+      if (countError) throw countError;
+
+      const countMap = new Map<string, number>();
+      (attachmentCounts || []).forEach(item => {
+        countMap.set(item.entity_id, (countMap.get(item.entity_id) || 0) + 1);
+      });
+
+      const customersWithCounts = customersData.map(customer => ({
+        ...customer,
+        attachment_count: countMap.get(customer.id) || 0
+      }));
 
       setCustomers(customersWithCounts);
     } catch (err) {
@@ -277,9 +298,9 @@ export function Customers() {
   };
 
   const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.includes(searchTerm) ||
-      (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = customer.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      customer.phone.includes(debouncedSearchTerm) ||
+      (customer.email && customer.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
 
     if (statusFilter === 'all') {
       return matchesSearch;
@@ -339,16 +360,17 @@ export function Customers() {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-slate-800">{t('nav.customers')}</h1>
-        <div className="flex items-center gap-2">
+    <div className="p-4 md:p-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-800">{t('nav.customers')}</h1>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => setShowBulkImport(true)}
-            className="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg transition-colors"
+            className="flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg transition-colors"
+            aria-label="Import customers from file"
           >
             <Upload className="w-5 h-5" />
-            Import
+            <span className="sm:inline">Import</span>
           </button>
           <button
             onClick={() => {
@@ -356,10 +378,11 @@ export function Customers() {
               setEditingCustomer(null);
               setShowModal(true);
             }}
-            className="flex items-center gap-2 bg-[#bb2738] hover:bg-[#a01f2f] text-white px-4 py-2.5 rounded-lg transition-colors"
+            className="flex items-center justify-center gap-2 bg-[#bb2738] hover:bg-[#a01f2f] text-white px-4 py-2.5 rounded-lg transition-colors"
+            aria-label="Add new customer"
           >
             <Plus className="w-5 h-5" />
-            {t('common.add')} {t('nav.customers')}
+            <span>{t('common.add')} {t('nav.customers')}</span>
           </button>
         </div>
       </div>
@@ -397,21 +420,23 @@ export function Customers() {
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 border-b border-slate-200">
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" aria-hidden="true" />
               <input
                 type="text"
                 placeholder={t('common.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738]"
+                aria-label="Search customers by name, email, or phone"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#bb2738] bg-white"
+              aria-label="Filter customers by status"
             >
               <option value="all">All Customers</option>
               <option value="self-registered">Self-Registered</option>
