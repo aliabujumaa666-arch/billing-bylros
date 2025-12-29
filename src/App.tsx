@@ -45,7 +45,7 @@ const WarrantyManagement = lazy(() => import('./components/WarrantyManagement').
 const WhatsAppMessaging = lazy(() => import('./components/WhatsAppMessaging').then(module => ({ default: module.WhatsAppMessaging })));
 const WhatsAppInbox = lazy(() => import('./components/WhatsAppInbox').then(module => ({ default: module.WhatsAppInbox })));
 const WhatsAppAISettings = lazy(() => import('./components/WhatsAppAISettings').then(module => ({ default: module.WhatsAppAISettings })));
-const PageManagement = lazy(() => import('./components/PageManagement').then(module => ({ default: module.PageManagement })));
+const PageManagement = lazy(() => import('./components/PageManagementNew').then(module => ({ default: module.PageManagementNew })));
 const WhatsAppMarketing = lazy(() => import('./components/WhatsAppMarketing').then(module => ({ default: module.WhatsAppMarketing })));
 const EmailMarketing = lazy(() => import('./components/EmailMarketing').then(module => ({ default: module.default })));
 const CustomerLogin = lazy(() => import('./components/customer/CustomerLogin').then(module => ({ default: module.CustomerLogin })));
