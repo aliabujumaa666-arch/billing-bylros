@@ -103,6 +103,15 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      const scrollHeight = textarea.scrollHeight;
+      textarea.style.height = Math.max(500, scrollHeight) + 'px';
+    }
+  }, [formData.content]);
+
   const fetchPage = async () => {
     if (!pageId) return;
 
@@ -416,6 +425,47 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
   const formatAlignCenter = () => insertFormatting('<div style="text-align: center;">', '</div>', 'Centered text');
   const formatAlignRight = () => insertFormatting('<div style="text-align: right;">', '</div>', 'Right aligned text');
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!isVisualMode) return;
+
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key.toLowerCase()) {
+        case 'b':
+          e.preventDefault();
+          formatBold();
+          break;
+        case 'i':
+          e.preventDefault();
+          formatItalic();
+          break;
+        case 'u':
+          e.preventDefault();
+          formatUnderline();
+          break;
+        case 's':
+          e.preventDefault();
+          handleSave(false);
+          break;
+      }
+    }
+
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newText = formData.content.substring(0, start) + '  ' + formData.content.substring(end);
+
+      handleFieldChange('content', newText);
+
+      setTimeout(() => {
+        textarea.setSelectionRange(start + 2, start + 2);
+      }, 0);
+    }
+  };
+
   const togglePanel = (panel: keyof typeof expandedPanels) => {
     setExpandedPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
   };
@@ -702,14 +752,21 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
                 ref={textareaRef}
                 value={formData.content}
                 onChange={(e) => handleFieldChange('content', e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Start writing your content..."
                 rows={20}
-                className={`w-full p-4 outline-none resize-none ${
-                  isVisualMode ? 'font-normal' : 'font-mono text-sm'
+                className={`w-full p-4 outline-none resize-none bg-white text-slate-800 placeholder-slate-400 leading-relaxed ${
+                  isVisualMode ? 'font-normal text-base' : 'font-mono text-sm'
                 }`}
+                style={{ minHeight: '500px' }}
               />
-              <div className="px-4 py-2 border-t border-slate-200 text-xs text-slate-500 bg-slate-50">
-                Word count: {wordCount}
+              <div className="px-4 py-2 border-t border-slate-200 text-xs text-slate-500 bg-slate-50 flex items-center justify-between">
+                <span>Word count: {wordCount}</span>
+                {isVisualMode && (
+                  <span className="text-slate-400">
+                    Shortcuts: Ctrl+B (Bold), Ctrl+I (Italic), Ctrl+U (Underline), Ctrl+S (Save)
+                  </span>
+                )}
               </div>
             </div>
           </div>
