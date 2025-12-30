@@ -595,7 +595,7 @@ export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onN
               </div>
 
               <div>
-                <h3 className="font-bold text-lg mb-4">Services</h3>
+                <h3 className="font-bold text-lg mb-4">Company</h3>
                 <ul className="space-y-2 text-slate-400 text-sm">
                   <li>
                     <a href="https://bylros.ae/about-us/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
