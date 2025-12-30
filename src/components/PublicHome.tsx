@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useBrand } from '../contexts/BrandContext';
 import { supabase } from '../lib/supabase';
-import { Building2, Calendar, Package, Phone, Mail, MapPin, ArrowRight, Clock, Shield, Award, Users, CheckCircle } from 'lucide-react';
+import { Building2, Calendar, Package, Phone, Mail, MapPin, ArrowRight, Clock, Shield, Award, Users, CheckCircle, FileSearch, Hammer, Truck, Circle } from 'lucide-react';
+import * as Icons from 'lucide-react';
 
 interface PublicHomeProps {
   onNavigateToTracker: () => void;
@@ -15,26 +16,35 @@ export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onN
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [headerMenu, setHeaderMenu] = useState<any[]>([]);
   const [footerMenu, setFooterMenu] = useState<any[]>([]);
+  const [roadmapSettings, setRoadmapSettings] = useState<any>(null);
 
   useEffect(() => {
-    fetchMenus();
+    fetchMenusAndSettings();
   }, []);
 
-  const fetchMenus = async () => {
+  const fetchMenusAndSettings = async () => {
     try {
       const { data } = await supabase
         .from('portal_settings')
-        .select('header_menu, footer_menu')
+        .select('header_menu, footer_menu, setting_value')
         .eq('setting_key', 'home_page')
         .maybeSingle();
 
       if (data) {
         setHeaderMenu(data.header_menu || []);
         setFooterMenu(data.footer_menu || []);
+        if (data.setting_value && data.setting_value.roadmap) {
+          setRoadmapSettings(data.setting_value.roadmap);
+        }
       }
     } catch (error) {
-      console.error('Error fetching menus:', error);
+      console.error('Error fetching menus and settings:', error);
     }
+  };
+
+  const getIcon = (iconName: string) => {
+    const Icon = (Icons as any)[iconName];
+    return Icon || Circle;
   };
 
   const handleMenuClick = (url: string, isExternal: boolean, openNewTab: boolean) => {
@@ -344,6 +354,54 @@ export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onN
             </div>
           </div>
         </section>
+
+        {roadmapSettings?.enabled && roadmapSettings?.steps && roadmapSettings.steps.length > 0 && (
+          <section id="roadmap" className="py-20" style={{ backgroundColor: roadmapSettings.backgroundColor }}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-16">
+                <h2 className="text-3xl lg:text-5xl font-bold text-slate-900 mb-4">
+                  {roadmapSettings.title}
+                </h2>
+                <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+                  {roadmapSettings.subtitle}
+                </p>
+              </div>
+
+              <div className="relative">
+                <div className="hidden md:block absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#bb2738] via-[#bb2738] to-[#bb2738] opacity-20" style={{ top: '3rem' }}></div>
+
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-4">
+                  {roadmapSettings.steps.map((step: any, index: number) => {
+                    const IconComponent = getIcon(step.icon);
+                    return (
+                      <div key={index} className="relative">
+                        <div className="flex md:flex-col items-start md:items-center gap-4 md:gap-0">
+                          <div className="relative z-10 flex flex-col items-center">
+                            <div className="w-24 h-24 bg-[#bb2738] text-white rounded-full flex items-center justify-center mb-4 shadow-lg">
+                              <IconComponent className="w-12 h-12" />
+                            </div>
+                            <div className="w-12 h-12 bg-white border-4 border-[#bb2738] text-[#bb2738] rounded-full flex items-center justify-center font-bold text-xl -mt-8 mb-4 shadow-md">
+                              {step.order}
+                            </div>
+                          </div>
+
+                          <div className="flex-1 md:text-center">
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">{step.title}</h3>
+                            <p className="text-slate-600 leading-relaxed">{step.description}</p>
+                          </div>
+                        </div>
+
+                        {index < roadmapSettings.steps.length - 1 && (
+                          <div className="md:hidden absolute left-12 top-24 bottom-0 w-0.5 bg-[#bb2738]/30"></div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section id="visits" className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
