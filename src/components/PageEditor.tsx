@@ -111,38 +111,43 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
         .from('pages')
         .select('*')
         .eq('id', pageId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
-      if (data) {
-        setFormData({
-          title: data.title || '',
-          slug: data.slug || '',
-          content: data.content || '',
-          draft_content: data.draft_content || '',
-          excerpt: data.excerpt || '',
-          meta_description: data.meta_description || '',
-          meta_keywords: data.meta_keywords || '',
-          featured_image_url: data.featured_image_url || '',
-          status: data.status || 'draft',
-          visibility: data.visibility || 'public',
-          password: data.password || '',
-          template: data.template || 'default',
-          parent_id: data.parent_id,
-          sort_order: data.sort_order || 0,
-          page_type: data.page_type || 'standard',
-          show_in_header: data.show_in_header || false,
-          show_in_footer: data.show_in_footer || true,
-          allow_comments: data.allow_comments || false,
-          custom_css: data.custom_css || '',
-          custom_js: data.custom_js || '',
-          scheduled_at: data.scheduled_at || '',
-        });
+      if (!data) {
+        alert('Page not found');
+        onBack();
+        return;
       }
+
+      setFormData({
+        title: data.title || '',
+        slug: data.slug || '',
+        content: data.content || '',
+        draft_content: data.draft_content || '',
+        excerpt: data.excerpt || '',
+        meta_description: data.meta_description || '',
+        meta_keywords: data.meta_keywords || '',
+        featured_image_url: data.featured_image_url || '',
+        status: data.status || 'draft',
+        visibility: data.visibility || 'public',
+        password: data.password || '',
+        template: data.template || 'default',
+        parent_id: data.parent_id,
+        sort_order: data.sort_order || 0,
+        page_type: data.page_type || 'standard',
+        show_in_header: data.show_in_header || false,
+        show_in_footer: data.show_in_footer || true,
+        allow_comments: data.allow_comments || false,
+        custom_css: data.custom_css || '',
+        custom_js: data.custom_js || '',
+        scheduled_at: data.scheduled_at || '',
+      });
     } catch (error) {
       console.error('Error fetching page:', error);
       alert('Failed to load page');
+      onBack();
     } finally {
       setLoading(false);
     }
@@ -233,6 +238,12 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
       return;
     }
 
+    const baseSlug = formData.slug || generateSlug(formData.title);
+    if (!baseSlug.trim()) {
+      if (!isAutoSave) alert('Please enter a valid page title that can be converted to a URL slug');
+      return;
+    }
+
     if (slugStatus === 'taken' && !isAutoSave) {
       alert('The slug is already in use. Please choose a different one.');
       return;
@@ -241,10 +252,9 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
     setSaving(true);
 
     try {
-      const baseSlug = formData.slug || generateSlug(formData.title);
-      const uniqueSlug = await ensureUniqueSlug(baseSlug);
+      const uniqueSlug = pageId ? baseSlug : await ensureUniqueSlug(baseSlug);
 
-      if (uniqueSlug !== baseSlug) {
+      if (uniqueSlug !== baseSlug && !pageId) {
         setFormData(prev => ({ ...prev, slug: uniqueSlug }));
         setSlugStatus('available');
       }
@@ -255,6 +265,7 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
         author_id: pageId ? undefined : user?.id,
         last_modified_by: user?.id,
         scheduled_at: formData.scheduled_at || null,
+        is_published: formData.status === 'published',
       };
 
       if (pageId) {
@@ -295,15 +306,67 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
 
   const handlePublish = async () => {
     const newStatus = formData.status === 'published' ? 'draft' : 'published';
-    setFormData(prev => ({ ...prev, status: newStatus }));
-    await handleSave();
+
+    try {
+      setSaving(true);
+
+      if (!pageId) {
+        alert('Please save the page first before publishing.');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('pages')
+        .update({
+          status: newStatus,
+          is_published: newStatus === 'published',
+          last_modified_by: user?.id,
+        })
+        .eq('id', pageId);
+
+      if (error) throw error;
+
+      setFormData(prev => ({ ...prev, status: newStatus }));
+      setHasUnsavedChanges(false);
+      alert(`Page ${newStatus === 'published' ? 'published' : 'unpublished'} successfully!`);
+    } catch (error: any) {
+      console.error('Error updating page status:', error);
+      alert('Failed to update page status: ' + (error.message || 'Unknown error'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleTrash = async () => {
     if (!confirm('Move this page to trash?')) return;
-    setFormData(prev => ({ ...prev, status: 'trash' }));
-    await handleSave();
-    onBack();
+
+    try {
+      setSaving(true);
+
+      if (!pageId) {
+        setFormData(prev => ({ ...prev, status: 'trash' }));
+        onBack();
+        return;
+      }
+
+      const { error } = await supabase
+        .from('pages')
+        .update({
+          status: 'trash',
+          last_modified_by: user?.id,
+        })
+        .eq('id', pageId);
+
+      if (error) throw error;
+
+      setHasUnsavedChanges(false);
+      onBack();
+    } catch (error: any) {
+      console.error('Error moving page to trash:', error);
+      alert('Failed to move page to trash: ' + (error.message || 'Unknown error'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const insertFormatting = (before: string, after: string = '', placeholder: string = '') => {
