@@ -597,10 +597,31 @@ export function PublicHome({ onNavigateToTracker, onNavigateToCustomerLogin, onN
               <div>
                 <h3 className="font-bold text-lg mb-4">Services</h3>
                 <ul className="space-y-2 text-slate-400 text-sm">
-                  <li>Glass Partitions</li>
-                  <li>Aluminum Windows</li>
-                  <li>Glass Doors</li>
-                  <li>Facades</li>
+                  <li>
+                    <a href="https://bylros.ae/about-us/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                      About Us
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://bylros.ae/our-services/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                      Our Services
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://bylros.ae/project/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                      Project
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://bylros.ae/carrers/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                      Carrers
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://bylros.ae/faqs/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                      FAQs
+                    </a>
+                  </li>
                 </ul>
               </div>
 
