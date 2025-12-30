@@ -4,7 +4,7 @@ import {
   Save, Eye, Plus, Trash2, Settings, CreditCard, Building2, Mail,
   Keyboard, Menu, Search, ChevronLeft, ChevronRight, X, AlertCircle,
   CheckCircle, FileText, Phone, GripVertical,
-  Monitor, Smartphone, Home, Info, UserPlus
+  Monitor, Smartphone, Home, Info, UserPlus, MapPin, ArrowRight
 } from 'lucide-react';
 import { PayPalSettings } from './PayPalSettings';
 import { StripeSettings } from './StripeSettings';
@@ -169,6 +169,72 @@ export function PortalSettings() {
       return {
         ...prev,
         features: newFeatures
+      };
+    });
+  };
+
+  const addRoadmapStep = () => {
+    setSettings((prev: any) => {
+      const currentSteps = prev.roadmap?.steps || [];
+      const newOrder = currentSteps.length + 1;
+      return {
+        ...prev,
+        roadmap: {
+          ...prev.roadmap,
+          steps: [
+            ...currentSteps,
+            {
+              order: newOrder,
+              icon: 'Circle',
+              title: 'New Step',
+              description: 'Step description'
+            }
+          ]
+        }
+      };
+    });
+    addToast('info', 'New roadmap step added');
+  };
+
+  const removeRoadmapStep = (index: number) => {
+    if (window.confirm('Are you sure you want to remove this roadmap step?')) {
+      setSettings((prev: any) => {
+        const newSteps = prev.roadmap.steps.filter((_: any, i: number) => i !== index);
+        const reorderedSteps = newSteps.map((step: any, i: number) => ({
+          ...step,
+          order: i + 1
+        }));
+        return {
+          ...prev,
+          roadmap: {
+            ...prev.roadmap,
+            steps: reorderedSteps
+          }
+        };
+      });
+      addToast('info', 'Roadmap step removed');
+    }
+  };
+
+  const moveRoadmapStep = (index: number, direction: 'up' | 'down') => {
+    setSettings((prev: any) => {
+      const newSteps = [...prev.roadmap.steps];
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= newSteps.length) return prev;
+
+      [newSteps[index], newSteps[newIndex]] = [newSteps[newIndex], newSteps[index]];
+
+      const reorderedSteps = newSteps.map((step: any, i: number) => ({
+        ...step,
+        order: i + 1
+      }));
+
+      return {
+        ...prev,
+        roadmap: {
+          ...prev.roadmap,
+          steps: reorderedSteps
+        }
       };
     });
   };
@@ -704,6 +770,211 @@ export function PortalSettings() {
                     </div>
                   </div>
 
+                  {/* Roadmap Section */}
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-[#bb2738]/10 rounded-lg">
+                            <MapPin className="w-6 h-6 text-[#bb2738]" />
+                          </div>
+                          <div>
+                            <h2 className="text-xl font-semibold text-slate-800">Roadmap Section</h2>
+                            <p className="text-sm text-slate-500">Show your company's workflow process</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={addRoadmapStep}
+                          className="flex items-center gap-2 px-4 py-2 bg-[#bb2738] text-white rounded-lg hover:bg-[#a01f2f] transition-colors shadow-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add Step
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-6 space-y-5">
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg">
+                        <input
+                          type="checkbox"
+                          id="showRoadmap"
+                          checked={settings.roadmap?.enabled || false}
+                          onChange={(e) => updateSettings(['roadmap', 'enabled'], e.target.checked)}
+                          className="w-5 h-5 text-[#bb2738] rounded focus:ring-[#bb2738]"
+                        />
+                        <label htmlFor="showRoadmap" className="flex-1">
+                          <div className="text-sm font-medium text-slate-700">Show Roadmap Section</div>
+                          <div className="text-xs text-slate-500">Display workflow process on portal homepage</div>
+                        </label>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Section Title
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.roadmap?.title || ''}
+                          onChange={(e) => updateSettings(['roadmap', 'title'], e.target.value)}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none transition-shadow"
+                          placeholder="How We Work"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Section Subtitle
+                        </label>
+                        <textarea
+                          value={settings.roadmap?.subtitle || ''}
+                          onChange={(e) => updateSettings(['roadmap', 'subtitle'], e.target.value)}
+                          rows={2}
+                          className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none resize-none transition-shadow"
+                          placeholder="Our streamlined process ensures quality results"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Background Color
+                        </label>
+                        <div className="flex gap-3">
+                          <div className="relative">
+                            <input
+                              type="color"
+                              value={settings.roadmap?.backgroundColor || '#f8fafc'}
+                              onChange={(e) => updateSettings(['roadmap', 'backgroundColor'], e.target.value)}
+                              className="w-20 h-12 rounded-lg cursor-pointer border-2 border-slate-300"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            value={settings.roadmap?.backgroundColor || '#f8fafc'}
+                            onChange={(e) => updateSettings(['roadmap', 'backgroundColor'], e.target.value)}
+                            className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none font-mono"
+                            placeholder="#f8fafc"
+                          />
+                          <div
+                            className="w-20 h-12 rounded-lg border-2 border-slate-300"
+                            style={{ backgroundColor: settings.roadmap?.backgroundColor || '#f8fafc' }}
+                          />
+                        </div>
+                      </div>
+
+                      {settings.roadmap?.steps && settings.roadmap.steps.length > 0 && (
+                        <div className="space-y-4 pt-4 border-t border-slate-200">
+                          <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                            Process Steps
+                          </h3>
+                          {settings.roadmap.steps.map((step: any, index: number) => (
+                            <div key={index} className="p-5 border-2 border-slate-200 rounded-lg hover:border-[#bb2738]/30 transition-colors bg-slate-50/50">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex flex-col gap-1">
+                                    <button
+                                      onClick={() => moveRoadmapStep(index, 'up')}
+                                      disabled={index === 0}
+                                      className="p-1 hover:bg-slate-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                                      title="Move up"
+                                    >
+                                      <ChevronLeft className="w-4 h-4 rotate-90" />
+                                    </button>
+                                    <button
+                                      onClick={() => moveRoadmapStep(index, 'down')}
+                                      disabled={index === settings.roadmap.steps.length - 1}
+                                      className="p-1 hover:bg-slate-200 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                                      title="Move down"
+                                    >
+                                      <ChevronRight className="w-4 h-4 rotate-90" />
+                                    </button>
+                                  </div>
+                                  <div className="p-2 bg-white rounded-lg border border-slate-300">
+                                    <GripVertical className="w-4 h-4 text-slate-400" />
+                                  </div>
+                                  <div className="w-8 h-8 bg-[#bb2738] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                    {step.order}
+                                  </div>
+                                  <h3 className="font-semibold text-slate-800">Step {index + 1}</h3>
+                                </div>
+                                <button
+                                  onClick={() => removeRoadmapStep(index)}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Remove step"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Icon Name (Lucide Icons)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={step.icon}
+                                    onChange={(e) => {
+                                      const newSteps = [...settings.roadmap.steps];
+                                      newSteps[index].icon = e.target.value;
+                                      updateSettings(['roadmap', 'steps'], newSteps);
+                                    }}
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none text-sm"
+                                    placeholder="e.g., FileSearch, CheckCircle, Hammer"
+                                  />
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    Browse icons at <a href="https://lucide.dev" target="_blank" rel="noopener noreferrer" className="text-[#bb2738] hover:underline">lucide.dev</a>
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Step Title
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={step.title}
+                                    onChange={(e) => {
+                                      const newSteps = [...settings.roadmap.steps];
+                                      newSteps[index].title = e.target.value;
+                                      updateSettings(['roadmap', 'steps'], newSteps);
+                                    }}
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none text-sm"
+                                    placeholder="Request Quote"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Description
+                                  </label>
+                                  <textarea
+                                    value={step.description}
+                                    onChange={(e) => {
+                                      const newSteps = [...settings.roadmap.steps];
+                                      newSteps[index].description = e.target.value;
+                                      updateSettings(['roadmap', 'steps'], newSteps);
+                                    }}
+                                    rows={2}
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#bb2738] focus:border-transparent outline-none text-sm resize-none"
+                                    placeholder="Describe this step in the process"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {(!settings.roadmap?.steps || settings.roadmap.steps.length === 0) && (
+                        <div className="text-center py-12 text-slate-500">
+                          <MapPin className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                          <p className="font-medium">No roadmap steps added yet</p>
+                          <p className="text-sm">Click "Add Step" to create your workflow process</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Contact Section */}
                   <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                     <div className="p-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
@@ -876,6 +1147,34 @@ export function PortalSettings() {
                               </div>
                               <h3 className="font-semibold text-slate-800 mb-1">{feature.title}</h3>
                               <p className="text-sm text-slate-600">{feature.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Roadmap Preview */}
+                    {settings.roadmap?.enabled && settings.roadmap?.steps && settings.roadmap.steps.length > 0 && (
+                      <div className="p-8" style={{ backgroundColor: settings.roadmap.backgroundColor }}>
+                        <div className="text-center mb-8">
+                          <h2 className="text-2xl font-bold text-slate-800 mb-2">{settings.roadmap.title}</h2>
+                          <p className="text-slate-600">{settings.roadmap.subtitle}</p>
+                        </div>
+                        <div className="relative">
+                          {settings.roadmap.steps.map((step: any, i: number) => (
+                            <div key={i} className="flex gap-4 mb-6 last:mb-0">
+                              <div className="flex flex-col items-center">
+                                <div className="w-12 h-12 bg-[#bb2738] text-white rounded-full flex items-center justify-center font-bold shrink-0">
+                                  {step.order}
+                                </div>
+                                {i < settings.roadmap.steps.length - 1 && (
+                                  <div className="w-0.5 h-full bg-[#bb2738]/30 my-2"></div>
+                                )}
+                              </div>
+                              <div className="flex-1 pb-6">
+                                <h3 className="font-semibold text-slate-800 mb-1">{step.title}</h3>
+                                <p className="text-sm text-slate-600">{step.description}</p>
+                              </div>
                             </div>
                           ))}
                         </div>

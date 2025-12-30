@@ -145,6 +145,50 @@ export function CustomerHome({ onNavigate }: { onNavigate: (view: string) => voi
         </div>
       )}
 
+      {settings.roadmap?.enabled && settings.roadmap?.steps && settings.roadmap.steps.length > 0 && (
+        <div className="rounded-xl p-8 md:p-12" style={{ backgroundColor: settings.roadmap.backgroundColor }}>
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-slate-800 mb-3">{settings.roadmap.title}</h2>
+              <p className="text-lg text-slate-600">{settings.roadmap.subtitle}</p>
+            </div>
+
+            <div className="relative">
+              <div className="hidden md:block absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#bb2738] via-[#bb2738] to-[#bb2738] opacity-20" style={{ top: '2.5rem' }}></div>
+
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-4">
+                {settings.roadmap.steps.map((step: any, index: number) => {
+                  const IconComponent = getIcon(step.icon);
+                  return (
+                    <div key={index} className="relative">
+                      <div className="flex md:flex-col items-start md:items-center gap-4 md:gap-0">
+                        <div className="relative z-10 flex flex-col items-center">
+                          <div className="w-20 h-20 bg-[#bb2738] text-white rounded-full flex items-center justify-center mb-3 shadow-lg">
+                            <IconComponent className="w-10 h-10" />
+                          </div>
+                          <div className="w-10 h-10 bg-white border-4 border-[#bb2738] text-[#bb2738] rounded-full flex items-center justify-center font-bold text-lg -mt-6 mb-3 shadow-md">
+                            {step.order}
+                          </div>
+                        </div>
+
+                        <div className="flex-1 md:text-center">
+                          <h3 className="text-lg font-bold text-slate-800 mb-2">{step.title}</h3>
+                          <p className="text-sm text-slate-600 leading-relaxed">{step.description}</p>
+                        </div>
+                      </div>
+
+                      {index < settings.roadmap.steps.length - 1 && (
+                        <div className="md:hidden absolute left-10 top-20 bottom-0 w-0.5 bg-[#bb2738]/30"></div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {settings.contact && settings.contact.showContactInfo && (
         <div className="bg-slate-50 rounded-xl p-8 border border-slate-200">
           <h2 className="text-2xl font-bold text-slate-800 mb-4">{settings.contact.title}</h2>
