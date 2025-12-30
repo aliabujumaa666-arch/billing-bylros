@@ -30,6 +30,8 @@ import {
   AlignRight,
   Undo,
   Redo,
+  Type,
+  BookOpen,
 } from 'lucide-react';
 
 interface PageEditorProps {
@@ -471,18 +473,20 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
   };
 
   const wordCount = formData.content.trim().split(/\s+/).filter(Boolean).length;
+  const charCount = formData.content.length;
+  const readingTime = Math.ceil(wordCount / 200);
 
   const Panel = ({ title, name, children }: { title: string; name: keyof typeof expandedPanels; children: React.ReactNode }) => (
-    <div className="border border-slate-200 rounded-lg mb-3 bg-white">
+    <div className="border border-slate-200 rounded-lg mb-3 bg-white shadow-sm hover:shadow transition-shadow duration-200">
       <button
         type="button"
         onClick={() => togglePanel(name)}
-        className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
+        className="w-full flex items-center justify-between p-3.5 hover:bg-slate-50 transition-all duration-200 rounded-t-lg"
       >
-        <span className="font-medium text-slate-800 text-sm">{title}</span>
-        {expandedPanels[name] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        <span className="font-semibold text-slate-800 text-sm">{title}</span>
+        {expandedPanels[name] ? <ChevronUp className="w-4 h-4 text-slate-600" /> : <ChevronDown className="w-4 h-4 text-slate-600" />}
       </button>
-      {expandedPanels[name] && <div className="p-3 border-t border-slate-200">{children}</div>}
+      {expandedPanels[name] && <div className="p-3.5 border-t border-slate-200">{children}</div>}
     </div>
   );
 
@@ -509,8 +513,8 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-slate-50 animate-fadeIn">
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-full px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -519,20 +523,33 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
                   if (hasUnsavedChanges && !confirm('You have unsaved changes. Leave anyway?')) return;
                   onBack();
                 }}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2.5 hover:bg-slate-100 rounded-lg transition-all duration-200 text-slate-700 hover:text-slate-900"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div>
-                <h1 className="text-xl font-semibold text-slate-800">
+                <h1 className="text-xl font-semibold text-slate-900">
                   {pageId ? 'Edit Page' : 'Add New Page'}
                 </h1>
-                <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
                   {lastSaved && (
-                    <span>Last saved: {lastSaved.toLocaleTimeString()}</span>
+                    <span className="flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                      Saved {lastSaved.toLocaleTimeString()}
+                    </span>
                   )}
-                  {saving && <span className="text-[#bb2738]">Saving...</span>}
-                  {hasUnsavedChanges && !saving && <span className="text-orange-600">Unsaved changes</span>}
+                  {saving && (
+                    <span className="flex items-center gap-1 text-[#bb2738]">
+                      <div className="w-1.5 h-1.5 bg-[#bb2738] rounded-full animate-pulse"></div>
+                      Saving...
+                    </span>
+                  )}
+                  {hasUnsavedChanges && !saving && (
+                    <span className="flex items-center gap-1 text-orange-600">
+                      <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                      Unsaved changes
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -543,24 +560,24 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
                   href={`/page/${formData.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 shadow-sm hover:shadow"
                 >
                   <Eye className="w-4 h-4" />
-                  Preview
+                  <span className="font-medium">Preview</span>
                 </a>
               )}
               <button
                 onClick={() => handleSave(false)}
                 disabled={saving || !hasUnsavedChanges}
-                className="flex items-center gap-2 px-4 py-2 text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2.5 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
               >
                 <Save className="w-4 h-4" />
-                Save Draft
+                <span className="font-medium">Save Draft</span>
               </button>
               <button
                 onClick={handlePublish}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-[#bb2738] hover:bg-[#a01f2f] text-white rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#bb2738] hover:bg-[#a01f2f] text-white rounded-lg transition-all duration-200 disabled:opacity-50 shadow-md hover:shadow-lg font-medium"
               >
                 {formData.status === 'published' ? 'Unpublish' : 'Publish'}
               </button>
@@ -577,174 +594,191 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
               value={formData.title}
               onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="Add title"
-              className="w-full text-4xl font-bold border-none outline-none mb-2 placeholder-slate-300 px-0"
+              className="w-full text-4xl font-bold border-none outline-none mb-3 placeholder-slate-300 px-0 text-slate-900 transition-all focus:placeholder-slate-400"
             />
 
-            <div className="flex items-center gap-2 text-sm text-slate-500 mb-4">
-              <span>Permalink:</span>
-              <span className="text-slate-700">/page/</span>
+            <div className="flex items-center gap-2 text-sm text-slate-500 mb-6 pb-6 border-b border-slate-200">
+              <span className="font-medium">Permalink:</span>
+              <span className="text-slate-400">/page/</span>
               <input
                 type="text"
                 value={formData.slug}
                 onChange={(e) => handleFieldChange('slug', e.target.value)}
                 placeholder="your-page-slug"
-                className="border border-slate-200 rounded px-2 py-1 text-slate-700 outline-none focus:ring-2 focus:ring-[#bb2738] focus:border-transparent"
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 outline-none focus:ring-2 focus:ring-[#bb2738] focus:border-transparent transition-all bg-slate-50 focus:bg-white"
               />
               {slugStatus === 'checking' && (
-                <span className="text-blue-600 text-xs">Checking...</span>
+                <span className="inline-flex items-center gap-1 text-blue-600 text-xs bg-blue-50 px-2 py-1 rounded-full">
+                  <div className="w-1 h-1 bg-blue-600 rounded-full animate-pulse"></div>
+                  Checking...
+                </span>
               )}
               {slugStatus === 'available' && (
-                <span className="text-green-600 text-xs">✓ Available</span>
+                <span className="inline-flex items-center gap-1 text-green-600 text-xs bg-green-50 px-2 py-1 rounded-full font-medium">
+                  ✓ Available
+                </span>
               )}
               {slugStatus === 'taken' && (
-                <span className="text-red-600 text-xs">✗ Already exists</span>
+                <span className="inline-flex items-center gap-1 text-red-600 text-xs bg-red-50 px-2 py-1 rounded-full font-medium">
+                  ✗ Already exists
+                </span>
               )}
             </div>
 
-            <div className="mb-4 flex gap-2 border-b border-slate-200">
+            <div className="mb-6 inline-flex bg-slate-100 rounded-lg p-1">
               <button
                 onClick={() => setIsVisualMode(true)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-2 ${
                   isVisualMode
-                    ? 'border-[#bb2738] text-[#bb2738]'
-                    : 'border-transparent text-slate-600 hover:text-slate-800'
+                    ? 'bg-white text-[#bb2738] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
                 }`}
               >
-                <FileText className="w-4 h-4 inline mr-2" />
+                <FileText className="w-4 h-4" />
                 Visual
               </button>
               <button
                 onClick={() => setIsVisualMode(false)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-2 ${
                   !isVisualMode
-                    ? 'border-[#bb2738] text-[#bb2738]'
-                    : 'border-transparent text-slate-600 hover:text-slate-800'
+                    ? 'bg-white text-[#bb2738] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
                 }`}
               >
-                <Code className="w-4 h-4 inline mr-2" />
+                <Code className="w-4 h-4" />
                 Code
               </button>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-lg shadow-slate-200/50">
               {isVisualMode && (
-                <div className="flex items-center gap-1 p-2 border-b border-slate-200 bg-slate-50 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={formatBold}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Bold (Ctrl+B)"
-                  >
-                    <Bold className="w-4 h-4 text-slate-700" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={formatItalic}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Italic (Ctrl+I)"
-                  >
-                    <Italic className="w-4 h-4 text-slate-700" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={formatUnderline}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Underline (Ctrl+U)"
-                  >
-                    <Underline className="w-4 h-4 text-slate-700" />
-                  </button>
+                <div className="flex items-center gap-1 px-3 py-2.5 border-b border-slate-200 bg-white flex-wrap shadow-sm">
+                  <div className="flex items-center gap-0.5 bg-slate-50 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={formatBold}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Bold (Ctrl+B)"
+                    >
+                      <Bold className="w-[18px] h-[18px]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={formatItalic}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Italic (Ctrl+I)"
+                    >
+                      <Italic className="w-[18px] h-[18px]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={formatUnderline}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Underline (Ctrl+U)"
+                    >
+                      <Underline className="w-[18px] h-[18px]" />
+                    </button>
+                  </div>
 
-                  <div className="w-px h-6 bg-slate-300 mx-1"></div>
+                  <div className="w-px h-6 bg-slate-200 mx-1.5"></div>
 
-                  <button
-                    type="button"
-                    onClick={formatH1}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Heading 1"
-                  >
-                    <Heading1 className="w-4 h-4 text-slate-700" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={formatH2}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Heading 2"
-                  >
-                    <Heading2 className="w-4 h-4 text-slate-700" />
-                  </button>
+                  <div className="flex items-center gap-0.5 bg-slate-50 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={formatH1}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Heading 1"
+                    >
+                      <Heading1 className="w-[18px] h-[18px]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={formatH2}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Heading 2"
+                    >
+                      <Heading2 className="w-[18px] h-[18px]" />
+                    </button>
+                  </div>
 
-                  <div className="w-px h-6 bg-slate-300 mx-1"></div>
+                  <div className="w-px h-6 bg-slate-200 mx-1.5"></div>
 
-                  <button
-                    type="button"
-                    onClick={formatUL}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Bullet List"
-                  >
-                    <List className="w-4 h-4 text-slate-700" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={formatOL}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Numbered List"
-                  >
-                    <ListOrdered className="w-4 h-4 text-slate-700" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={formatQuote}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Blockquote"
-                  >
-                    <Quote className="w-4 h-4 text-slate-700" />
-                  </button>
+                  <div className="flex items-center gap-0.5 bg-slate-50 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={formatUL}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Bullet List"
+                    >
+                      <List className="w-[18px] h-[18px]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={formatOL}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Numbered List"
+                    >
+                      <ListOrdered className="w-[18px] h-[18px]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={formatQuote}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Blockquote"
+                    >
+                      <Quote className="w-[18px] h-[18px]" />
+                    </button>
+                  </div>
 
-                  <div className="w-px h-6 bg-slate-300 mx-1"></div>
+                  <div className="w-px h-6 bg-slate-200 mx-1.5"></div>
 
-                  <button
-                    type="button"
-                    onClick={formatAlignLeft}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Align Left"
-                  >
-                    <AlignLeft className="w-4 h-4 text-slate-700" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={formatAlignCenter}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Align Center"
-                  >
-                    <AlignCenter className="w-4 h-4 text-slate-700" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={formatAlignRight}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Align Right"
-                  >
-                    <AlignRight className="w-4 h-4 text-slate-700" />
-                  </button>
+                  <div className="flex items-center gap-0.5 bg-slate-50 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={formatAlignLeft}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Align Left"
+                    >
+                      <AlignLeft className="w-[18px] h-[18px]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={formatAlignCenter}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Align Center"
+                    >
+                      <AlignCenter className="w-[18px] h-[18px]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={formatAlignRight}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Align Right"
+                    >
+                      <AlignRight className="w-[18px] h-[18px]" />
+                    </button>
+                  </div>
 
-                  <div className="w-px h-6 bg-slate-300 mx-1"></div>
+                  <div className="w-px h-6 bg-slate-200 mx-1.5"></div>
 
-                  <button
-                    type="button"
-                    onClick={formatLink}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Insert Link"
-                  >
-                    <LinkIcon className="w-4 h-4 text-slate-700" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={formatImage}
-                    className="p-2 hover:bg-white rounded transition-colors border border-transparent hover:border-slate-300"
-                    title="Insert Image"
-                  >
-                    <ImageIcon className="w-4 h-4 text-slate-700" />
-                  </button>
+                  <div className="flex items-center gap-0.5 bg-slate-50 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={formatLink}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Insert Link"
+                    >
+                      <LinkIcon className="w-[18px] h-[18px]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={formatImage}
+                      className="p-2 hover:bg-white rounded-md transition-all duration-200 text-slate-700 hover:text-slate-900 hover:shadow-sm"
+                      title="Insert Image"
+                    >
+                      <ImageIcon className="w-[18px] h-[18px]" />
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -755,24 +789,51 @@ export function PageEditor({ pageId, onBack }: PageEditorProps) {
                 onKeyDown={handleKeyDown}
                 placeholder="Start writing your content..."
                 rows={20}
-                className={`w-full p-4 outline-none resize-none bg-white text-slate-800 placeholder-slate-400 leading-relaxed ${
-                  isVisualMode ? 'font-normal text-base' : 'font-mono text-sm'
+                className={`w-full px-6 py-6 outline-none resize-none bg-white text-slate-900 placeholder-slate-400 transition-all duration-200 ${
+                  isVisualMode ? 'font-normal text-[17px] leading-[1.7] tracking-[0.01em]' : 'font-mono text-sm leading-relaxed bg-slate-50'
                 }`}
-                style={{ minHeight: '500px' }}
+                style={{ minHeight: '500px', maxWidth: '720px', margin: '0 auto' }}
               />
-              <div className="px-4 py-2 border-t border-slate-200 text-xs text-slate-500 bg-slate-50 flex items-center justify-between">
-                <span>Word count: {wordCount}</span>
+              <div className="px-6 py-3 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between">
+                <div className="flex items-center gap-4 text-xs text-slate-600">
+                  <div className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="font-medium">{wordCount}</span>
+                    <span className="text-slate-400">words</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Type className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="font-medium">{charCount}</span>
+                    <span className="text-slate-400">characters</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="font-medium">{readingTime}</span>
+                    <span className="text-slate-400">min read</span>
+                  </div>
+                </div>
                 {isVisualMode && (
-                  <span className="text-slate-400">
-                    Shortcuts: Ctrl+B (Bold), Ctrl+I (Italic), Ctrl+U (Underline), Ctrl+S (Save)
-                  </span>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded-md">
+                      <kbd className="font-mono font-semibold">Ctrl+B</kbd>
+                      <span className="text-slate-400">Bold</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded-md">
+                      <kbd className="font-mono font-semibold">Ctrl+I</kbd>
+                      <span className="text-slate-400">Italic</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded-md">
+                      <kbd className="font-mono font-semibold">Ctrl+S</kbd>
+                      <span className="text-slate-400">Save</span>
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="w-80 p-6 border-l border-slate-200 bg-slate-50 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 73px)' }}>
+        <div className="w-80 p-6 border-l border-slate-200 bg-gradient-to-b from-slate-50 to-white overflow-y-auto" style={{ maxHeight: 'calc(100vh - 73px)' }}>
           <Panel title="Publish" name="publish">
             <div className="space-y-3">
               <div>
